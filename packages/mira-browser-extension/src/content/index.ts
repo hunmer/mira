@@ -8,6 +8,8 @@ import { openImportDialog, extractUrls } from './overlay/import-dialog';
 import { urlKind } from '@/shared/drag-data';
 import { upgradeImageUrl } from '@/shared/imu';
 import { fileToStaged } from '@/shared/staged-file';
+import { isDragPopoverHostAllowed } from '@/shared/types';
+import { OVERLAY_Z } from './overlay/styles';
 import { dbg } from '@/shared/debug';
 import type { ResourceKind } from '@/shared/types';
 import type { Folder, Tag } from 'mira-app-core/shared/sdk';
@@ -121,11 +123,53 @@ const sniffer = createSniffer(resources => {
   }).catch(e => dbg.error('content', 'SNIFFER_REPORT send failed', e));
 });
 
+/** 页面右下角轻量提示(批量复制 url 等操作的反馈),2 秒后自动消失 */
+function showToast(message: string) {
+  const toast = document.createElement('div');
+  toast.textContent = message;
+  Object.assign(toast.style, {
+    position: 'fixed',
+    left: '50%',
+    bottom: '32px',
+    transform: 'translateX(-50%)',
+    zIndex: String(OVERLAY_Z),
+    background: 'rgba(24,24,27,.96)',
+    color: '#fafafa',
+    border: '1px solid #3f3f46',
+    borderRadius: '8px',
+    padding: '8px 14px',
+    font: '13px/1.5 system-ui, -apple-system, sans-serif',
+    boxShadow: '0 8px 32px rgba(0,0,0,.4)',
+  } as Partial<CSSStyleDeclaration>);
+  document.documentElement.appendChild(toast);
+  setTimeout(() => toast.remove(), 2000);
+}
+
 // 拖拽上传:发给 service worker
 const dragdrop = createDragDrop({
   getFolders: fetchFolders,
   getTags: fetchTags,
   createFolder,
+  // 「批量导入」:复用右键批量导入对话框,对该元素下收集的图片 URL 选文件夹/标签后逐条上传
+  onBatchImport(urls) {
+    openImportDialog({
+      urls,
+      referrer: location.href,
+      getFolders: fetchFolders,
+      getTags: fetchTags,
+      createFolder,
+      onImport: payload => {
+        dbg.info('content', 'dragdrop batch import submit', { count: payload.urls.length, folderId: payload.folderId, tags: payload.tags });
+        batchUploadUrls(payload.urls, { folderId: payload.folderId, tags: payload.tags });
+      },
+    });
+  },
+  // 「批量复制url」:该元素下的图片 URL 逐行写入剪贴板
+  onCopyUrls(urls) {
+    navigator.clipboard.writeText(urls.join('\n'))
+      .then(() => { dbg.info('content', 'urls copied', { count: urls.length }); showToast(`已复制 ${urls.length} 个图片 URL`); })
+      .catch(e => { dbg.error('content', 'copy urls failed', e); showToast('复制失败'); });
+  },
   openCustomUpload(source) {
     return chrome.runtime.sendMessage({
       type: 'CUSTOM_UPLOAD_SIDEPANEL_OPEN',
@@ -219,7 +263,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         sendResponse({ ok: true });
         return true;
       case 'DISPATCH_DRAGDROP':
-        dragdrop.setEnabled(msg.payload.enabled);
+        dragdrop.setEnabled(msg.payload.enabled && isDragPopoverHostAllowed(location.host, msg.payload.hosts ?? []));
         sendResponse({ ok: true, dragdrop: dragdrop.health() });
         return true;
       case 'DISPATCH_HOVER_BUTTON':
@@ -306,12 +350,15 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 chrome.runtime.sendMessage({ type: 'CONFIG_GET' }).then((settings: any) => {
   dbg.info('content', 'init CONFIG_GET', {
     dragPopoverEnabled: settings?.dragPopoverEnabled,
+    dragPopoverHosts: settings?.dragPopoverHosts,
     imageHoverButtonEnabled: settings?.imageHoverButtonEnabled,
     snifferEnabled: settings?.snifferEnabled,
     snifferKinds: settings?.snifferKinds,
     libraryId: settings?.libraryId,
   });
-  if (settings?.dragPopoverEnabled === false) dragdrop.setEnabled(false);
+  // 拖拽快传按钮:总开关关闭,或当前 host 不在启用站点列表(空列表 = 所有站点)时禁用
+  if (settings?.dragPopoverEnabled === false
+    || !isDragPopoverHostAllowed(location.host, settings?.dragPopoverHosts)) dragdrop.setEnabled(false);
   if (settings?.imageHoverButtonEnabled !== true) hoverButton.setEnabled(false);
   if (settings?.snifferEnabled) sniffer.start(settings.snifferKinds);
   dbg.info('content', 'initialization complete', { dragdrop: dragdrop.health() });

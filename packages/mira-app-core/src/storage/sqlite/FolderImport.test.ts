@@ -41,9 +41,9 @@ describe('nested folder creation and file import', () => {
     );
 
     expect(imported.folder_id).toBe(childId);
-    expect(imported.path).toBe(path.join(nestedDir, 'source.bin'));
-    expect(fs.existsSync(imported.path)).toBe(true);
-    expect(await library.getItemFilePath(imported)).toBe(imported.path);
+    expect(imported.path).toBeNull();
+    expect(fs.existsSync(path.join(nestedDir, 'source.bin'))).toBe(true);
+    expect(await library.getItemFilePath(imported)).toBe(path.join(nestedDir, 'source.bin'));
   });
 
   it('moves a root file into the nested folder on disk and in the database', async () => {
@@ -65,7 +65,7 @@ describe('nested folder creation and file import', () => {
     const fileName = path.basename(source);
     const rootPath = path.join(root, fileName);
 
-    expect(imported.path).toBe(rootPath);
+    expect(imported.path).toBeNull();
     expect(fs.existsSync(rootPath)).toBe(true);
 
     const result = await library.setFileFolder(imported.id, childId);
@@ -98,5 +98,26 @@ describe('nested folder creation and file import', () => {
     expect(await library.getFolder(childId)).toBeNull();
     expect(fs.existsSync(nestedDir)).toBe(false);
     expect(fs.existsSync(path.join(root, 'Parent'))).toBe(true);
+  });
+
+  it('keeps copied nested file paths when deleting a folder to the recycle bin', async () => {
+    root = fs.mkdtempSync(path.join(os.tmpdir(), 'mira-folder-trash-'));
+    source = path.join(os.tmpdir(), `mira-folder-trash-source-${Date.now()}-${Math.random()}.bin`);
+    fs.writeFileSync(source, 'nested trash path');
+    library = new LibraryServerDataSQLite({
+      id: 'folder-trash-test',
+      customFields: { path: root },
+    });
+    await library.initialize();
+
+    const parentId = await library.createFolder({ title: 'Parent', color: 0, icon: '' });
+    const childId = await library.createFolder({ title: 'Child', parent_id: parentId, color: 0, icon: '' });
+    const imported = await library.createFileFromPath(source, { folder_id: childId }, { importType: 'copy' });
+
+    expect(await library.deleteFolder(parentId, true)).toBe(true);
+    const recycled = await library.getFile(imported.id);
+    expect(recycled?.recycled).toBe(1);
+    expect(recycled?.path).toContain(path.join('.trash', 'Parent', 'Child'));
+    expect(fs.existsSync(recycled!.path)).toBe(true);
   });
 });

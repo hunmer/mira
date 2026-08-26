@@ -31,6 +31,13 @@ export interface DragDropHandlers {
    * 返回新文件夹 id;失败返回 null(由调用方静默或提示)。
    */
   createFolder?: (title: string) => Promise<number | null>;
+  /**
+   * 拖拽源元素下含多张图片时,「批量导入」drop zone 释放触发。
+   * urls 为该元素下收集到的图片 URL 列表。
+   */
+  onBatchImport?: (urls: string[]) => void;
+  /** 「批量复制url」drop zone 释放触发。 */
+  onCopyUrls?: (urls: string[]) => void;
 }
 
 export interface DragDropController {
@@ -152,6 +159,36 @@ function resolveMediaSource(element: Element): DragSource | null {
   return null;
 }
 
+/**
+ * 收集拖拽目标元素下的多张图片 URL(批量导入/批量复制用)。
+ *
+ * 从 target 向上最多 maxDepth 层,取第一个包含 ≥2 张图片的容器;
+ * 拖拽目标是媒体元素本身(单图操作)时返回空。
+ * 过滤 data: URL 与重复项,最多 limit 张。
+ */
+export function collectImagesUnder(
+  target: Element | null,
+  opts?: { maxDepth?: number; limit?: number },
+): string[] {
+  if (!target) return [];
+  if (target.closest('img, video')) return [];
+  const maxDepth = opts?.maxDepth ?? 6;
+  const limit = opts?.limit ?? 50;
+  for (let el: Element | null = target, depth = 0; el && depth < maxDepth; el = el.parentElement, depth++) {
+    const urls: string[] = [];
+    const seen = new Set<string>();
+    for (const img of el.querySelectorAll('img')) {
+      const url = (img.currentSrc || img.src || '').trim();
+      if (!url || url.startsWith('data:') || seen.has(url)) continue;
+      seen.add(url);
+      urls.push(url);
+      if (urls.length >= limit) break;
+    }
+    if (urls.length >= 2) return urls;
+  }
+  return [];
+}
+
 export function createDragDrop(handlers: DragDropHandlers): DragDropController {
   const controllerHost = window as unknown as Record<string, DragDropController | undefined>;
   controllerHost[CONTROLLER_KEY]?.destroy();
@@ -163,10 +200,10 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
   let pendingFolders: Promise<Folder[] | null> | null = null;
   let pendingTags: Promise<Tag[] | null> | null = null;
   let listenersAttached = false;
-  // 拖拽起点(dragstart 记录,dragover 据此判断位移与方向)
-  let dragOrigin: { x: number; y: number; source: DragSource } | null = null;
+  // 拖拽起点(dragstart 记录,dragover 据此判断位移与方向);target 为拖拽源元素,供批量图片收集
+  let dragOrigin: { x: number; y: number; source: DragSource; target: Element | null } | null = null;
   // 部分站点会拦截 dragstart；提前在 pointerdown 捕获拖拽候选，供 dragover 恢复。
-  let pointerOrigin: { x: number; y: number; source: DragSource } | null = null;
+  let pointerOrigin: { x: number; y: number; source: DragSource; target: Element | null } | null = null;
 
   function sourceFromEvent(e: Event): DragSource | null {
     const target = e.target instanceof Element ? e.target : null;
@@ -180,8 +217,9 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
 
   function onPointerDown(e: PointerEvent) {
     if (!enabled || e.button !== 0) return;
+    const target = e.target instanceof Element ? e.target : null;
     const source = sourceFromEvent(e);
-    pointerOrigin = source ? { x: e.clientX, y: e.clientY, source } : null;
+    pointerOrigin = source ? { x: e.clientX, y: e.clientY, source, target } : null;
     if (source) dbg.info('dragdrop', 'pointer candidate ready', { source, x: e.clientX, y: e.clientY });
   }
 
@@ -215,6 +253,7 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
       x: pointerOrigin?.x ?? e.clientX,
       y: pointerOrigin?.y ?? e.clientY,
       source,
+      target,
     };
     void fetchFolders(); // 预热文件夹拉取,移动达到阈值时已就绪
     void fetchTags(); // 预热标签拉取
@@ -231,7 +270,7 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     const dy = e.clientY - dragOrigin.y;
     if (Math.abs(dx) < SHOW_THRESHOLD && Math.abs(dy) < SHOW_THRESHOLD) return;
     dbg.log('dragdrop', 'dragover exceed threshold → show', { dx, dy });
-    showOverlay(dragOrigin.source, e.clientX, e.clientY, dx, dy);
+    showOverlay(dragOrigin.source, dragOrigin.target, e.clientX, e.clientY, dx, dy);
   }
 
   function onDragEnd() {
@@ -305,6 +344,25 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
         return;
       }
       handlers.onUpload({ url: source.url, kind: source.kind, folderId, tags });
+    });
+    return zone;
+  }
+
+  /**
+   * 动作型 drop zone(批量导入/批量复制 url):释放即执行 action,
+   * 不走 onUpload,与 makeDropZone 的文件夹/标签上传语义区分。
+   */
+  function makeActionZone(label: string, action: () => void): HTMLDivElement {
+    const zone = document.createElement('div');
+    zone.className = 'mira-dropzone mira-action-zone';
+    zone.textContent = label;
+    zone.addEventListener('dragover', ev => { ev.preventDefault(); zone.classList.add('mira-hover'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('mira-hover'));
+    zone.addEventListener('drop', ev => {
+      ev.preventDefault();
+      zone.classList.remove('mira-hover');
+      hideOverlay();
+      action();
     });
     return zone;
   }
@@ -479,7 +537,7 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     });
   }
 
-  function showOverlay(source: DragSource, x: number, y: number, dx: number, dy: number) {
+  function showOverlay(source: DragSource, target: Element | null, x: number, y: number, dx: number, dy: number) {
     hideOverlay();
     dbg.info('dragdrop', 'showOverlay', { source, hasGetFolders: !!handlers.getFolders, hasGetTags: !!handlers.getTags, x, y, dx, dy });
     overlay = document.createElement('div');
@@ -540,6 +598,21 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
       topRow.appendChild(newZone);
     }
     body.appendChild(topRow);
+
+    // 拖拽源元素下有多张图片时,追加「批量导入 / 批量复制url」动作区
+    const batchUrls = collectImagesUnder(target);
+    if (batchUrls.length >= 2 && (handlers.onBatchImport || handlers.onCopyUrls)) {
+      dbg.info('dragdrop', 'batch actions available', { count: batchUrls.length });
+      const batchRow = document.createElement('div');
+      batchRow.className = 'mira-batch-zones';
+      if (handlers.onBatchImport) {
+        batchRow.appendChild(makeActionZone(`🖼 批量导入(${batchUrls.length})`, () => handlers.onBatchImport!(batchUrls)));
+      }
+      if (handlers.onCopyUrls) {
+        batchRow.appendChild(makeActionZone('🔗 批量复制url', () => handlers.onCopyUrls!(batchUrls)));
+      }
+      body.appendChild(batchRow);
+    }
 
     // 下方两栏:左文件夹列表 | 右标签列表
     const cols = document.createElement('div');
@@ -772,6 +845,8 @@ function ensureStyles() {
 .mira-empty-state-dropzone.mira-hover { border-color: #4ade80; background: rgba(74,222,128,.12); color: #fafafa; }
 .mira-top-zones { display: flex; gap: 8px; }
 .mira-top-zones .mira-dropzone { flex: 1; width: auto; }
+.mira-batch-zones { display: flex; gap: 8px; }
+.mira-batch-zones .mira-dropzone { flex: 1; width: auto; padding: 10px 8px; font-size: 12px; }
 .mira-custom-upload { border-style: dotted; color: #71717a; }
 .mira-custom-upload.mira-hover { color: #fafafa; }
 .mira-cols { display: flex; gap: 8px; min-height: 0; flex: 1; }

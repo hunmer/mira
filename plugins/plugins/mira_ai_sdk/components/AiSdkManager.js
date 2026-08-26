@@ -93,6 +93,7 @@
       '        <div class="flex min-w-0 items-center gap-2">',
       '          <MiraCardTitle class="truncate">{{ provider.name }}</MiraCardTitle>',
       '          <MiraBadge v-if="provider.isDefault">默认</MiraBadge>',
+      '          <MiraBadge v-if="provider.isDefaultImage" variant="secondary" :title="provider.defaultImageModelId">默认生图</MiraBadge>',
       '        </div>',
       '        <MiraBadge variant="secondary">{{ provider.models.length }} 个模型</MiraBadge>',
       '      </MiraCardHeader>',
@@ -104,12 +105,20 @@
       '        <div class="flex flex-wrap gap-1">',
       '          <MiraBadge v-for="model in provider.models" :key="model" variant="outline" class="font-mono text-[0.625rem]">{{ model }}</MiraBadge>',
       '        </div>',
+      '        <div class="flex items-center gap-2">',
+      '          <span class="w-16 shrink-0 text-xs text-muted-foreground">生图模型</span>',
+      '          <MiraSelect :model-value="imageModelDrafts[provider.id] || provider.models[0]" @update:model-value="setImageModelDraft(provider.id, $event)">',
+      '            <MiraSelectTrigger class="min-w-0 flex-1"><MiraSelectValue /></MiraSelectTrigger>',
+      '            <MiraSelectContent><MiraSelectItem v-for="model in provider.models" :key="model" :value="model">{{ model }}</MiraSelectItem></MiraSelectContent>',
+      '          </MiraSelect>',
+      '        </div>',
       '        <div v-if="testResults[provider.id]" class="rounded-md p-2 text-xs" :class="testResults[provider.id].ok ? \'bg-green-500/10 text-green-700\' : \'bg-destructive/10 text-destructive\'">',
       '          {{ testResults[provider.id].message }}',
       '        </div>',
       '        <div class="flex flex-wrap gap-2">',
       '          <MiraButton size="sm" :disabled="testingId === provider.id" @click="testProvider(provider)">{{ testingId === provider.id ? "测试中..." : "测试连接" }}</MiraButton>',
       '          <MiraButton v-if="!provider.isDefault" size="sm" variant="outline" @click="setDefault(provider)">设为默认</MiraButton>',
+      '          <MiraButton v-if="!provider.isDefaultImage || provider.defaultImageModelId !== imageModelDrafts[provider.id]" size="sm" variant="outline" @click="setDefaultImage(provider)">设置默认生图模型</MiraButton>',
       '          <MiraButton size="sm" variant="outline" @click="openEdit(provider)">编辑</MiraButton>',
       '          <MiraButton size="sm" variant="destructive" @click="deleteProvider(provider)">删除</MiraButton>',
       '        </div>',
@@ -214,7 +223,7 @@
       '          <p v-if="imgError" class="text-xs text-destructive">{{ imgError }}</p>',
       '          <p v-if="imgInfo" class="text-xs text-muted-foreground">{{ imgInfo }}</p>',
       '          <div v-if="imgResults.length" class="grid grid-cols-2 gap-2 sm:grid-cols-4">',
-      '            <a v-for="(image, index) in imgResults" :key="index" :href="image.dataUrl" target="_blank" class="block overflow-hidden rounded-md border">',
+      '            <a v-for="(image, index) in imgResults" :key="index" href="#" @click.prevent="openImage(image)" class="block overflow-hidden rounded-md border">',
       '              <img :src="image.dataUrl" class="aspect-square w-full object-cover" />',
       '            </a>',
       '          </div>',
@@ -302,6 +311,9 @@
         loading: false,
         providers: [],
         defaultProviderId: null,
+        defaultImageProviderId: null,
+        defaultImageModelId: null,
+        imageModelDrafts: {},
         testResults: {},
         testingId: '',
         dialogOpen: false,
@@ -392,11 +404,23 @@
         var data = await this.request('/ai-sdk/providers/list' + (this.libraryId ? '?libraryId=' + encodeURIComponent(this.libraryId) : ''), { method: 'GET' });
         this.providers = data.providers || [];
         this.defaultProviderId = data.defaultProviderId || null;
+        this.defaultImageProviderId = data.defaultImageProviderId || null;
+        this.defaultImageModelId = data.defaultImageModelId || null;
+        var self = this;
+        this.providers.forEach(function (provider) {
+          var current = self.imageModelDrafts[provider.id];
+          var preferred = provider.isDefaultImage ? provider.defaultImageModelId : current;
+          self.setImageModelDraft(provider.id, provider.models.indexOf(preferred) >= 0 ? preferred : provider.models[0]);
+        });
         if (!this.chatProviderId) {
           var preferred = this.providers.find(function (item) { return item.isDefault; }) || this.providers[0];
           if (preferred) this.onChatProviderChange(preferred.id);
         }
-        if (!this.imgProviderId && this.chatProviderId) this.onImgProviderChange(this.chatProviderId);
+        if (!this.imgProviderId) {
+          var imagePreferred = this.providers.find(function (item) { return item.isDefaultImage; });
+          if (imagePreferred) this.onImgProviderChange(imagePreferred.id, imagePreferred.defaultImageModelId);
+          else if (this.chatProviderId) this.onImgProviderChange(this.chatProviderId);
+        }
       },
       openCreate: function () {
         this.editingId = '';
@@ -539,6 +563,22 @@
           window.alert(this.errorText(error));
         }
       },
+      setImageModelDraft: function (providerId, model) {
+        if (this.$set) this.$set(this.imageModelDrafts, providerId, model);
+        else this.imageModelDrafts[providerId] = model;
+      },
+      setDefaultImage: async function (provider) {
+        var model = this.imageModelDrafts[provider.id] || provider.models[0];
+        try {
+          await this.request('/ai-sdk/providers/default-image', {
+            method: 'POST',
+            body: JSON.stringify({ libraryId: this.libraryId, id: provider.id, model: model }),
+          });
+          await this.loadProviders();
+        } catch (error) {
+          window.alert(this.errorText(error));
+        }
+      },
       testProvider: async function (provider) {
         this.testingId = provider.id;
         this.$set ? this.$set(this.testResults, provider.id, null) : (this.testResults[provider.id] = null);
@@ -615,10 +655,10 @@
       clearChat: function () {
         this.chatMessages = [];
       },
-      onImgProviderChange: function (value) {
+      onImgProviderChange: function (value, preferredModel) {
         this.imgProviderId = value;
         var models = this.imgModels;
-        this.imgModel = models.length ? models[0] : '';
+        this.imgModel = models.indexOf(preferredModel) >= 0 ? preferredModel : (models[0] || '');
       },
       pickImages: function () {
         var input = this.$refs.imgFileInput;
@@ -680,6 +720,22 @@
           this.imgError = this.errorText(error);
         } finally {
           this.generating = false;
+        }
+      },
+      openImage: function (image) {
+        var dataUrl = String(image && image.dataUrl || '');
+        var match = dataUrl.match(/^data:([^;,]+)?(?:;base64)?,([\s\S]*)$/i);
+        if (!match) return;
+        try {
+          var mediaType = match[1] || 'image/png';
+          var binary = atob(match[2]);
+          var bytes = new Uint8Array(binary.length);
+          for (var i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+          var objectUrl = URL.createObjectURL(new Blob([bytes], { type: mediaType }));
+          window.open(objectUrl, '_blank', 'noopener,noreferrer');
+          window.setTimeout(function () { URL.revokeObjectURL(objectUrl); }, 60000);
+        } catch (error) {
+          this.imgError = this.errorText(error);
         }
       },
       errorText: function (error) { return error && error.message ? error.message : String(error); },

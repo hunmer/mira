@@ -138,8 +138,8 @@ const appliedFilterId = ref<string | null>(null);
 const folderTree = ref<LibraryTreeNode[]>([]);
 const tagTree = ref<LibraryTreeNode[]>([]);
 
-// ---- 数据加载(分页:一页最多 500;宿主返回 total 才显示底部翻页条) ----
-const PAGE_SIZE = 500;
+// ---- 数据加载(分页:一页最多 200;宿主返回 total 才显示底部翻页条) ----
+const PAGE_SIZE = 200;
 const page = ref(1);
 const total = ref<number | undefined>(undefined);
 const pageCount = computed(() =>

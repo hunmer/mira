@@ -95,9 +95,11 @@
         <!-- 多选模式 - 叠放相册效果 -->
         <div v-if="displayItems.length > 1" class="relative">
           <div class="image-stack relative w-[120px] h-[120px] mx-auto">
-            <div v-for="(item, index) in displayItems.slice(0, 4)" :key="item.id"
+            <Motion v-for="(item, index) in displayItems.slice(0, 4)" :key="item.id" as="div"
               class="stack-container absolute w-[100px] h-[100px] top-0 left-0"
-              :style="{ zIndex: index, left: `${index * 8}px`, top: `${index * 8}px` }">
+              :style="{ zIndex: index, left: `${index * 8}px`, top: `${index * 8}px` }"
+              :initial="{ scale: 0, opacity: 0 }" :animate="{ scale: 1, opacity: 1 }"
+              :transition="stackPopTransition(index)">
               <!-- 加载中占位符 -->
               <div v-if="multiImageLoadStates[item.id] === 'loading' || multiImageLoadStates[item.id] === undefined"
                 class="stack-placeholder absolute w-full h-full top-0 left-0 rounded-xl shadow-[0_2px_6px_rgba(0,0,0,0.1)] border-2 border-white bg-muted rounded-lg flex items-center justify-center">
@@ -115,7 +117,7 @@
                 :src="item.thumbnailPath || item.url"
                 class="stack-img absolute w-full h-full top-0 left-0 object-cover rounded-xl shadow-[0_2px_6px_rgba(0,0,0,0.1)] border-2 border-white"
                 @load="handleMultiImageLoad(item.id)" @error="handleMultiImageError(item)" />
-            </div>
+            </Motion>
             <!-- 更多文件提示 -->
             <div v-if="displayItems.length > 4"
               class="absolute bottom-1 right-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded z-10">
@@ -324,6 +326,7 @@
 
 <script setup lang="ts">
 import { toRefs, ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { Motion } from 'motion-v'
 import { useI18n } from 'vue-i18n'
 import type { FileInfo } from '../../../shared/types'
 import ColorThief from 'colorthief'
@@ -342,6 +345,10 @@ import { getExtIconUrl } from '@renderer/utils/extIconHelper'
 import { runBatchOperation } from '@renderer/composables/useBatchOperation'
 import OrderedSectionList from '@/renderer/components/common/OrderedSectionList.vue'
 import SortableLayoutDialog from '@/renderer/components/common/SortableLayoutDialog.vue'
+
+// 叠放相册弹入动画：index 0 = 最里边先弹入，依次到最外边
+const POP_SPRING = { type: 'spring', stiffness: 400, damping: 17 } as const
+const stackPopTransition = (index: number) => ({ ...POP_SPRING, delay: index * 0.08 })
 
 // 全局图片加载错误状态缓存
 const imageLoadErrorCache = new Map<string, boolean>()

@@ -75,7 +75,7 @@ export const FolderOperations = {
         const placeholders = subtreeIds.map(() => '?').join(',');
         // 子树内所有文件（含未回收的）；path 列保留的是磁盘绝对路径
         const fileRows = await this.getSql(
-          `SELECT id, name, path FROM files WHERE folder_id IN (${placeholders})`,
+          `SELECT id, name, path, folder_id FROM files WHERE folder_id IN (${placeholders})`,
           subtreeIds
         );
 
@@ -91,8 +91,10 @@ export const FolderOperations = {
         // 顺序很重要——若 watcher 在 rename 后对旧路径发出 unlink，因 path 已更新，查不到行不会误删记录。
         for (const row of fileRows) {
           const file = this.rowToMap(row);
-          const rel = file.path && fs.existsSync(folderDir)
-            ? path.relative(folderDir, path.dirname(file.path))
+          // copy/move 模式的 files.path 为 NULL，必须从文件夹关系解析素材库内实际路径。
+          const physicalPath = await this.getItemFilePath(file, { isUrlFile: false });
+          const rel = physicalPath && fs.existsSync(folderDir)
+            ? path.relative(folderDir, path.dirname(physicalPath))
             : '';
           const subDir = rel && rel !== '.' && !rel.startsWith('..') ? rel : '';
           const newPath = path.join(trashFolderDir, subDir, file.name);

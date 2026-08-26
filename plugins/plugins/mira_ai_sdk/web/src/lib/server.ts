@@ -33,6 +33,8 @@ export interface AiProvider {
   name: string
   models: string[]
   isDefault: boolean
+  isDefaultImage: boolean
+  defaultImageModelId: string | null
 }
 
 /** 已配置的 AI 服务商列表（mira_ai_sdk 服务端插件） */

@@ -48,7 +48,7 @@
     "renderFailed": "插件内容渲染失败",
     "buildHint": "（请在插件目录执行 pnpm install && pnpm build 生成 dist）",
     "managePlugins": "管理插件",
-    "openInWebviewTab": "在 Webview 标签页打开",
+    "openInWebviewTab": "在标签页打开",
     "devMode": "Dev 模式",
     "disable": "禁用",
     "devDialogTitle": "插件 Dev 模式",
@@ -64,7 +64,9 @@
     "layoutTitle": "自定义插件栏",
     "layoutDescription": "拖拽调整插件图标顺序；把图标拖到「未启用」可隐藏，拖回「已启用」即可恢复。",
     "hideAll": "全部隐藏",
-    "showAll": "全部显示"
+    "showAll": "全部显示",
+    "prevPage": "上一页",
+    "nextPage": "下一页"
   },
   "sidebarHistoryModule": {
     "loading": "加载中...",

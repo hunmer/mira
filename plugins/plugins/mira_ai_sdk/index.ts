@@ -18,6 +18,8 @@ interface ProviderConfig {
 interface StoreData {
   providers: ProviderConfig[];
   defaultProviderId: string | null;
+  defaultImageProviderId: string | null;
+  defaultImageModelId: string | null;
 }
 
 interface PresetModel {
@@ -102,6 +104,49 @@ function toBase64Content(value: unknown): string {
   return String(value || '').replace(/^data:[^;]*;base64,/, '');
 }
 
+/** 将不同 OpenAI 兼容服务商的图片响应归一化为 AI SDK 所需的 b64_json。 */
+function imageResponseFetch(input: string | URL | Request, init?: RequestInit): Promise<Response> {
+  return fetch(input, init).then(async response => {
+    const contentType = response.headers.get('content-type') || '';
+    const url = typeof input === 'string' ? input : input.toString();
+    if (!url.includes('/images/') || !contentType.toLowerCase().includes('json')) return response;
+
+    const text = await response.text();
+    let payload: any;
+    try {
+      payload = JSON.parse(text);
+    } catch {
+      // Some gateways prepend markdown/log text to an otherwise valid JSON body.
+      const start = text.indexOf('{');
+      const end = text.lastIndexOf('}');
+      if (start < 0 || end <= start) return new Response(text, response);
+      try { payload = JSON.parse(text.slice(start, end + 1)); } catch { return new Response(text, response); }
+    }
+    if (!Array.isArray(payload?.data)) return new Response(text, response);
+
+    const data = await Promise.all(payload.data.map(async (item: any) => {
+      if (typeof item?.b64_json === 'string') return item;
+      const inline = item?.base64 || item?.base64_json || item?.b64;
+      if (typeof inline === 'string') return { ...item, b64_json: toBase64Content(inline) };
+      if (typeof item?.url === 'string') {
+        const image = await fetch(item.url);
+        if (!image.ok) throw new Error(`下载生成图片失败 HTTP ${image.status}`);
+        const bytes = new Uint8Array(await image.arrayBuffer());
+        const mediaType = image.headers.get('content-type') || 'image/png';
+        return { ...item, b64_json: Buffer.from(bytes).toString('base64'), mediaType };
+      }
+      return item;
+    }));
+    const headers = new Headers(response.headers);
+    headers.set('content-type', 'application/json');
+    return new Response(JSON.stringify({ ...payload, data }), {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
+    });
+  });
+}
+
 class MiraAiSdkPlugin {
   private readonly pluginName = PLUGIN_NAME;
   private readonly routes: any[] = [];
@@ -109,7 +154,12 @@ class MiraAiSdkPlugin {
   private readonly libraryId: string;
   private readonly dataFile: string;
   private readonly pluginDir: string;
-  private store: StoreData = { providers: [], defaultProviderId: null };
+  private store: StoreData = {
+    providers: [],
+    defaultProviderId: null,
+    defaultImageProviderId: null,
+    defaultImageModelId: null,
+  };
   private presetsCache: PresetFile | null = null;
 
   constructor(inst: any) {
@@ -140,9 +190,16 @@ class MiraAiSdkPlugin {
       this.store = {
         providers: Array.isArray(raw.providers) ? raw.providers : [],
         defaultProviderId: raw.defaultProviderId ?? null,
+        defaultImageProviderId: raw.defaultImageProviderId ?? null,
+        defaultImageModelId: raw.defaultImageModelId ?? null,
       };
     } catch {
-      this.store = { providers: [], defaultProviderId: null };
+      this.store = {
+        providers: [],
+        defaultProviderId: null,
+        defaultImageProviderId: null,
+        defaultImageModelId: null,
+      };
     }
   }
 
@@ -181,6 +238,7 @@ class MiraAiSdkPlugin {
       name: provider.name,
       apiKey: provider.apiKey || undefined,
       baseURL: provider.baseUrl,
+      fetch: imageResponseFetch,
     });
     return openaiCompatible.imageModel(model);
   }
@@ -194,6 +252,8 @@ class MiraAiSdkPlugin {
       hasApiKey: Boolean(item.apiKey),
       models: item.models,
       isDefault: item.id === this.store.defaultProviderId,
+      isDefaultImage: item.id === this.store.defaultImageProviderId,
+      defaultImageModelId: item.id === this.store.defaultImageProviderId ? this.store.defaultImageModelId : null,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
     }));
@@ -266,7 +326,13 @@ class MiraAiSdkPlugin {
 
     // 注意: HttpRouter 同一 path 只支持一种 method，各操作使用独立路径
     router.registerRounter(libraryId, '/ai-sdk/providers/list', 'get', async (_req: any, res: any) => {
-      res.json({ success: true, providers: this.maskedProviders(), defaultProviderId: this.store.defaultProviderId });
+      res.json({
+        success: true,
+        providers: this.maskedProviders(),
+        defaultProviderId: this.store.defaultProviderId,
+        defaultImageProviderId: this.store.defaultImageProviderId,
+        defaultImageModelId: this.store.defaultImageModelId,
+      });
     });
 
     router.registerRounter(libraryId, '/ai-sdk/providers/create', 'post', async (req: any, res: any) => {
@@ -319,6 +385,9 @@ class MiraAiSdkPlugin {
           const models = parseModels(body.models);
           if (!models.length) throw new Error('至少配置一个模型');
           provider.models = models;
+          if (this.store.defaultImageProviderId === provider.id && !models.includes(this.store.defaultImageModelId || '')) {
+            this.store.defaultImageModelId = models[0];
+          }
         }
         provider.updatedAt = Date.now();
         this.saveStore();
@@ -335,6 +404,10 @@ class MiraAiSdkPlugin {
         if (this.store.defaultProviderId === provider.id) {
           this.store.defaultProviderId = this.store.providers[0]?.id ?? null;
         }
+        if (this.store.defaultImageProviderId === provider.id) {
+          this.store.defaultImageProviderId = null;
+          this.store.defaultImageModelId = null;
+        }
         this.saveStore();
         res.json({ success: true });
       } catch (error) {
@@ -346,6 +419,20 @@ class MiraAiSdkPlugin {
       try {
         const provider = this.findProvider(req.body?.id);
         this.store.defaultProviderId = provider.id;
+        this.saveStore();
+        res.json({ success: true });
+      } catch (error) {
+        res.status(400).json({ success: false, error: this.errorMessage(error) });
+      }
+    });
+
+    router.registerRounter(libraryId, '/ai-sdk/providers/default-image', 'post', async (req: any, res: any) => {
+      try {
+        const provider = this.findProvider(req.body?.id);
+        const model = String(req.body?.model || '').trim();
+        if (!provider.models.includes(model)) throw new Error('生图模型不属于该服务商');
+        this.store.defaultImageProviderId = provider.id;
+        this.store.defaultImageModelId = model;
         this.saveStore();
         res.json({ success: true });
       } catch (error) {
@@ -482,13 +569,16 @@ class MiraAiSdkPlugin {
             name: providerName,
             apiKey: String(body.apiKey || '').trim() || undefined,
             baseURL: baseUrl,
+            fetch: imageResponseFetch,
           }).imageModel(modelId);
         } else {
-          const provider = this.resolveProvider(body.providerId);
+          const imageProviderId = body.providerId || this.store.defaultImageProviderId;
+          const provider = this.resolveProvider(imageProviderId);
           providerId = provider.id;
           providerName = provider.name;
-          imageModel = this.buildImageModel(provider, body.model);
-          modelId = String(body.model || '').trim() || provider.models[0];
+          const requestedModel = body.model || (provider.id === this.store.defaultImageProviderId ? this.store.defaultImageModelId : undefined);
+          imageModel = this.buildImageModel(provider, requestedModel);
+          modelId = String(requestedModel || '').trim() || provider.models[0];
         }
 
         const n = Math.min(Math.max(1, Number(body.n) || 1), 10);

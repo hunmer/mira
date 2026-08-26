@@ -3,9 +3,11 @@
  * PluginContributionBar —— HomeView 右侧栏顶部的「插件图标列表」。
  *
  * 订阅 window.pluginSystem.contributions，把所有已注册 contribution 的插件渲染为图标，
- * 水平排列展示（OrderedSectionList headerless 横向模式，支持直接拖拽排序）。
+ * 水平排列展示（OrderedSectionList headerless 横向模式，支持页内直接拖拽排序）。
  * 图标顺序与隐藏状态持久化在 mira-plugin-bar-layout，由 dots dropdown 的
  * 「自定义布局」打开 SortableLayoutDialog 管理。
+ * 图标超出可用宽度时按页切分（React ExtendedToolbar 移植）：左右箭头弹簧滑动切换页，
+ * 页容量随容器宽度自适应。
  *
  * 点击图标的行为由 contribution.behavior 决定：
  *   - 'window'（默认）：直接调 onActivate（一般在此 openPluginWindow 打开插件主界面）
@@ -13,8 +15,9 @@
  *
  * 无任何 contribution 时整体隐藏（不占位）。
  */
-import { ref, computed, onMounted, onBeforeUnmount, defineComponent, h } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount, defineComponent, h } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { Motion, useSpring, useMotionValue, useMotionTemplate } from 'motion-v'
 import { Dropdown } from '@/renderer/components/common/Dropdown'
 import OrderedSectionList from '@renderer/components/common/OrderedSectionList.vue'
 import SortableLayoutDialog from '@renderer/components/common/SortableLayoutDialog.vue'
@@ -209,11 +212,103 @@ const visibleContributions = computed(() => {
 /** 隐藏的图标：仍在贡献注册表，可在布局对话框拖回启用区 */
 const hiddenContributions = computed(() => contributions.value.filter((c) => layoutHidden.value.includes(c.id)))
 
-/** 工具栏内直接拖拽图标排序 */
-function onReorderItems(items: PluginContribution[]) {
-  layoutOrder.value = [...items.map((c) => c.id), ...layoutHidden.value]
+/** 页内拖拽排序：把该页新顺序合并回全局顺序（跨页调整走「自定义布局」对话框） */
+function onPageReorder(pageIndex: number, items: PluginContribution[]) {
+  const ids = pages.value.map((p) => p.map((c) => c.id))
+  ids[pageIndex] = items.map((c) => c.id)
+  layoutOrder.value = [...ids.flat(), ...layoutHidden.value]
   saveBarLayout()
 }
+
+// ==================== 分页滑动窗口（React ExtendedToolbar 移植；motion-v 弹簧驱动窗口宽度与滑轨位移） ====================
+
+/** 每个图标占位宽（h-8 按钮 + gap-2）、箭头占位宽、面板左右内边距，用于按可用宽度自适应分页 */
+const ITEM_SLOT_W = 40
+const ARROW_SLOT_W = 40
+const PANEL_PAD_W = 12
+
+const viewportEl = ref<HTMLElement | null>(null)
+const viewportWidth = ref(0)
+const panelEls = ref<Array<HTMLElement | null>>([])
+const panelWidths = ref<number[]>([])
+const currentPage = ref(0)
+
+function setPanelEl(i: number, el: any) {
+  panelEls.value[i] = (el as HTMLElement) ?? null
+}
+
+/** 每页容量：优先不分页（无箭头占位）；装不下时按「左右各预留一个箭头位」的保守容量切页 */
+const perPage = computed(() => {
+  const avail = viewportWidth.value
+  if (avail <= 0) return Number.MAX_SAFE_INTEGER
+  const total = visibleContributions.value.length
+  const flat = Math.floor((avail - PANEL_PAD_W + 8) / ITEM_SLOT_W)
+  if (total <= flat) return flat
+  return Math.max(1, Math.floor((avail - PANEL_PAD_W - 2 * ARROW_SLOT_W + 8) / ITEM_SLOT_W))
+})
+
+const pages = computed(() => {
+  const size = perPage.value
+  const list = visibleContributions.value
+  if (size >= list.length) return [list]
+  const out: PluginContribution[][] = []
+  for (let i = 0; i < list.length; i += size) out.push(list.slice(i, i + size))
+  return out
+})
+
+function goPage(i: number) {
+  const next = Math.min(Math.max(i, 0), pages.value.length - 1)
+  if (next === currentPage.value) return
+  currentPage.value = next
+  applyWindowMotion()
+}
+
+// skipInitialAnimation：首次测量 jump 到位不播动画，后续 set 均走弹簧（首帧无闪烁）
+const springConfig = { stiffness: 200, damping: 20, mass: 0.8, skipInitialAnimation: true }
+const windowWidthTarget = useMotionValue(0)
+const trackXTarget = useMotionValue(0)
+const windowWidthSpring = useSpring(windowWidthTarget, springConfig)
+const trackX = useSpring(trackXTarget, springConfig)
+const windowWidthStyle = useMotionTemplate`${windowWidthSpring}px`
+
+let ro: ResizeObserver | null = null
+
+/** 窗口宽度 = 当前页面板宽；滑轨位移 = 当前页之前所有面板宽度之和 */
+function applyWindowMotion() {
+  const width = panelWidths.value[currentPage.value] || 0
+  const offset = panelWidths.value.slice(0, currentPage.value).reduce((a, b) => a + (b || 0), 0)
+  windowWidthTarget.set(width)
+  trackXTarget.set(-offset)
+}
+
+/** 同步测量各面板宽度（overflow 裁剪不影响布局，width:0 的窗口内也能量到） */
+function measurePanels() {
+  panelWidths.value = pages.value.map((_, i) => panelEls.value[i]?.offsetWidth ?? 0)
+  applyWindowMotion()
+}
+
+function observeAll() {
+  if (!ro) return
+  ro.disconnect()
+  if (viewportEl.value) ro.observe(viewportEl.value)
+  panelEls.value.forEach((el) => el && ro!.observe(el))
+}
+
+// 页结构（各页条数）或容器宽度变化 → 重新测量并重挂 ResizeObserver（post：DOM 更新后、绘制前）
+watch(
+  () => [pages.value.map((p) => p.length).join(','), viewportWidth.value] as const,
+  () => {
+    if (currentPage.value > pages.value.length - 1) currentPage.value = pages.value.length - 1
+    measurePanels()
+    observeAll()
+  },
+  { flush: 'post' },
+)
+
+// 工具栏随 contribution 出现/消失整体 v-if，容器元素出现后同步量宽（驱动切页计算）
+watch(viewportEl, (el) => {
+  if (el) viewportWidth.value = el.offsetWidth
+}, { flush: 'post' })
 
 /** 布局对话框跨区拖拽：enabled 区为持久化来源（disabled 区是派生展示） */
 function onLayoutEnabledChange(items: PluginContribution[]) {
@@ -226,6 +321,22 @@ function onLayoutEnabledChange(items: PluginContribution[]) {
 
 onMounted(() => {
   void loadBarLayout()
+  ro = new ResizeObserver((entries) => {
+    let panelsChanged = false
+    for (const entry of entries) {
+      const el = entry.target as HTMLElement
+      if (el === viewportEl.value) {
+        viewportWidth.value = el.offsetWidth
+      } else {
+        const i = panelEls.value.indexOf(el)
+        if (i >= 0) {
+          panelWidths.value[i] = el.offsetWidth
+          panelsChanged = true
+        }
+      }
+    }
+    if (panelsChanged) applyWindowMotion()
+  })
   // pluginSystem 可能尚未初始化（插件系统初始化在 useHomeInit 内进行），
   // 这里轮询等待 contributions 中心可用后订阅。
   const trySubscribe = () => {
@@ -255,6 +366,8 @@ onMounted(() => {
 let timer: ReturnType<typeof setInterval> | null = null
 
 onBeforeUnmount(() => {
+  ro?.disconnect()
+  ro = null
   if (timer) {
     clearInterval(timer)
     timer = null
@@ -391,91 +504,130 @@ const ContributionHost = defineComponent({
     v-if="contributions.length > 0"
     class="rounded-2xl border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur-xl shadow-[0_12px_40px_rgba(99,102,241,0.10)] flex items-center gap-1 px-2 py-1.5"
   >
-    <!-- 图标区：OrderedSectionList 控制顺序（headerless 横向工具栏，可直接拖拽排序） -->
-    <OrderedSectionList
-      class="min-w-0 flex-1"
-      :items="visibleContributions"
-      draggable
-      headerless
-      horizontal
-      @update:items="onReorderItems"
-    >
-      <template #default="{ item: contribution }">
-        <!-- window 行为：纯按钮，点击直开插件主界面；右键菜单提供 dev 模式 / 禁用 -->
-        <ContextMenu>
-          <ContextMenuTrigger as-child>
-            <button
-              v-if="!isPopover(contribution)"
-              class="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
-              :title="contribution.title"
-              :aria-label="contribution.title"
-              @click="onWindowActivate(contribution)"
+    <!-- 图标区：按可用宽度分页的面板滑动窗口（OrderedSectionList 负责页内拖拽排序，motion-v 弹簧动画） -->
+    <div ref="viewportEl" class="relative min-w-0 flex-1 overflow-hidden">
+      <Motion class="relative overflow-hidden" :style="{ width: windowWidthStyle }">
+        <Motion class="flex" :style="{ x: trackX }">
+          <div
+            v-for="(page, pi) in pages"
+            :key="pi"
+            :ref="(el: any) => setPanelEl(pi, el)"
+            class="flex h-8 shrink-0 items-center gap-2 px-1.5"
+          >
+            <!-- 上一页箭头（第一页不显示） -->
+            <Motion
+              v-if="pi > 0"
+              as="button"
+              type="button"
+              :while-tap="{ scale: 0.9 }"
+              class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-background text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+              :title="t('views.pluginContributionBar.prevPage')"
+              :aria-label="t('views.pluginContributionBar.prevPage')"
+              @click="goPage(pi - 1)"
             >
-              <PluginIcon
-                :plugin-id="contribution.pluginId"
-                :contribution-icon="contribution.icon"
-                :size="18"
-                rounded="sm"
-                :badge="isPluginDevEnabled(contribution.pluginId) ? '#f97316' : undefined"
-              />
-            </button>
-
-            <!-- popover 行为：Dropdown 弹出 render 返回的内容；dev 模式下点击直接打开 dev url -->
-            <Dropdown
-              v-else
-              placement="bottom-end"
-              min-width="280px"
+              <span class="material-icons" style="font-size: 18px;">chevron_left</span>
+            </Motion>
+            <OrderedSectionList
+              class="min-w-0"
+              :items="page"
+              draggable
+              headerless
+              horizontal
+              @update:items="onPageReorder(pi, $event)"
             >
-              <template #trigger>
-                <button
-                  class="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
-                  :title="contribution.title"
-                  :aria-label="contribution.title"
-                  @click="onPopoverTriggerClick($event, contribution)"
-                >
-                  <PluginIcon
-                    :plugin-id="contribution.pluginId"
-                    :contribution-icon="contribution.icon"
-                    :size="18"
-                    rounded="sm"
-                    :badge="isPluginDevEnabled(contribution.pluginId) ? '#f97316' : undefined"
-                  />
-                </button>
-              </template>
-              <template #content="{ close }">
-                <div class="p-3">
-                  <div class="flex items-center justify-between mb-2 pb-2 border-b border-border/60">
-                    <div class="text-sm font-medium truncate">{{ contribution.title }}</div>
+              <template #default="{ item: contribution }">
+                <!-- window 行为：纯按钮，点击直开插件主界面；右键菜单提供 dev 模式 / 禁用 -->
+                <ContextMenu>
+                  <ContextMenuTrigger as-child>
                     <button
-                      class="h-6 w-6 flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted transition-colors"
-                      @click="close"
+                      v-if="!isPopover(contribution)"
+                      class="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                      :title="contribution.title"
+                      :aria-label="contribution.title"
+                      @click="onWindowActivate(contribution)"
                     >
-                      <span class="material-icons" style="font-size: 16px;">close</span>
+                      <PluginIcon
+                        :plugin-id="contribution.pluginId"
+                        :contribution-icon="contribution.icon"
+                        :size="18"
+                        rounded="sm"
+                        :badge="isPluginDevEnabled(contribution.pluginId) ? '#f97316' : undefined"
+                      />
                     </button>
-                  </div>
-                  <!-- 插件自定义内容挂载点：ContributionHost 在挂载后调用 render(container, ctx) -->
-                  <ContributionHost :contribution="contribution" />
-                </div>
+
+                    <!-- popover 行为：Dropdown 弹出 render 返回的内容；dev 模式下点击直接打开 dev url -->
+                    <Dropdown
+                      v-else
+                      placement="bottom-end"
+                      min-width="280px"
+                    >
+                      <template #trigger>
+                        <button
+                          class="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                          :title="contribution.title"
+                          :aria-label="contribution.title"
+                          @click="onPopoverTriggerClick($event, contribution)"
+                        >
+                          <PluginIcon
+                            :plugin-id="contribution.pluginId"
+                            :contribution-icon="contribution.icon"
+                            :size="18"
+                            rounded="sm"
+                            :badge="isPluginDevEnabled(contribution.pluginId) ? '#f97316' : undefined"
+                          />
+                        </button>
+                      </template>
+                      <template #content="{ close }">
+                        <div class="p-3">
+                          <div class="flex items-center justify-between mb-2 pb-2 border-b border-border/60">
+                            <div class="text-sm font-medium truncate">{{ contribution.title }}</div>
+                            <button
+                              class="h-6 w-6 flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted transition-colors"
+                              @click="close"
+                            >
+                              <span class="material-icons" style="font-size: 16px;">close</span>
+                            </button>
+                          </div>
+                          <!-- 插件自定义内容挂载点：ContributionHost 在挂载后调用 render(container, ctx) -->
+                          <ContributionHost :contribution="contribution" />
+                        </div>
+                      </template>
+                    </Dropdown>
+                  </ContextMenuTrigger>
+                  <ContextMenuContent class="w-48">
+                    <ContextMenuItem @select="onOpenInWebviewTab(contribution)">
+                      <span class="material-icons text-base mr-2">open_in_new</span>
+                      <span>{{ t('views.pluginContributionBar.openInWebviewTab') }}</span>
+                    </ContextMenuItem>
+                    <ContextMenuItem @select="openDevDialog(contribution)">
+                      <span class="material-icons text-base mr-2">developer_mode</span>
+                      <span>{{ t('views.pluginContributionBar.devMode') }}</span>
+                    </ContextMenuItem>
+                    <ContextMenuItem @select="onDisablePlugin(contribution)">
+                      <span class="material-icons text-base mr-2">block</span>
+                      <span>{{ t('views.pluginContributionBar.disable') }}</span>
+                    </ContextMenuItem>
+                  </ContextMenuContent>
+                </ContextMenu>
               </template>
-            </Dropdown>
-          </ContextMenuTrigger>
-          <ContextMenuContent class="w-48">
-            <ContextMenuItem @select="onOpenInWebviewTab(contribution)">
-              <span class="material-icons text-base mr-2">open_in_new</span>
-              <span>{{ t('views.pluginContributionBar.openInWebviewTab') }}</span>
-            </ContextMenuItem>
-            <ContextMenuItem @select="openDevDialog(contribution)">
-              <span class="material-icons text-base mr-2">developer_mode</span>
-              <span>{{ t('views.pluginContributionBar.devMode') }}</span>
-            </ContextMenuItem>
-            <ContextMenuItem @select="onDisablePlugin(contribution)">
-              <span class="material-icons text-base mr-2">block</span>
-              <span>{{ t('views.pluginContributionBar.disable') }}</span>
-            </ContextMenuItem>
-          </ContextMenuContent>
-        </ContextMenu>
-      </template>
-    </OrderedSectionList>
+            </OrderedSectionList>
+            <!-- 下一页箭头（最后一页不显示） -->
+            <Motion
+              v-if="pi < pages.length - 1"
+              as="button"
+              type="button"
+              :while-tap="{ scale: 0.9 }"
+              class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-background text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+              :title="t('views.pluginContributionBar.nextPage')"
+              :aria-label="t('views.pluginContributionBar.nextPage')"
+              @click="goPage(pi + 1)"
+            >
+              <span class="material-icons" style="font-size: 18px;">chevron_right</span>
+            </Motion>
+          </div>
+        </Motion>
+      </Motion>
+    </div>
 
     <!-- 最右侧：dots dropdown（自定义布局 / 插件管理） -->
     <div class="w-px h-5 bg-border/60 mx-0.5 shrink-0" />

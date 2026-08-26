@@ -389,7 +389,7 @@ const closeOtherBrowserViews = async () => {
       </template>
       </Dropdown>
     </div>
-    <template v-if="multiLibraryViewsEnabled">
+    <template v-if="multiLibraryViewsEnabled && hasOtherBrowserViews">
       <button
         type="button"
         class="size-7 shrink-0 rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"

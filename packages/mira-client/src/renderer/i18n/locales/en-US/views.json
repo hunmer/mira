@@ -48,7 +48,7 @@
     "renderFailed": "Plugin content failed to render",
     "buildHint": "(Run pnpm install && pnpm build in the plugin directory to generate dist)",
     "managePlugins": "Manage plugins",
-    "openInWebviewTab": "Open in webview tab",
+    "openInWebviewTab": "Open in tab",
     "devMode": "Dev Mode",
     "disable": "Disable",
     "devDialogTitle": "Plugin Dev Mode",
@@ -64,7 +64,9 @@
     "layoutTitle": "Customize Plugin Bar",
     "layoutDescription": "Drag to reorder plugin icons; drag to \"Disabled\" to hide an icon, drag back to \"Enabled\" to restore it.",
     "hideAll": "Hide all",
-    "showAll": "Show all"
+    "showAll": "Show all",
+    "prevPage": "Previous page",
+    "nextPage": "Next page"
   },
   "sidebarHistoryModule": {
     "loading": "Loading...",

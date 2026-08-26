@@ -7,19 +7,17 @@
  * server/token/libraryId 来自宿主注入的 query（resolveMiraServerConfig），主题跟随宿主。
  */
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import {
-  Brush,
-  Download,
-  ImagePlus,
-  Library,
-  Loader2,
-  Plus,
-  Sparkles,
-  Trash2,
-} from '@lucide/vue'
+import { Brush, Download, ImagePlus, Library, Loader2, Plus, Sparkles } from '@lucide/vue'
 import { Badge } from 'mira-plugin-ui/src/components/ui/badge'
 import { Button } from 'mira-plugin-ui/src/components/ui/button'
 import { Checkbox } from 'mira-plugin-ui/src/components/ui/checkbox'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from 'mira-plugin-ui/src/components/ui/dropdown-menu'
+import { VueDraggable } from 'mira-plugin-ui/src/components/ui/draggable'
 import { Label } from 'mira-plugin-ui/src/components/ui/label'
 import {
   Select,
@@ -94,10 +92,12 @@ const count = ref(1)
 const currentProvider = computed(() => providers.value.find((p) => p.id === providerId.value))
 const models = computed(() => currentProvider.value?.models || [])
 
-function onProviderChange(value: string) {
+function onProviderChange(value: string, preferredModel?: string | null) {
   providerId.value = value
   const next = providers.value.find((p) => p.id === value)
-  model.value = next?.models[0] || ''
+  model.value = preferredModel && next?.models.includes(preferredModel)
+    ? preferredModel
+    : next?.models[0] || ''
 }
 
 async function loadProviders() {
@@ -105,8 +105,8 @@ async function loadProviders() {
   try {
     const list = await listProviders()
     providers.value = list
-    const preferred = list.find((p) => p.isDefault) || list[0]
-    if (preferred) onProviderChange(preferred.id)
+    const preferred = list.find((p) => p.isDefaultImage) || list[0]
+    if (preferred) onProviderChange(preferred.id, preferred.defaultImageModelId)
   } catch (e) {
     error.value = errorMessage(e)
   }
@@ -377,7 +377,7 @@ onUnmounted(() => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem v-for="p in providers" :key="p.id" :value="p.id">
-                {{ p.name }}{{ p.isDefault ? t('app.default') : '' }}
+                {{ p.name }}{{ p.isDefaultImage ? t('app.default') : '' }}
               </SelectItem>
             </SelectContent>
           </Select>
@@ -419,19 +419,19 @@ onUnmounted(() => {
 
         <Separator />
 
-        <div class="space-y-1.5">
-          <Label>{{ t('app.prompt') }}</Label>
+        <div class="flex min-h-0 flex-1 flex-col gap-1.5">
+          <Label class="shrink-0">{{ t('app.prompt') }}</Label>
           <Textarea
             v-model="prompt"
-            rows="5"
+            class="field-sizing-fixed min-h-0 flex-1 resize-none"
             :placeholder="t('app.promptPlaceholder')"
             :disabled="generating"
             @keydown.ctrl.enter.prevent="onGenerate"
           />
-          <p class="text-xs text-muted-foreground">{{ t('app.promptHint') }}</p>
+          <p class="shrink-0 text-xs text-muted-foreground">{{ t('app.promptHint') }}</p>
         </div>
 
-        <Button class="w-full" :disabled="generating || !model || !prompt.trim()" @click="onGenerate">
+        <Button class="w-full shrink-0" :disabled="generating || !model || !prompt.trim()" @click="onGenerate">
           <Loader2 v-if="generating" class="animate-spin" />
           <Sparkles v-else />
           {{ generating ? t('app.generating') : refImages.length ? t('app.edit') : t('app.generate') }}
@@ -442,52 +442,70 @@ onUnmounted(() => {
       <main class="flex min-w-0 flex-1 flex-col">
         <!-- 参考图栏 -->
         <section class="flex shrink-0 items-center gap-2 border-b px-4 py-2.5">
-          <span class="text-xs text-muted-foreground">{{ t('app.refs') }}</span>
+          <span class="shrink-0 text-xs text-muted-foreground">{{ t('app.refs') }}</span>
           <div class="flex flex-wrap items-center gap-2">
-            <div v-for="(item, index) in refImages" :key="item.key" class="group relative">
-              <img
-                :src="item.dataUrl"
-                :alt="item.name"
-                :title="item.name"
-                class="size-14 rounded-md border object-cover"
-                draggable="false"
-              />
-              <button
-                type="button"
-                :title="t('app.remove')"
-                class="absolute -right-1 -top-1 grid size-4 place-items-center rounded-full bg-destructive text-[0.625rem] leading-none text-destructive-foreground opacity-0 transition-opacity group-hover:opacity-100"
-                @click="removeRefImage(index)"
-              >×</button>
-            </div>
-          </div>
+            <VueDraggable
+              v-model="refImages"
+              :animation="150"
+              class="flex flex-wrap items-center gap-2"
+            >
+              <div
+                v-for="(item, index) in refImages"
+                :key="item.key"
+                class="group relative cursor-grab active:cursor-grabbing"
+              >
+                <img
+                  :src="item.dataUrl"
+                  :alt="item.name"
+                  :title="item.name"
+                  class="size-14 rounded-md border object-cover"
+                  draggable="false"
+                />
+                <!-- 蒙版入口：首图左上角（蒙版基于首图绘制） -->
+                <button
+                  v-if="index === 0"
+                  type="button"
+                  :title="maskDataUrl ? t('app.redrawMask') : t('app.maskHint')"
+                  class="absolute -left-1.5 -top-1.5 grid size-5 place-items-center rounded-full border shadow-sm transition-opacity"
+                  :class="maskDataUrl
+                    ? 'border-primary bg-primary text-primary-foreground opacity-100'
+                    : 'bg-background text-foreground opacity-0 group-hover:opacity-100'"
+                  @click="maskEditorOpen = true"
+                >
+                  <Brush class="size-3" />
+                </button>
+                <button
+                  type="button"
+                  :title="t('app.remove')"
+                  class="absolute -right-1 -top-1 grid size-4 place-items-center rounded-full bg-destructive text-[0.625rem] leading-none text-destructive-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                  @click="removeRefImage(index)"
+                  >×</button>
+              </div>
+            </VueDraggable>
 
-          <Button v-if="loadingRefs" variant="ghost" size="sm" disabled>
-            <Loader2 class="animate-spin" />{{ t('app.loadingAssets') }}
-          </Button>
-          <Button v-else variant="outline" size="sm" :disabled="refImages.length >= 4" @click="pickerOpen = true">
-            <Library />{{ t('app.fromLibrary') }}
-          </Button>
-          <Button variant="outline" size="sm" :disabled="refImages.length >= 4" @click="localFileInput?.click()">
-            <ImagePlus />{{ t('app.fromLocal') }}
-          </Button>
-          <Button
-            v-if="refImages.length"
-            variant="outline"
-            size="sm"
-            :title="maskDataUrl ? t('app.redrawMask') : t('app.maskHint')"
-            @click="maskEditorOpen = true"
-          >
-            <Brush />{{ maskDataUrl ? t('app.maskSet') : t('app.drawMask') }}
-          </Button>
-          <Button
-            v-if="maskDataUrl && refImages.length"
-            variant="ghost"
-            size="sm"
-            :title="t('app.removeMask')"
-            @click="maskDataUrl = null"
-          >
-            <Trash2 />
-          </Button>
+            <!-- 添加参考图：加号占位，点击下拉选择来源 -->
+            <DropdownMenu v-if="refImages.length < 4">
+              <DropdownMenuTrigger as-child>
+                <button
+                  type="button"
+                  :title="t('app.addRef')"
+                  :disabled="loadingRefs"
+                  class="grid size-14 place-items-center rounded-md border border-dashed text-muted-foreground transition-colors hover:border-primary hover:text-primary disabled:cursor-default disabled:opacity-50"
+                >
+                  <Loader2 v-if="loadingRefs" class="size-5 animate-spin" />
+                  <Plus v-else class="size-5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem @click="localFileInput?.click()">
+                  <ImagePlus />{{ t('app.uploadLocal') }}
+                </DropdownMenuItem>
+                <DropdownMenuItem @click="pickerOpen = true">
+                  <Library />{{ t('app.pickLibrary') }}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
 
           <span class="ml-auto text-xs text-muted-foreground">{{ refImages.length }}/4</span>
 

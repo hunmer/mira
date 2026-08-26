@@ -70,6 +70,29 @@ async function resetImuRules() {
   if (!(await dialog.confirm({ message: t('settings.imuRulesReset') }))) return;
   await update({ imuRules: DEFAULT_IMAGE_URL_RULES });
 }
+
+/** textarea 文本 → host 列表(每行一个,去空白行) */
+function parseHosts(raw: string): string[] {
+  return raw.split('\n').map(s => s.trim()).filter(Boolean);
+}
+
+/** 把当前活动标签页的 host 追加到拖拽快传启用站点列表 */
+async function addCurrentHost() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  let host = '';
+  try { host = tab?.url ? new URL(tab.url).host : ''; } catch { host = ''; }
+  if (!host) {
+    await dialog.alert({ message: t('settings.addCurrentSiteUnsupported') });
+    return;
+  }
+  const hosts = [...(settings.value.dragPopoverHosts ?? [])];
+  if (hosts.some(h => h.trim().toLowerCase() === host.toLowerCase())) {
+    await dialog.alert({ message: t('settings.addCurrentSiteDuplicate') });
+    return;
+  }
+  hosts.push(host);
+  await update({ dragPopoverHosts: hosts });
+}
 </script>
 
 <template>
@@ -107,6 +130,18 @@ async function resetImuRules() {
         </select>
       </div>
       <div class="row"><span>{{ t('settings.dragPopover') }}</span><Switch :model-value="settings.dragPopoverEnabled" @update:model-value="v => update({ dragPopoverEnabled: v })" /></div>
+      <div v-if="settings.dragPopoverEnabled" class="hosts-editor">
+        <label :title="t('settings.dragPopoverHostsHint')">{{ t('settings.dragPopoverHosts') }}</label>
+        <textarea
+          class="hosts-textarea"
+          rows="3"
+          spellcheck="false"
+          placeholder="www.example.com"
+          :value="(settings.dragPopoverHosts ?? []).join('\n')"
+          @change="e => update({ dragPopoverHosts: parseHosts((e.target as HTMLTextAreaElement).value) })"
+        />
+        <Button size="sm" variant="outline" @click="addCurrentHost">{{ t('settings.addCurrentSite') }}</Button>
+      </div>
       <div class="row" :title="t('settings.imageHoverButtonHint')">
         <span>{{ t('settings.imageHoverButton') }}</span><Switch :model-value="settings.imageHoverButtonEnabled" @update:model-value="v => update({ imageHoverButtonEnabled: v })" />
       </div>
@@ -168,6 +203,15 @@ label { font-size: 12px; color: var(--muted); display: block; margin: 6px 0 2px;
 select { background: var(--bg); color: var(--fg); border: 1px solid var(--border); border-radius: 4px; padding: 2px 6px; }
 .number-input { width: 72px; }
 .debug-categories { padding-left: 10px; border-left: 2px solid var(--border); }
+.hosts-editor { display: flex; flex-direction: column; gap: 4px; padding: 2px 0 6px; }
+.hosts-editor label { margin: 0; }
+.hosts-textarea {
+  background: var(--bg); color: var(--fg);
+  border: 1px solid var(--border); border-radius: 4px;
+  padding: 4px 6px; font: inherit; font-size: 12px;
+  resize: vertical; min-height: 56px;
+}
+.hosts-editor button { align-self: flex-start; }
 .debug-categories.disabled { opacity: .5; }
 .debug-category-row { font-size: 12px; }
 </style>
