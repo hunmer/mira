@@ -93,7 +93,7 @@
       '        <div class="flex min-w-0 items-center gap-2">',
       '          <MiraCardTitle class="truncate">{{ provider.name }}</MiraCardTitle>',
       '          <MiraBadge v-if="provider.isDefault">默认</MiraBadge>',
-      '          <MiraBadge v-if="provider.isDefaultImage" variant="secondary" :title="provider.defaultImageModelId">默认生图</MiraBadge>',
+      '          <MiraBadge v-if="provider.isDefaultImage" variant="secondary" :title="provider.defaultImageModelId">默认视觉</MiraBadge>',
       '        </div>',
       '        <MiraBadge variant="secondary">{{ provider.models.length }} 个模型</MiraBadge>',
       '      </MiraCardHeader>',
@@ -102,15 +102,14 @@
       '          <div class="flex gap-2"><dt class="w-16 shrink-0 text-muted-foreground">Base URL</dt><dd class="min-w-0 break-all">{{ provider.baseUrl }}</dd></div>',
       '          <div class="flex gap-2"><dt class="w-16 shrink-0 text-muted-foreground">API Key</dt><dd class="min-w-0 break-all font-mono">{{ provider.hasApiKey ? provider.apiKeyMasked : \'未配置\' }}</dd></div>',
       '        </dl>',
-      '        <div class="flex flex-wrap gap-1">',
-      '          <MiraBadge v-for="model in provider.models" :key="model" variant="outline" class="font-mono text-[0.625rem]">{{ model }}</MiraBadge>',
-      '        </div>',
-      '        <div class="flex items-center gap-2">',
-      '          <span class="w-16 shrink-0 text-xs text-muted-foreground">生图模型</span>',
-      '          <MiraSelect :model-value="imageModelDrafts[provider.id] || provider.models[0]" @update:model-value="setImageModelDraft(provider.id, $event)">',
-      '            <MiraSelectTrigger class="min-w-0 flex-1"><MiraSelectValue /></MiraSelectTrigger>',
-      '            <MiraSelectContent><MiraSelectItem v-for="model in provider.models" :key="model" :value="model">{{ model }}</MiraSelectItem></MiraSelectContent>',
-      '          </MiraSelect>',
+      '        <div class="flex flex-wrap items-center gap-1">',
+      '          <template v-for="model in provider.models">',
+      '            <MiraBadge :key="model" variant="outline" class="cursor-pointer font-mono text-[0.625rem]" @click="activeModelKey = provider.id + ":" + model">{{ model }}</MiraBadge>',
+      '            <span v-if="activeModelKey === provider.id + ":" + model" class="flex items-center gap-1">',
+      '              <MiraButton v-if="!(provider.isDefault && provider.defaultModelId === model)" size="sm" variant="outline" @click="setDefaultModel(provider, model)">设置默认文本模型</MiraButton>',
+      '              <MiraButton v-if="!(provider.isDefaultImage && provider.defaultImageModelId === model)" size="sm" variant="outline" @click="setDefaultImage(provider, model)">设置默认视觉模式</MiraButton>',
+      '            </span>',
+      '          </template>',
       '        </div>',
       '        <div v-if="testResults[provider.id]" class="rounded-md p-2 text-xs" :class="testResults[provider.id].ok ? \'bg-green-500/10 text-green-700\' : \'bg-destructive/10 text-destructive\'">',
       '          {{ testResults[provider.id].message }}',
@@ -118,7 +117,6 @@
       '        <div class="flex flex-wrap gap-2">',
       '          <MiraButton size="sm" :disabled="testingId === provider.id" @click="testProvider(provider)">{{ testingId === provider.id ? "测试中..." : "测试连接" }}</MiraButton>',
       '          <MiraButton v-if="!provider.isDefault" size="sm" variant="outline" @click="setDefault(provider)">设为默认</MiraButton>',
-      '          <MiraButton v-if="!provider.isDefaultImage || provider.defaultImageModelId !== imageModelDrafts[provider.id]" size="sm" variant="outline" @click="setDefaultImage(provider)">设置默认生图模型</MiraButton>',
       '          <MiraButton size="sm" variant="outline" @click="openEdit(provider)">编辑</MiraButton>',
       '          <MiraButton size="sm" variant="destructive" @click="deleteProvider(provider)">删除</MiraButton>',
       '        </div>',
@@ -313,7 +311,7 @@
         defaultProviderId: null,
         defaultImageProviderId: null,
         defaultImageModelId: null,
-        imageModelDrafts: {},
+        activeModelKey: '',
         testResults: {},
         testingId: '',
         dialogOpen: false,
@@ -406,15 +404,9 @@
         this.defaultProviderId = data.defaultProviderId || null;
         this.defaultImageProviderId = data.defaultImageProviderId || null;
         this.defaultImageModelId = data.defaultImageModelId || null;
-        var self = this;
-        this.providers.forEach(function (provider) {
-          var current = self.imageModelDrafts[provider.id];
-          var preferred = provider.isDefaultImage ? provider.defaultImageModelId : current;
-          self.setImageModelDraft(provider.id, provider.models.indexOf(preferred) >= 0 ? preferred : provider.models[0]);
-        });
         if (!this.chatProviderId) {
           var preferred = this.providers.find(function (item) { return item.isDefault; }) || this.providers[0];
-          if (preferred) this.onChatProviderChange(preferred.id);
+          if (preferred) this.onChatProviderChange(preferred.id, preferred.defaultModelId);
         }
         if (!this.imgProviderId) {
           var imagePreferred = this.providers.find(function (item) { return item.isDefaultImage; });
@@ -563,12 +555,18 @@
           window.alert(this.errorText(error));
         }
       },
-      setImageModelDraft: function (providerId, model) {
-        if (this.$set) this.$set(this.imageModelDrafts, providerId, model);
-        else this.imageModelDrafts[providerId] = model;
+      setDefaultModel: async function (provider, model) {
+        try {
+          await this.request('/ai-sdk/providers/default-model', {
+            method: 'POST',
+            body: JSON.stringify({ libraryId: this.libraryId, id: provider.id, model: model }),
+          });
+          await this.loadProviders();
+        } catch (error) {
+          window.alert(this.errorText(error));
+        }
       },
-      setDefaultImage: async function (provider) {
-        var model = this.imageModelDrafts[provider.id] || provider.models[0];
+      setDefaultImage: async function (provider, model) {
         try {
           await this.request('/ai-sdk/providers/default-image', {
             method: 'POST',
@@ -601,10 +599,10 @@
         this.activeTestTab = tab === 'image' ? 'image' : 'chat';
         this.testDialogOpen = true;
       },
-      onChatProviderChange: function (value) {
+      onChatProviderChange: function (value, preferredModel) {
         this.chatProviderId = value;
         var models = this.chatModels;
-        this.chatModel = models.length ? models[0] : '';
+        this.chatModel = models.indexOf(preferredModel) >= 0 ? preferredModel : (models[0] || '');
       },
       sendChat: async function () {
         var input = this.chatInput.trim();

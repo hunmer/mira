@@ -18,6 +18,7 @@ interface ProviderConfig {
 interface StoreData {
   providers: ProviderConfig[];
   defaultProviderId: string | null;
+  defaultModelId: string | null;
   defaultImageProviderId: string | null;
   defaultImageModelId: string | null;
 }
@@ -157,6 +158,7 @@ class MiraAiSdkPlugin {
   private store: StoreData = {
     providers: [],
     defaultProviderId: null,
+    defaultModelId: null,
     defaultImageProviderId: null,
     defaultImageModelId: null,
   };
@@ -190,6 +192,7 @@ class MiraAiSdkPlugin {
       this.store = {
         providers: Array.isArray(raw.providers) ? raw.providers : [],
         defaultProviderId: raw.defaultProviderId ?? null,
+        defaultModelId: raw.defaultModelId ?? null,
         defaultImageProviderId: raw.defaultImageProviderId ?? null,
         defaultImageModelId: raw.defaultImageModelId ?? null,
       };
@@ -197,6 +200,7 @@ class MiraAiSdkPlugin {
       this.store = {
         providers: [],
         defaultProviderId: null,
+        defaultModelId: null,
         defaultImageProviderId: null,
         defaultImageModelId: null,
       };
@@ -252,6 +256,8 @@ class MiraAiSdkPlugin {
       hasApiKey: Boolean(item.apiKey),
       models: item.models,
       isDefault: item.id === this.store.defaultProviderId,
+      isDefaultModel: item.id === this.store.defaultProviderId && item.models.includes(this.store.defaultModelId || ''),
+      defaultModelId: item.id === this.store.defaultProviderId ? this.store.defaultModelId : null,
       isDefaultImage: item.id === this.store.defaultImageProviderId,
       defaultImageModelId: item.id === this.store.defaultImageProviderId ? this.store.defaultImageModelId : null,
       createdAt: item.createdAt,
@@ -330,6 +336,7 @@ class MiraAiSdkPlugin {
         success: true,
         providers: this.maskedProviders(),
         defaultProviderId: this.store.defaultProviderId,
+        defaultModelId: this.store.defaultModelId,
         defaultImageProviderId: this.store.defaultImageProviderId,
         defaultImageModelId: this.store.defaultImageModelId,
       });
@@ -385,6 +392,9 @@ class MiraAiSdkPlugin {
           const models = parseModels(body.models);
           if (!models.length) throw new Error('至少配置一个模型');
           provider.models = models;
+          if (this.store.defaultProviderId === provider.id && !models.includes(this.store.defaultModelId || '')) {
+            this.store.defaultModelId = models[0];
+          }
           if (this.store.defaultImageProviderId === provider.id && !models.includes(this.store.defaultImageModelId || '')) {
             this.store.defaultImageModelId = models[0];
           }
@@ -403,6 +413,7 @@ class MiraAiSdkPlugin {
         this.store.providers = this.store.providers.filter(item => item.id !== provider.id);
         if (this.store.defaultProviderId === provider.id) {
           this.store.defaultProviderId = this.store.providers[0]?.id ?? null;
+          this.store.defaultModelId = this.store.providers[0]?.models[0] ?? null;
         }
         if (this.store.defaultImageProviderId === provider.id) {
           this.store.defaultImageProviderId = null;
@@ -419,6 +430,21 @@ class MiraAiSdkPlugin {
       try {
         const provider = this.findProvider(req.body?.id);
         this.store.defaultProviderId = provider.id;
+        this.store.defaultModelId = provider.models[0] ?? null;
+        this.saveStore();
+        res.json({ success: true });
+      } catch (error) {
+        res.status(400).json({ success: false, error: this.errorMessage(error) });
+      }
+    });
+
+    router.registerRounter(libraryId, '/ai-sdk/providers/default-model', 'post', async (req: any, res: any) => {
+      try {
+        const provider = this.findProvider(req.body?.id);
+        const model = String(req.body?.model || '').trim();
+        if (!provider.models.includes(model)) throw new Error('文本模型不属于该服务商');
+        this.store.defaultProviderId = provider.id;
+        this.store.defaultModelId = model;
         this.saveStore();
         res.json({ success: true });
       } catch (error) {
@@ -490,8 +516,9 @@ class MiraAiSdkPlugin {
           const provider = this.resolveProvider(body.providerId);
           providerId = provider.id;
           providerName = provider.name;
-          model = this.buildModel(provider, body.model);
-          modelId = String(body.model || '').trim() || provider.models[0];
+          const requestedModel = body.model || (provider.id === this.store.defaultProviderId ? this.store.defaultModelId : undefined);
+          model = this.buildModel(provider, requestedModel);
+          modelId = String(requestedModel || '').trim() || provider.models[0];
         }
 
         if (!stream) {
