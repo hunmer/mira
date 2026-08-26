@@ -2,37 +2,30 @@
 
 ## 根目录结构
 
-```
-d:\mira_typescript\
+```text
+/Users/Zhuanz/Documents/mira/
 ├── CLAUDE.md                      # 项目索引文档(轻量)
-├── claude/                        # 详情文档目录
-│   ├── overview.md
-│   ├── conventions.md
-│   ├── module-index.md            # 模块职责详情(含已移除模块)
-│   ├── entrypoints.md             # 入口与启动
-│   ├── public-interfaces.md       # 对外接口聚合
-│   ├── dependencies-and-config.md # 依赖与配置
-│   ├── data-model.md              # 数据模型
-│   ├── testing-and-quality.md     # 测试与质量
-│   ├── file-map.md                # 本文件
-│   ├── faq.md                     # 常见问题
-│   └── changelog.md               # 变更记录
-├── .claude/
-│   └── index.json                 # 机器可读扫描索引
-├── .agents/                       # Agent skills(含 mira-cli / procm-mcp 等)
+├── claude/                        # 详情文档目录(overview/conventions/module-index/
+│                                  #   entrypoints/public-interfaces/dependencies-and-config/
+│                                  #   data-model/testing-and-quality/file-map/faq/changelog)
+├── .agents/skills/                # Agent skills(mira-cli / procm-mcp / mira-sdk-coverage-audit 等 6 个)
+├── .audit/                        # SDK 覆盖审计工作区(manifest/coverage-report/decide.ts 工具)
+├── .github/workflows/             # CI(electron-macos/windows、docker、landing-page、mira-doc、mira-mobile)
+├── handoff/                       # 任务交接设计文档(device-share 等 5 个)
+├── docs/                          # 文档产物(typedoc / dependency-cruiser / library-import-modes.md)
 ├── package.json                   # 根级 monorepo 配置(@hunmer/mira-monorepo)
-├── pnpm-workspace.yaml            # workspace 定义(9 包 + 2 glob)
+├── pnpm-workspace.yaml            # workspace 定义(11 包 + 2 glob)
 ├── pnpm-lock.yaml
 ├── tsconfig.json                  # project references → core/server
-├── dependency-switch-config-macos.json
-├── dependency-switch-config-windows.json
 ├── packages/
-│   ├── mira-app-core/             # 核心库 (v2.0.8)
-│   ├── mira-app-server/           # 服务端 (v2.0.9)
-│   ├── mira-client/               # Electron 客户端 mira-web (v2.0.9)
+│   ├── mira-app-core/             # 核心库 (v3.0.1)
+│   ├── mira-app-server/           # 服务端 (v3.0.1;含 public/pair.html 设备配对页)
+│   ├── mira-client/               # Electron 客户端 mira-web (v3.0.1)
 │   ├── mira-dashboard-next/       # Web 管理面板 (v0.0.0)
-│   ├── mira-browser-extension/    # Chrome MV3 扩展 (v0.1.0)
+│   ├── mira-browser-extension/    # Chrome MV3 扩展 (v0.0.1)
 │   ├── mira-plugin-ui/            # 插件共享 UI 组件库 (v1.1.0,自包含 dist)
+│   ├── grid-layout-plus/          # vendored 栅格布局 fork (v2.0.0-beta.0)
+│   ├── mira-cep-panel/            # Adobe CEP 面板 (v0.1.0)
 │   ├── vue-masonry/               # 瀑布流组件 @hunmer/vue-masonry (v0.1.0)
 │   ├── vue-selection-box/         # 框选组件 @hunmer/vue-selection-box (v0.1.0)
 │   ├── mira-scripts-core/         # 脚本工具集 (v1.0.5)
@@ -41,35 +34,37 @@ d:\mira_typescript\
 │   └── landing-page/              # 官方落地页 efferd-ui (v0.1.0,独立 lockfile)
 ├── plugins/
 │   ├── CLAUDE.md                  # 插件集合文档
-│   ├── plugins/
-│   │   ├── plugins.recommend.json # 推荐注册表(12 条)
-│   │   ├── librarys.json          # 库配置
-│   │   ├── mira_eagle_extension/  # Eagle 协议 (v1.0.0,旧协议)
-│   │   ├── mira_gallery_dl/       # gallery-dl 站点下载 (旧协议)
-│   │   ├── mira_3d_format/        # GLB/GLTF (v1.0.2,格式协议,+web)
-│   │   ├── mira_spine_format/     # Spine (v1.1.1,格式协议,+web)
-│   │   ├── mira_epub_format/      # EPUB (v1.0.0,格式协议,+web)
-│   │   ├── mira_livp_format/      # LIVP (v1.0.0,格式协议,+web)
-│   │   ├── mira_lottie_format/    # dotLottie (v1.0.0,格式协议,+web)
-│   │   ├── mira_pag_format/       # PAG (v1.0.0,格式协议,+web)
-│   │   ├── mira_swf_format/       # SWF (v1.0.0,格式协议,+web)
-│   │   ├── mira_tiptap_format/    # .tiptap 富文本编辑 (格式协议,+web 85 文件)
-│   │   ├── mira_zipper_format/    # ZIP (v1.0.0,格式协议,+web)
-│   │   ├── pdf-viewer/            # PDF 预览 (v1.0.0,格式协议,+web)
-│   │   └── psd-viewer/            # PSD 预览 (v1.0.1,格式协议,+web)
-│   └── old_plugins/
-│       └── mira_thumb/            # 旧版缩略图插件 (已弃用)
-├── online_client_plugins/         # 客户端在线插件(动态加载)
-│   ├── plugins.json               # 自动生成的索引
-│   └── plugins/                   # 各客户端插件(mira-3d-format-preview 等)
-├── scripts/                       # 构建辅助(build-client-plugins-index.mjs 等)
-├── docs/                          # 文档产物(typedoc / dependency-cruiser)
+│   └── plugins/                   # 16 个服务端插件(全部有独立 CLAUDE.md)
+│       ├── plugins.recommend.json # 推荐注册表(11 条)
+│       ├── plugins.json           # 源码侧展示注册表(3 条)
+│       ├── mira_eagle_extension/  # Eagle 协议 (旧协议)
+│       ├── mira_gallery_dl/       # gallery-dl 站点下载 (旧协议)
+│       ├── mira_image_cropper/    # 图片裁切 (深度,+web)
+│       ├── mira_format_converter/ # 格式转换 (深度,+web)
+│       ├── mira_ai_sdk/           # AI 服务商网关 (深度,+web)
+│       ├── mira_3d_format/        # GLB/GLTF (格式,+web)
+│       ├── mira_spine_format/     # Spine (格式,+web)
+│       ├── mira_epub_format/      # EPUB (格式,+web)
+│       ├── mira_livp_format/      # LIVP (格式,+web)
+│       ├── mira_lottie_format/    # dotLottie (格式,+web)
+│       ├── mira_pag_format/       # PAG (格式,+web)
+│       ├── mira_swf_format/       # SWF (格式,+web)
+│       ├── mira_tiptap_format/    # .tiptap 富文本 (格式,+web)
+│       ├── mira_zipper_format/    # ZIP (格式,+web)
+│       ├── pdf-viewer/            # PDF (格式,+web)
+│       └── psd-viewer/            # PSD (格式,+web)
+│   （旧_plugins/ 与运行时 data/ 已清理;old_plugins/mira_thumb 已弃用）
+├── online_client_plugins/         # 客户端在线插件市场(git 跟踪 5 个插件目录)
+│   ├── plugins.json               # 自动生成的索引(5 插件)
+│   └── plugins/                   # mira-video-editor / image-search / mira-whiteboard /
+│                                  #   mira-custom-tab-demo / mira-welcome-demo
+├── scripts/                       # 构建/安装/部署辅助(16 个;含 install-mira-macos.sh 等)
 ├── data/                          # 运行时数据
 ├── dist/                          # 构建输出
-├── test/                          # 仓库级测试
-├── tool.js                        # 辅助工具脚本
-└── deploy.bat                     # Windows 部署脚本
+└── test/                          # 仓库级测试(verify-trash.ts)
 ```
+
+> 已删除(2026-08-24/25 清理):`.claude/`(index.json 等)、`.zcode/plans/`、`tool.js`、`dependency-switch-config-*.json`、`deploy.bat`、`skills-lock.json`、`data/librarys.json`、`data/users.db`、`plugins/librarys*.json`、根 `task_plan.md`/`progress.md`。
 
 ## 已移除/合并模块
 

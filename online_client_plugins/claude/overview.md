@@ -11,8 +11,9 @@
 - **服务端插件**在 `plugins/plugins/`（ServerPluginManager 加载，双协议），部分含 `web/` 客户端预览
 - **本仓库是纯客户端插件**：运行在 mira-client 的插件运行时里（Tab、窗口、UI、事件），不占服务端
 - 两者在 `mira_image_cropper` 等形态上开始融合：服务端插件 + `web/` SPA + 市场分发
+- 原 3D/Spine/PSD 三个「格式预览」在线插件与 `plugins/plugins/` 下同名服务端插件的 `web/` 预览能力重叠，2026-08-24 已从市场撤下（服务端 `web/` 仍在）
 
 ## 规模
 
-- 9 个插件目录，索引收录 8 个（`mira-pinterest-search-v2` 无 plugin.json 暂缺）
-- 索引 generatedAt 2026-08-21
+- git 跟踪 5 个插件目录，索引收录 **5 个**（generatedAt 2026-08-24T11:21:06Z）
+- 磁盘另有 4 个仅剩 node_modules 的空壳目录（3d/spine/psd/pinterest-v2，git 已移除）

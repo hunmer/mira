@@ -16,12 +16,12 @@
 
 ## 插件系统(双协议)
 
-共 13 个插件,导出 `init(inst)` 工厂。推荐注册表 `plugins/plugins/plugins.recommend.json`,服务端运行时注册表 `packages/mira-app-server/src/plugins/plugins.json`。**两套并行协议**:
+共 16 个插件(深度 5 + 格式 11),导出 `init(inst)` 工厂。注册表:`plugins/plugins/plugins.recommend.json`(推荐)、`plugins/plugins/plugins.json`(源码侧展示)、`packages/mira-app-server/src/plugins/plugins.json`(运行时)。**两套并行协议**:
 
 - **旧协议(`extends ServerPlugin`)**:mira_eagle_extension、mira_gallery_dl 等需深度介入服务端的插件。可注册 HTTP Hook、WebSocket 监听、缩略图生成器、前端路由
 - **新协议(格式插件)**:`init(inst)` 内调用 `inst.pluginManager.registerFileFormat(pluginName, handler)`,声明 `extensions`/`mimeTypes`/`thumbnailExtensions`/`thumbnail(src,dest)`/`viewers[]`。用于 mira_3d_format、mira_spine_format、mira_epub_format、mira_livp_format、mira_lottie_format、mira_pag_format、mira_swf_format、mira_tiptap_format、mira_zipper_format、pdf-viewer、psd-viewer 等
 - **客户端 web 插件**:格式插件 `web/` 子目录经 `plugins/plugins/*/web` 进入 workspace,内置 `plugin.json`(`pluginId`/`permissions`/`index`),由客户端动态加载;共享 UI 组件用 `mira-plugin-ui`
-- 插件配置持久化在 `{pluginDir}/data/`
+- 插件配置持久化在 `{pluginDir}/data/`(**git 忽略**,勿提交运行时数据)
 
 ## 通信协议
 
@@ -44,9 +44,9 @@
 
 ```bash
 pnpm install                      # 安装依赖
-pnpm run start:server             # 构建并启动(core + server + 插件)
-pnpm run build:core               # 仅构建 mira-app-core
-pnpm run build:server             # 仅构建 mira-app-server
+pnpm run start:server             # 构建依赖链 + 插件(install:deps + build:plugins)
+pnpm run install:deps             # 构建 core + server + client 依赖链
+pnpm run build:plugins            # 构建服务端插件集合
 ```
 
 各模块独立构建/测试命令见各包 `CLAUDE.md`。

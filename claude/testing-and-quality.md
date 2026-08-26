@@ -4,9 +4,9 @@
 
 | 包 | 测试方案 | 命令 |
 |----|----------|------|
-| mira-app-core | vitest(27 个测试文件 + test-helpers) | 见包内 `package.json` |
-| mira-app-server | Jest(`sdk/` 目录) | `pnpm run test`(= `jest --config sdk/jest.config.js`) |
-| mira-client | `procm-ui-tests/`(约 30 个真实页面 UI 用例,经 procm-mcp ws://127.0.0.1:7331 驱动,仅开发构建暴露 `window.__procmUiTests`)+ 主进程 `DownloadService.test.ts` | `pnpm run test:ui:remote <name>`、`pnpm run type-check` |
+| mira-app-core | vitest(27+ 个测试文件 + test-helpers + contract 测试) | 见包内 `package.json` |
+| mira-app-server | Jest(`sdk/` 目录)+ node --test(`src/sync/`) + `DuplicateScanner.test.ts` 等单测 | `pnpm run test`、`pnpm run test:paths` |
+| mira-client | `procm-ui-tests/`(31 个文件的真实页面 UI 用例,经 procm-mcp 驱动,仅开发构建暴露 `window.__procmUiTests`)+ 主进程 `DownloadService.test.ts` + node --test 纯函数测试(`test:split-tabs`:mediaTabRuntime/splitPaneRestore) | `pnpm run test:ui:remote <name>`、`pnpm run test:split-tabs`、`pnpm run type-check` |
 | mira-browser-extension | Vitest(19 个测试文件,约 137 用例) | `pnpm run test` |
 | mira_mobile | Flutter test(9 文件:providers/services/utils;screens 零覆盖) | `flutter test` |
 | mira-dashboard-next | 无 | -- |
@@ -17,7 +17,7 @@
 
 ## SDK 覆盖审计
 
-- `.audit/server-api-manifest.json` + `.audit/sdk-coverage-report.md`:固定 JSON API 128 条,covered 117 / missing 11 / excluded 13 / dynamic 7(2026-08-19)
+- `.audit/server-api-manifest.json` + `.audit/sdk-coverage-report.md`:固定 JSON API 138 条,covered 125 / missing 13 / excluded 13 / dynamic 7(2026-08-24 重生成)
 
 ## 类型检查
 
@@ -26,7 +26,7 @@
 
 ## Lint
 
-- mira-client:ESLint 9,`pnpm run lint`(`eslint . --ext .vue,.js,.ts... --fix`)
+- mira-client:ESLint 9 **flat config**(`eslint.config.mjs`,2026-08-24 从 `.eslintrc.js` 迁移),`pnpm run lint`(=`eslint .`)/ `lint:fix`
 - 全仓无统一 lint 根脚本
 
 ## 依赖分析工具(仅客户端)
@@ -38,8 +38,8 @@
 ## 质量风险
 
 - mira-doc 的 config head 仍指向 `/mira-doc/icon.ico` 而 public 实为 `icon.webp`
-- 服务端原生依赖(sqlite3 / sharp / ffmpeg)跨平台安装易出错(原 `dependency-switch-config-{macos,windows}.json` 切换工具已随 `tool.js` 一并移除)
-- mira-client 存在 33 个预存 TS6133(未使用变量)类型错误(非门禁阻断项,`type-check` 当前失败)
+- 服务端原生依赖(sqlite3 / sharp / ffmpeg)跨平台安装易出错(一键安装脚本 `scripts/install-mira-{macos,windows}` 缓解)
+- mira-client 曾有 33 个预存 TS6133(未使用变量)类型错误(08-20 时点;ESLint 9 flat config 迁移后是否仍在待复测)
 
 ## 2026-08-20 已清理的技术债
 

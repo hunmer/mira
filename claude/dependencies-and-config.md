@@ -2,7 +2,7 @@
 
 ## 包管理
 
-- pnpm workspace,`pnpm-workspace.yaml` 当前显式声明 9 个包 + 2 个 glob(`online_client_plugins/plugins/*`、`plugins/plugins/*/web`)
+- pnpm workspace,`pnpm-workspace.yaml` 当前显式声明 11 个包 + 2 个 glob(`online_client_plugins/plugins/*`、`plugins/plugins/*/web`)
 - 根 `package.json` 名 `@hunmer/mira-monorepo`,private
 - `pnpm.onlyBuiltDependencies`:electron、esbuild、sqlite3、sharp(允许原生构建)
 
@@ -16,8 +16,10 @@ packages:
   - 'packages/mira-scripts-core'
   - 'packages/mira-browser-extension'
   - 'packages/mira-plugin-ui'
+  - 'packages/mira-cep-panel'
   - 'packages/vue-masonry'
   - 'packages/vue-selection-box'
+  - 'packages/grid-layout-plus'
   - 'online_client_plugins/plugins/*'
   - 'plugins/plugins/*/web'
 ```
@@ -67,7 +69,9 @@ packages:
 ## 其它根级产物目录
 
 - `dist/`:构建输出
-- `data/`:运行时数据(SQLite 等)
-- `docs/`:文档产物(含 typedoc / dependency-cruiser 输出)
+- `data/`:运行时数据(SQLite 等;`librarys.json`/`users.db` 的历史快照已于 2026-08-24 清理出 git)
+- `docs/`:文档产物(typedoc / dependency-cruiser 输出;`library-import-modes.md` 导入三模式说明)
+- `handoff/`:任务交接设计文档(device-share / dropdown-animation / thumbnail-cache / float-window / tiptap-notion)
+- `.audit/`:SDK 覆盖审计工作区(server-api-manifest / sdk-coverage-report / decide.ts 等工具)
 - `test/`:仓库级测试(若有)
-- `scripts/`:构建辅助脚本
+- `scripts/`:构建/安装/部署辅助脚本(16 个)

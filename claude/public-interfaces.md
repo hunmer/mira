@@ -7,6 +7,7 @@
 - 统一响应:`{ code, data, message?, timestamp }`
 - 路由前缀 `/api/`,认证 `/api/auth/`,管理 `/api/admins/`
 - **19 个路由模块**(见下),全部继承 `BaseRouter.ts`
+- v3.0 新增端点亮点:`POST /api/devices/share-tickets` + `GET /api/devices/share/:ticketId`(设备分享票据,免认证下载,TTL 30 分钟)、`POST|GET /api/libraries/import(/:id(/cancel))`(Eagle/Billfish 跨库导入)、`GET|PUT /api/user/files`(用户文本文件读写)、`GET /api/plugins/store`(插件商店代理)、`POST /api/files/upload` 支持 importType copy/move/link
 
 ```
 AdminsRouter AuthRouter BaseRouter CookieSitesRouter DatabaseRoutes DeviceRoutes
@@ -19,6 +20,7 @@ SettingsRouter StatisticsRouter TagRouter ThumbRouter UserRouter WebSocketRouter
 - 连接:`ws://host:wsPort?clientId=xxx&libraryId=xxx`
 - 消息格式:`{ action, requestId, libraryId, clientId, payload: { type, data } }`
 - 默认端口 8018(`MIRA_SERVER_WS_PORT` / `WS_PORT`)
+- **二进制帧端到端转发**(v3.0):帧头 `[0x4D 魔数][u16 clientId 长度][clientId]`,server 只按 clientId 路由不落盘(设备间文件分享)
 
 ## 插件对外扩展点(mira-app-server)
 
@@ -32,9 +34,9 @@ SettingsRouter StatisticsRouter TagRouter ThumbRouter UserRouter WebSocketRouter
 - `MiraClient`:统一客户端门面
 - `HttpClient`:REST 调用
 - `WebSocketClient`:WS 订阅
-- **17 个 API 模块**(库/文件/标签/文件夹/缩略图/统计/设置/用户/管理/CookieSite/Admin/Download/FileSystem 等)
-- SDK 覆盖(`.audit/sdk-coverage-report.md`,2026-08-19):固定 JSON API 128 条,covered 117 / missing 11 / excluded 13 / dynamic 7
-- 被 mira-client、mira-scripts-core、mira-dashboard-next(12/13 api 模块已迁移)、mira-browser-extension 复用
+- **17 个 API 模块**(库/文件/标签/文件夹/缩略图/统计/设置/用户/管理/CookieSite/Admin/Download/FileSystem 等;v3.0 新增 createShareTicket、user readFile/writeFile、importFrom/进度/取消、scanDuplicates matchMode)
+- SDK 覆盖(`.audit/sdk-coverage-report.md`,2026-08-24):固定 JSON API 138 条,covered 125 / missing 13 / excluded 13 / dynamic 7
+- 被 mira-client、mira-scripts-core、mira-dashboard-next(13 个 api 模块基本全走 SDK)、mira-browser-extension 复用
 
 ## 浏览器扩展消息(mira-browser-extension)
 

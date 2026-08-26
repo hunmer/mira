@@ -6,12 +6,15 @@
 
 | 脚本 | 作用 |
 |------|------|
-| `pnpm run build:core` | 构建 mira-app-core(`pnpm -C packages/mira-app-core run rebuild`) |
-| `pnpm run build:server` | 构建 mira-app-server |
-| `pnpm run build:plugins` | 构建客户端插件集合 |
+| `pnpm run install:deps` | 构建 core + server + client 依赖链(`scripts/install-build.mjs`) |
+| `pnpm run build:plugins` | 构建服务端插件集合(`scripts/install-build.mjs "plugins/plugins/*"`) |
 | `pnpm run build:client-plugins-index` | 生成客户端插件索引(`scripts/build-client-plugins-index.mjs`) |
-| `pnpm run dev:client-plugins` | 监听式重建客户端插件索引 |
-| `pnpm run start:server` | 一键构建并启动:`build:core && build:server && build:plugins` |
+| `pnpm run dev:client-plugins` | 监听式重建客户端插件索引(--serve 8080) |
+| `pnpm run start:server` | 一键:`install:deps` + `build:plugins` |
+| `pnpm run start:client:win` / `start:client:mac` | 拉起 Electron 客户端 dev |
+| `pnpm run start:landing` | 落地页 dev |
+
+> 一键安装(终端用户):`scripts/install-mira-macos.sh` / `install-mira-windows.ps1`(自备/下载 Node、导出 ffmpeg/imagemagick/exiftool 路径、生成 `bin/mira-app-server` 包装脚本)。
 
 ## 工作区发现
 

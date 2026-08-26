@@ -4,6 +4,7 @@
 
 | 日期 | 操作 | 说明 |
 |------|------|------|
+| 2026-08-25 | 增量更新 | 版本 2.0.9→**3.0.1**(44 提交/201 文件)。新增**设备间分享**(DeviceShareDialog 6 文件 + WS 二进制 + FileSharePanel + qrcode)、HomeView 侧边栏拆分(886→341 行 + 7 新文件)、MediaTabListView 区块注册表 + node 纯函数测试(`test:split-tabs`)、LocalFolderTabView 拆分、设置分区 10→7、ui 53→58(+attachment/dropzone/spinner/terminal-view 等)、按库多开窗口、ESLint 9 flat config、preload +fs.getPathForFile、build 防 OOM、@hunmer/grid-layout-plus workspace 化;IPC handler 口径修正为 **19**(以 handlers.ts 实例化计);删 ServerControlDialog/ImportPanel。 |
 | 2026-08-23 | 增量更新 | IPC Handler 18→20(+PluginExecHandlers 受控执行白名单、+ScreenshotHandlers 截图窗口);新增 screenshot-window、HomeView 扩充(WebFavoritesPanel/HomeSplitContent/SidebarModuleList/SidebarLibrarySelector)、Dashboard 卡片体系(tabs/dashboard/cards/)、WebviewTabView + FaviconCacheService(services 9→10)、ProtocolService 重写;ui 52→54;依赖 +@unovis/*,grid-layout-plus 改 workspace:*(vendored 入库) |
 | 2026-08-20 | 增量更新 | 版本 1.0.5→2.0.9,迁移已合回 main;ui 组件 34→52、Store 11→15、主进程 IPC Handler 13→18(main.ts 拆分);新增悬浮球窗口、i18n、procm-ui-tests 远程 UI 测试、@hunmer/vue-selection-box;SCSS 体系确认删除(vite 残留注入列为技术债);ext_icons→public/icons |
 | 2026-08-05 | 全面更新 | 重点记录 shadcn-vue 迁移晚期现状(volt 已删、34 个 ui 组件、reka-ui 封装层);补齐 conventions/module-responsibilities/entrypoints/dependencies-and-config/data-model/testing-and-quality/faq;标注 tailwind.config.js 为死文件、main.css 为真实主题源、2 处 radix-vue 残留、动画 dev 技术债 |

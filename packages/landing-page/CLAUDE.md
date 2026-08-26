@@ -35,7 +35,8 @@ Mira 官方落地页 / 营销站(`mira-landing-page`,v0.1.0,private),站点域 `
 
 ## 扫描状态
 
-- **更新时间**: 2026-08-20
-- **已扫描**: `package.json`、`next.config.ts`、`config/site.ts`、`scripts/postbuild.mjs`、`app/layout.tsx`、`app/page.tsx`、`components.json`、`tsconfig.json` 路径别名、全部目录结构(app/components/hooks/lib/public/scripts)、git 历史(8-11 以来约 23 提交)
+- **更新时间**: 2026-08-25（增量核对，上次 2026-08-20）
+- **已扫描**: package.json、next.config.ts、config/site.ts、app/ 与 components/ 结构、git log（08-20 以来 6 文件变更）
 - **定位**: 独立营销站,不参与 Mira core/server/client 构建链路
+- **本次变更**: 新增隐私政策页（`app/privacy/page.tsx` + `components/sections/privacy-section.tsx`，sitemap 与 site-footer 加 /privacy 链接）；contact-section 隐藏 QQ 群二维码入口
 - **缺口**: sections/ui 内各组件实现未逐个细读;`lib/i18n` 语言切换能力疑似建设中(layout 为 `lang="en"`);`public/r` 目录用途未核实
