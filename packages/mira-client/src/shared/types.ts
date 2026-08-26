@@ -331,7 +331,6 @@ export interface PluginInstallProgress {
 export interface SystemInfo {
   version: string
   platform: string
-  getPathForFile: (file: File) => string
   arch: string
   nodeVersion: string
   uptime: number
@@ -474,6 +473,8 @@ export interface ElectronAPI {
 
   // 系统信息
   platform: string
+  // Electron 29+ 已移除 renderer 端 File.path，通过 webUtils 获取真实本地路径
+  getPathForFile: (file: File) => string
 
   // 素材库缓存协议
   libraryCache?: {

@@ -5,6 +5,7 @@ import { randomUUID } from 'crypto';
 import multer from 'multer';
 import { MiraServer } from '../server';
 import { canAccessLibrary } from '../middleware/permission';
+import { resolveUploadImport } from './UploadImportMode';
 
 export class FileRoutes {
     private router: Router;
@@ -285,16 +286,15 @@ export class FileRoutes {
 
                             // Electron 本地导入会额外传入源文件绝对路径；服务端与客户端同机时直接使用源文件，
                             // 让 move 按“复制后移入系统回收站”处理，而不是只移动上传临时文件。
-                            const sourceFilePath = typeof sourcePath === 'string' && fs.existsSync(sourcePath)
-                                ? sourcePath
-                                : file.path;
                             const configuredImportType = obj.libraryService.config.customFields?.importType
                                 ?? obj.libraryService.config.importType
                                 ?? req.body.importType;
-                            const importType = ['copy', 'move', 'link'].includes(configuredImportType)
-                                ? configuredImportType as 'copy' | 'move' | 'link'
-                                : 'copy';
-                            console.info(`[FileUpload] library=${libraryId} importType=${importType} sourcePath=${sourcePath || '<none>'} sourceFile=${sourceFilePath}`);
+                            const { sourceFilePath, importType } = resolveUploadImport(
+                                file.path,
+                                sourcePath,
+                                configuredImportType,
+                            );
+                            console.info(`[FileUpload] library=${libraryId} configuredImportType=${configuredImportType || '<none>'} importType=${importType} sourcePath=${sourcePath || '<none>'} sourceFile=${sourceFilePath}`);
                             // copy/link 会在素材库目录产生新的目录项，预先屏蔽 watcher 的 add 事件，避免重复入库。
                             if (importType !== 'move' && obj.watcher) {
                                 const anticipatedPath = path.join(

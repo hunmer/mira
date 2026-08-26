@@ -24,7 +24,7 @@
     "test:watch": "jest --config sdk/jest.config.js --watch",
     "test:coverage": "jest --config sdk/jest.config.js --coverage",
     "test:integration": "node sdk/scripts/test-and-fix.js",
-    "test:paths": "node --test -r ts-node/register src/sync/FilePathSet.test.ts src/sync/ImportedFileEvents.test.ts",
+    "test:paths": "node --test -r ts-node/register src/sync/FilePathSet.test.ts src/sync/ImportedFileEvents.test.ts src/routes/UploadImportMode.test.ts",
     "build:sdk": "tsc --project sdk/tsconfig.json",
     "sdk:example": "ts-node sdk/examples/usage-examples.ts",
     "prepublish": "npm run build",
