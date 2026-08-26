@@ -472,7 +472,7 @@ export class LibraryRoutes {
                 try {
                     const tagResult = await libraryObj.libraryService.getSql(
                         `SELECT COUNT(DISTINCT j.value) as total_tags
-                         FROM files f, json_each(CASE WHEN f.tags IS NULL OR f.tags = '' THEN '[]' ELSE f.tags END) j
+                         FROM files f, json_each(CASE WHEN json_valid(f.tags) THEN f.tags ELSE '[]' END) j
                          WHERE f.recycled = 0`
                     );
                     totalTags = tagResult[0]?.total_tags || 0;

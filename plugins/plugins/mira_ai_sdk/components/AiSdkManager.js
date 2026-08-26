@@ -214,7 +214,7 @@
       '          <p v-if="imgError" class="text-xs text-destructive">{{ imgError }}</p>',
       '          <p v-if="imgInfo" class="text-xs text-muted-foreground">{{ imgInfo }}</p>',
       '          <div v-if="imgResults.length" class="grid grid-cols-2 gap-2 sm:grid-cols-4">',
-      '            <a v-for="(image, index) in imgResults" :key="index" :href="image.dataUrl" target="_blank" class="block overflow-hidden rounded-md border">',
+      '            <a v-for="(image, index) in imgResults" :key="index" href="#" @click.prevent="openImage(image)" class="block overflow-hidden rounded-md border">',
       '              <img :src="image.dataUrl" class="aspect-square w-full object-cover" />',
       '            </a>',
       '          </div>',
@@ -680,6 +680,22 @@
           this.imgError = this.errorText(error);
         } finally {
           this.generating = false;
+        }
+      },
+      openImage: function (image) {
+        var dataUrl = String(image && image.dataUrl || '');
+        var match = dataUrl.match(/^data:([^;,]+)?(?:;base64)?,([\s\S]*)$/i);
+        if (!match) return;
+        try {
+          var mediaType = match[1] || 'image/png';
+          var binary = atob(match[2]);
+          var bytes = new Uint8Array(binary.length);
+          for (var i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+          var objectUrl = URL.createObjectURL(new Blob([bytes], { type: mediaType }));
+          window.open(objectUrl, '_blank', 'noopener,noreferrer');
+          window.setTimeout(function () { URL.revokeObjectURL(objectUrl); }, 60000);
+        } catch (error) {
+          this.imgError = this.errorText(error);
         }
       },
       errorText: function (error) { return error && error.message ? error.message : String(error); },

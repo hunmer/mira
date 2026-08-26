@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { calculateOverlayPosition, clampOverlayTop, createDragDrop, folderEmptyMessage, resolveDragSource } from './dragdrop';
+import { calculateOverlayPosition, clampOverlayTop, collectImagesUnder, createDragDrop, folderEmptyMessage, resolveDragSource } from './dragdrop';
 import type { DragDropHandlers } from './dragdrop';
 
 describe('resolveDragSource', () => {
@@ -39,6 +39,52 @@ describe('resolveDragSource', () => {
   it('未连接素材库时显示对应空状态', () => {
     expect(folderEmptyMessage(null)).toBe('未连接素材库');
     expect(folderEmptyMessage([])).toBe('暂无文件夹');
+  });
+});
+
+describe('collectImagesUnder', () => {
+  function makeImg(src: string): HTMLImageElement {
+    const img = document.createElement('img');
+    img.src = src;
+    return img;
+  }
+
+  it('target 为媒体元素本身时返回空(单图操作不提供批量)', () => {
+    const img = makeImg('https://example.com/a.jpg');
+    expect(collectImagesUnder(img)).toEqual([]);
+    expect(collectImagesUnder(null)).toEqual([]);
+  });
+
+  it('收集容器下的多张图片并去重', () => {
+    const container = document.createElement('div');
+    container.append(
+      makeImg('https://example.com/a.jpg'),
+      makeImg('https://example.com/a.jpg'), // 重复
+      makeImg('https://example.com/b.jpg'),
+    );
+    expect(collectImagesUnder(container)).toEqual(['https://example.com/a.jpg', 'https://example.com/b.jpg']);
+  });
+
+  it('容器内只有一张图时向上查找最近的含多图祖先', () => {
+    const grid = document.createElement('div');
+    const card = document.createElement('div');
+    const mask = document.createElement('span');
+    card.append(makeImg('https://example.com/a.jpg'), mask);
+    grid.append(card, makeImg('https://example.com/b.jpg'));
+    expect(collectImagesUnder(card)).toEqual(['https://example.com/a.jpg', 'https://example.com/b.jpg']);
+    expect(collectImagesUnder(mask)).toEqual(['https://example.com/a.jpg', 'https://example.com/b.jpg']);
+  });
+
+  it('过滤 data: URL;全部无效时返回空', () => {
+    const container = document.createElement('div');
+    container.append(makeImg('data:image/png;base64,xxx'), makeImg('data:image/gif;base64,yyy'));
+    expect(collectImagesUnder(container)).toEqual([]);
+  });
+
+  it('限制最大收集数量', () => {
+    const container = document.createElement('div');
+    for (let i = 0; i < 5; i++) container.appendChild(makeImg(`https://example.com/${i}.jpg`));
+    expect(collectImagesUnder(container, { limit: 3 })).toHaveLength(3);
   });
 });
 
@@ -173,6 +219,61 @@ describe('createDragDrop lifecycle', () => {
     document.dispatchEvent(new MouseEvent('dragover', { bubbles: true, clientX: 100, clientY: 10 }));
 
     expect(document.querySelector('.mira-dragdrop')).not.toBeNull();
+    img.remove();
+  });
+
+  it('拖拽含多图的容器时显示批量操作区,释放后触发批量回调', () => {
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation(callback => {
+      callback(0);
+      return 1;
+    });
+    const onBatchImport = vi.fn();
+    const onCopyUrls = vi.fn();
+    createDragDrop({ onUpload: vi.fn(), onBatchImport, onCopyUrls });
+    const container = document.createElement('div');
+    const imgA = document.createElement('img');
+    imgA.src = 'https://example.com/a.jpg';
+    const imgB = document.createElement('img');
+    imgB.src = 'https://example.com/b.jpg';
+    container.append(imgA, imgB);
+    document.body.appendChild(container);
+
+    container.dispatchEvent(new MouseEvent('dragstart', { bubbles: true, clientX: 10, clientY: 10 }));
+    document.dispatchEvent(new MouseEvent('dragover', { bubbles: true, clientX: 100, clientY: 10 }));
+
+    const zones = document.querySelectorAll<HTMLElement>('.mira-batch-zones .mira-dropzone');
+    expect(zones.length).toBe(2);
+    expect(zones[0].textContent).toContain('批量导入(2)');
+    zones[0].dispatchEvent(new MouseEvent('drop', { bubbles: true }));
+    expect(onBatchImport).toHaveBeenCalledOnce();
+    expect(onBatchImport).toHaveBeenCalledWith(['https://example.com/a.jpg', 'https://example.com/b.jpg']);
+
+    // 再次拖拽,释放到「批量复制url」
+    container.dispatchEvent(new MouseEvent('dragstart', { bubbles: true, clientX: 10, clientY: 10 }));
+    document.dispatchEvent(new MouseEvent('dragover', { bubbles: true, clientX: 100, clientY: 10 }));
+    const copyZone = document.querySelector<HTMLElement>('.mira-batch-zones .mira-dropzone:nth-child(2)');
+    expect(copyZone?.textContent).toContain('批量复制url');
+    copyZone?.dispatchEvent(new MouseEvent('drop', { bubbles: true }));
+    expect(onCopyUrls).toHaveBeenCalledOnce();
+    expect(onCopyUrls).toHaveBeenCalledWith(['https://example.com/a.jpg', 'https://example.com/b.jpg']);
+    container.remove();
+  });
+
+  it('拖拽单张图片时不显示批量操作区', () => {
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation(callback => {
+      callback(0);
+      return 1;
+    });
+    createDragDrop({ onUpload: vi.fn(), onBatchImport: vi.fn(), onCopyUrls: vi.fn() });
+    const img = document.createElement('img');
+    img.src = 'https://example.com/image.jpg';
+    document.body.appendChild(img);
+
+    img.dispatchEvent(new MouseEvent('dragstart', { bubbles: true, clientX: 10, clientY: 10 }));
+    document.dispatchEvent(new MouseEvent('dragover', { bubbles: true, clientX: 100, clientY: 10 }));
+
+    expect(document.querySelector('.mira-dragdrop')).not.toBeNull();
+    expect(document.querySelector('.mira-batch-zones')).toBeNull();
     img.remove();
   });
 

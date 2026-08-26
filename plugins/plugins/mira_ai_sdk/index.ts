@@ -102,6 +102,49 @@ function toBase64Content(value: unknown): string {
   return String(value || '').replace(/^data:[^;]*;base64,/, '');
 }
 
+/** 将不同 OpenAI 兼容服务商的图片响应归一化为 AI SDK 所需的 b64_json。 */
+function imageResponseFetch(input: string | URL | Request, init?: RequestInit): Promise<Response> {
+  return fetch(input, init).then(async response => {
+    const contentType = response.headers.get('content-type') || '';
+    const url = typeof input === 'string' ? input : input.toString();
+    if (!url.includes('/images/') || !contentType.toLowerCase().includes('json')) return response;
+
+    const text = await response.text();
+    let payload: any;
+    try {
+      payload = JSON.parse(text);
+    } catch {
+      // Some gateways prepend markdown/log text to an otherwise valid JSON body.
+      const start = text.indexOf('{');
+      const end = text.lastIndexOf('}');
+      if (start < 0 || end <= start) return new Response(text, response);
+      try { payload = JSON.parse(text.slice(start, end + 1)); } catch { return new Response(text, response); }
+    }
+    if (!Array.isArray(payload?.data)) return new Response(text, response);
+
+    const data = await Promise.all(payload.data.map(async (item: any) => {
+      if (typeof item?.b64_json === 'string') return item;
+      const inline = item?.base64 || item?.base64_json || item?.b64;
+      if (typeof inline === 'string') return { ...item, b64_json: toBase64Content(inline) };
+      if (typeof item?.url === 'string') {
+        const image = await fetch(item.url);
+        if (!image.ok) throw new Error(`下载生成图片失败 HTTP ${image.status}`);
+        const bytes = new Uint8Array(await image.arrayBuffer());
+        const mediaType = image.headers.get('content-type') || 'image/png';
+        return { ...item, b64_json: Buffer.from(bytes).toString('base64'), mediaType };
+      }
+      return item;
+    }));
+    const headers = new Headers(response.headers);
+    headers.set('content-type', 'application/json');
+    return new Response(JSON.stringify({ ...payload, data }), {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
+    });
+  });
+}
+
 class MiraAiSdkPlugin {
   private readonly pluginName = PLUGIN_NAME;
   private readonly routes: any[] = [];
@@ -181,6 +224,7 @@ class MiraAiSdkPlugin {
       name: provider.name,
       apiKey: provider.apiKey || undefined,
       baseURL: provider.baseUrl,
+      fetch: imageResponseFetch,
     });
     return openaiCompatible.imageModel(model);
   }
@@ -482,6 +526,7 @@ class MiraAiSdkPlugin {
             name: providerName,
             apiKey: String(body.apiKey || '').trim() || undefined,
             baseURL: baseUrl,
+            fetch: imageResponseFetch,
           }).imageModel(modelId);
         } else {
           const provider = this.resolveProvider(body.providerId);
