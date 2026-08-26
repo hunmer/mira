@@ -25,6 +25,8 @@ function onReorder() { emit('update:items', [...orderedItems.value]) }
 const rootClass = computed(() => {
   if (props.headerOnly) return 'shrink-0'
   if (props.horizontal) return 'flex min-w-0 items-center overflow-x-auto'
+  // headerless 纵向由外层容器滚动：不加 overflow-y-auto，否则会截断内部 sticky 元素的悬浮
+  if (props.headerless) return 'flex flex-col'
   return 'flex min-h-0 flex-1 flex-col overflow-y-auto'
 })
 const listClass = computed(() => props.horizontal ? 'flex items-center gap-2' : 'space-y-2')

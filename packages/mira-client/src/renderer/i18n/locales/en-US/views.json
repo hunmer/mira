@@ -48,7 +48,7 @@
     "renderFailed": "Plugin content failed to render",
     "buildHint": "(Run pnpm install && pnpm build in the plugin directory to generate dist)",
     "managePlugins": "Manage plugins",
-    "openInWebviewTab": "Open in webview tab",
+    "openInWebviewTab": "Open in tab",
     "devMode": "Dev Mode",
     "disable": "Disable",
     "devDialogTitle": "Plugin Dev Mode",

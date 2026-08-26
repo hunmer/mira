@@ -121,12 +121,12 @@ defineExpose({ refreshWaterfalls })
         @media-context-menu="(item, event) => emit('mediaContextMenu', item, event)"
         @media-info="item => emit('mediaInfo', item)" @media-set-folder="item => emit('mediaSetFolder', item)"
         @media-set-tags="item => emit('mediaSetTags', item)" @media-delete="item => emit('mediaDelete', item)"
-        @media-restore="item => emit('mediaRestore', item)" />
+        @media-restore="(item: FileInfo) => emit('mediaRestore', item)" />
 
       <!-- 列表视图 -->
       <MediaListComponent v-if="viewMode === 'list'" :key="`list-${viewMode}-${group.key}`" class="p-5"
         :items="group.items" :selected-items="selectedItems" :is-trash="isTrash"
-        @click="(item, event) => emit('mediaClick', item, event)" @dblclick="item => emit('mediaDoubleClick', item)"
+        @click="(item: FileInfo, event: MouseEvent) => emit('mediaClick', item, event)" @dblclick="item => emit('mediaDoubleClick', item)"
         @media-context-menu="(item, event) => emit('mediaContextMenu', item, event)"
         @media-info="item => emit('mediaInfo', item)" @media-set-folder="item => emit('mediaSetFolder', item)"
         @media-set-tags="item => emit('mediaSetTags', item)"

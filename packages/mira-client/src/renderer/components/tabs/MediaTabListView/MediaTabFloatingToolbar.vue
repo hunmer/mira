@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { ImagesBadge } from '@/components/ui/images-badge'
+import type { BadgeImage } from '@/components/ui/images-badge'
 import { useFloatingToolbar } from './useFloatingToolbar'
 
 /**
  * 浮动操作栏：选中项批量操作（回收站恢复/彻底删除，普通视图复制/分享/删除）+ 分页控件
- * 从 MediaTabListView.vue 按功能拆出，逻辑保持不变；FLIP 宽度过渡（useFloatingToolbar）随迁。
+ * 选中指示由 images-badge（21st.dev 移植）呈现：缩略图堆叠、悬停扇形展开、溢出显示 +N；
+ * FLIP 宽度过渡（useFloatingToolbar）与进入/退出缩放动画保留。
  */
 const props = defineProps<{
   selectedItems: string[]
+  selectedImages: BadgeImage[]
   isTrash: boolean
   currentPage: number
   totalPages: number
@@ -35,6 +39,10 @@ const { toolbarRef, showFloatingToolbar } = useFloatingToolbar({ selectedItems, 
       <div v-if="showFloatingToolbar" ref="toolbarRef"
         class="pointer-events-auto flex items-center space-x-4 bg-white/60 dark:bg-muted/80 backdrop-blur-xl shadow-[0_12px_36px_rgba(99,102,241,0.15)] rounded-full p-1.5 border border-white/60 dark:border-border"
         style="transform-origin: center;">
+        <!-- 选中指示：缩略图堆叠徽章（悬停扇形展开） -->
+        <ImagesBadge v-if="selectedItems.length > 0" bare size="sm" :images="selectedImages"
+          :label="$t('tabs.mediaTabListView.selectedCount', { count: selectedItems.length })" />
+
         <!-- 操作按钮 - 仅在选中文件时显示 -->
         <div v-if="selectedItems.length > 0" class="flex items-center space-x-2">
           <!-- 反选 -->
@@ -59,7 +67,7 @@ const { toolbarRef, showFloatingToolbar } = useFloatingToolbar({ selectedItems, 
               <span
                 class="material-symbols-outlined text-muted-foreground dark:text-muted-foreground">restore</span>
             </button>
-            <button class="p-2 rounded-full hover:bg-destructive/10 group transition-colors"
+            <button class="p-2 rounded-full hover:bg-primary/10 group transition-colors"
               :title="$t('tabs.mediaTabListView.purgeFiles', { count: selectedItems.length })"
               @click="emit('toolbarAction', 'purge')">
               <span

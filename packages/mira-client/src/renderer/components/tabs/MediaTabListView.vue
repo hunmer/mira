@@ -59,8 +59,8 @@
         </div>
 
         <!-- 浮动操作栏 -->
-        <MediaTabFloatingToolbar :selected-items="selectedItems" :is-trash="isTrash" :current-page="currentPage"
-          :total-pages="totalPages" :pagination-pages="paginationPages"
+        <MediaTabFloatingToolbar :selected-items="selectedItems" :selected-images="selectedImages" :is-trash="isTrash"
+          :current-page="currentPage" :total-pages="totalPages" :pagination-pages="paginationPages"
           @invert-selection="handleInvertSelection" @clear-selection="handleClearSelection"
           @toolbar-action="handleToolbarAction" @previous-page="handlePreviousPage"
           @next-page="handleNextPage" @page-change="handlePageChange" />
@@ -147,6 +147,7 @@ import {
   AlertDialogAction
 } from '@/components/ui/alert-dialog'
 import type { FileInfo } from '@/shared/types'
+import type { BadgeImage } from '@/components/ui/images-badge'
 import { useMediaTabFetch } from './MediaTabListView/useMediaTabFetch'
 import { useMediaTabSelection } from './MediaTabListView/useMediaTabSelection'
 import { useMediaTabFilters } from './MediaTabListView/useMediaTabFilters'
@@ -276,6 +277,15 @@ const {
   handleInvertSelection,
   handleClearSelection
 } = useMediaTabSelection({ homeController, paginatedMediaItems, emit })
+
+// 浮动工具栏选中项缩略图（ImagesBadge 堆叠展示）：当前页匹配的选中项，取前 12 张防止极端选中量
+const selectedImages = computed<BadgeImage[]>(() => {
+  const ids = new Set(selectedItems.value)
+  return paginatedMediaItems.value
+    .filter((item: FileInfo) => ids.has(item.id) && !!(item.thumbnailPath || item.url))
+    .slice(0, 12)
+    .map((item: FileInfo) => ({ src: (item.thumbnailPath || item.url) as string, alt: item.name }))
+})
 
 // 筛选逻辑：合并/清除/应用已保存过滤器
 const {

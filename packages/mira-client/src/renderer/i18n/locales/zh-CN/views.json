@@ -48,7 +48,7 @@
     "renderFailed": "插件内容渲染失败",
     "buildHint": "（请在插件目录执行 pnpm install && pnpm build 生成 dist）",
     "managePlugins": "管理插件",
-    "openInWebviewTab": "在 Webview 标签页打开",
+    "openInWebviewTab": "在标签页打开",
     "devMode": "Dev 模式",
     "disable": "禁用",
     "devDialogTitle": "插件 Dev 模式",
