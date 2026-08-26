@@ -1,4 +1,4 @@
-<script setup lang="ts" generic="T extends { id: string | number; title: string; icon?: string }">
+<script setup lang="ts" generic="T extends { id: string | number; title: string; icon?: unknown }">
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible'
 import { VueDraggable } from 'vue-draggable-plus'
 import { computed, ref, watch, type Ref } from 'vue'
