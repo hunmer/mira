@@ -12,6 +12,7 @@ import { watch } from 'vue'
 import type { LibraryInfo } from '../../../shared/types'
 import type { ServerConfig } from '@renderer/stores/serverList'
 import type { Ref } from 'vue'
+import { miraEventBus } from '@/renderer/services/EventBus'
 
 export function useHomeLibraryManagement(
   showServerManagementDialog: Ref<boolean>,
@@ -42,9 +43,7 @@ export function useHomeLibraryManagement(
         tagStore.fetchTags(collection.id)
       ])
 
-      window.dispatchEvent(new CustomEvent('collection-changed', {
-        detail: { collection }
-      }))
+      miraEventBus.emit('collection-changed', { collection, libraryId: collection.id })
 
       return true
     } catch (error) {

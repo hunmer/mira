@@ -62,8 +62,11 @@ export class FolderTabType extends MediaViewTabType {
   }
 
   shouldUpdateForEvent(tabData: any, eventData: any): boolean {
-    if (tabData?.libraryId !== eventData.libraryId) return false
-    const tabFolderId = tabData?.id || tabData?.folderId
+    if (String(tabData?.libraryId ?? '') !== String(eventData?.libraryId ?? '')) return false
+    const rawTabFolderId = tabData?.id || tabData?.folderId
+    const tabFolderId = typeof rawTabFolderId === 'string'
+      ? rawTabFolderId.replace(/^folder-/, '')
+      : rawTabFolderId
     if (!tabFolderId) return false
     if (String(tabFolderId) === String(eventData.folder_id)) return true
     if (eventData.old_data && String(tabFolderId) === String(eventData.old_data.folder_id)) return true

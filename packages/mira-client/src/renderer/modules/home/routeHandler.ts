@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { miraEventBus } from '@renderer/services/EventBus'
 
 /**
  * 首页路由参数处理模块
@@ -75,9 +76,7 @@ export function useHomeRouteHandler() {
   const handleTagRoute = async (tagId: string, libraryId?: string, title?: string) => {
     try {
       // 临时实现：通过事件通知HomeView更新标签状态
-      window.dispatchEvent(new CustomEvent('home-route-tag', {
-        detail: { tagId, libraryId, title }
-      }))
+      miraEventBus.emit('home-route-tag', { tagId, libraryId, title })
       
       return true
     } catch (error) {
@@ -93,9 +92,7 @@ export function useHomeRouteHandler() {
   const handleFolderRoute = async (folderId: string, libraryId?: string, title?: string) => {
     try {
       // 临时实现：通过事件通知HomeView更新文件夹状态
-      window.dispatchEvent(new CustomEvent('home-route-folder', {
-        detail: { folderId, libraryId, title }
-      }))
+      miraEventBus.emit('home-route-folder', { folderId, libraryId, title })
       
       return true
     } catch (error) {

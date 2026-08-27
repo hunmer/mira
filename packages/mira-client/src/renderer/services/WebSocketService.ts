@@ -1010,11 +1010,17 @@ function scheduleTreeRefresh(libraryId?: string): void {
 
   treeRefreshTimers.set(targetLibraryId, setTimeout(() => {
     treeRefreshTimers.delete(targetLibraryId)
-    void import('../stores/folder').then(({ useFolderStore }) => useFolderStore().refreshFolders(targetLibraryId)).finally(() => {
+    void Promise.all([
+      import('../stores/folder').then(({ useFolderStore }) => useFolderStore().refreshFolders(targetLibraryId)),
+      import('../stores/tag').then(({ useTagStore }) => useTagStore().refreshTags(targetLibraryId)),
+    ]).finally(() => {
       // 文件监听/扩展导入可能在广播后才完成统计相关写入，再读一次最终值。
       const retryTimer = setTimeout(() => {
         treeRefreshTimers.delete(targetLibraryId)
-        void import('../stores/folder').then(({ useFolderStore }) => useFolderStore().refreshFolders(targetLibraryId))
+        void Promise.all([
+          import('../stores/folder').then(({ useFolderStore }) => useFolderStore().refreshFolders(targetLibraryId)),
+          import('../stores/tag').then(({ useTagStore }) => useTagStore().refreshTags(targetLibraryId)),
+        ])
       }, TREE_REFRESH_RETRY_DELAY)
       treeRefreshTimers.set(targetLibraryId, retryTimer)
     })

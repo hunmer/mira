@@ -44,7 +44,7 @@ export class AllTabType extends MediaViewTabType {
   }
 
   shouldUpdateForEvent(tabData: any, eventData: any): boolean {
-    return tabData?.libraryId === eventData.libraryId
+    return String(tabData?.libraryId ?? '') === String(eventData?.libraryId ?? '')
   }
 }
 

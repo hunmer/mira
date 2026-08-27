@@ -90,8 +90,11 @@ export class TagTabType extends MediaViewTabType {
   }
 
   shouldUpdateForEvent(tabData: any, eventData: any): boolean {
-    if (tabData?.libraryId !== eventData.libraryId) return false
-    const tabTagId = tabData?.id || tabData?.tagId || tabData?.name
+    if (String(tabData?.libraryId ?? '') !== String(eventData?.libraryId ?? '')) return false
+    const rawTabTagId = tabData?.id || tabData?.tagId || tabData?.name
+    const tabTagId = typeof rawTabTagId === 'string'
+      ? rawTabTagId.replace(/^tag-/, '')
+      : rawTabTagId
     if (!tabTagId) return false
 
     const matchTags = (tags: any[]): boolean =>

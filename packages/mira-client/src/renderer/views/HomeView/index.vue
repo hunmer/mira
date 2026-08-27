@@ -51,6 +51,7 @@ import { useHomeTabManagement } from './useHomeTabManagement'
 import { useHomeLibraryManagement } from './useHomeLibraryManagement'
 import { useHomeEventHandlers } from './useHomeEventHandlers'
 import { useHomeInit } from './useHomeInit'
+import { miraEventBus, type HomeTabReplaceDetail } from '@/renderer/services/EventBus'
 
 // ============================================
 // 初始化stores和controllers
@@ -557,8 +558,7 @@ const {
 } = eventHandlers
 
 // 面包屑点击：原地替换当前 Tab 的内容（不新开 Tab）
-const handleTabReplace = async (e: Event) => {
-  const { kind, payload } = (e as CustomEvent).detail || {}
+const handleTabReplace = async ({ kind, payload }: HomeTabReplaceDetail) => {
   if (!kind) return
   await replaceCurrentTab(kind, payload || {})
 }
@@ -596,7 +596,7 @@ onMounted(async () => {
   )
 
   // 面包屑点击替换当前 Tab
-  window.addEventListener('home-tab-replace', handleTabReplace)
+  miraEventBus.on('home-tab-replace', handleTabReplace)
 
   // 悬浮球：监听主进程转发的消息（文件拖放 / 单击）
   window.electronAPI?.on('floating-ball-from-window', handleFloatingBallMessage)
@@ -669,7 +669,7 @@ onUnmounted(() => {
     handleReopenClosedTab,
     handleCloseCurrentTab
   )
-  window.removeEventListener('home-tab-replace', handleTabReplace)
+  miraEventBus.off('home-tab-replace', handleTabReplace)
   // 悬浮球：移除监听
   window.electronAPI?.removeAllListeners('floating-ball-from-window')
   window.electronAPI?.removeAllListeners('menu:show-plugins-dialog')

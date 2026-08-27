@@ -13,6 +13,7 @@ import { useConfirm } from '@renderer/composables/useConfirm'
 import { useToast } from '@renderer/composables/useToast'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 import i18n from '../../i18n'
+import { miraEventBus } from '@/renderer/services/EventBus'
 
 export function useHomeEventHandlers(
   createTabFromFolder: any,
@@ -99,9 +100,7 @@ export function useHomeEventHandlers(
   }
 
   // 标签选择事件处理
-  const handleTagSelected = async (event: Event) => {
-    const customEvent = event as CustomEvent
-    const tagData = customEvent.detail
+  const handleTagSelected = async (tagData: any) => {
     // 只创建tab，不处理路由和数据刷新（这些已经由路由处理器处理了）
     const newTab = await createTabFromTag(tagData, tagData.libraryId)
 
@@ -112,9 +111,7 @@ export function useHomeEventHandlers(
   }
 
   // 文件夹选择事件处理
-  const handleFolderSelected = async (event: Event) => {
-    const customEvent = event as CustomEvent
-    const folderData = customEvent.detail
+  const handleFolderSelected = async (folderData: any) => {
     // 侧栏树从父文件夹进入子文件夹时复用当前父 Tab；Ctrl/Cmd 点击
     // 保持原有新 Tab 行为，由 FolderTreeComponent 透传 ctrlKey。
     if (folderData?.source === 'sidebar-tree' && !folderData.ctrlKey && !folderData.metaKey) {
@@ -127,7 +124,7 @@ export function useHomeEventHandlers(
         }
         const payload = { id: String(folderData.id), title: folderData.title || folderData.label }
         if (replaceCurrentTab) await replaceCurrentTab('folder', payload)
-        else window.dispatchEvent(new CustomEvent('home-tab-replace', { detail: { kind: 'folder', payload } }))
+        else miraEventBus.emit('home-tab-replace', { kind: 'folder', payload })
         return
       }
     }
@@ -192,8 +189,8 @@ export function useHomeEventHandlers(
     handleReopenClosedTab: () => void,
     handleCloseCurrentTab: () => void
   ) => {
-    window.addEventListener('home-tag-selected', handleTagSelected)
-    window.addEventListener('home-folder-selected', handleFolderSelected)
+    miraEventBus.on('home-tag-selected', handleTagSelected)
+    miraEventBus.on('home-folder-selected', handleFolderSelected)
     document.addEventListener('shortcut:activate-last-tab', handleActivateLastTab)
     document.addEventListener('shortcut:reopen-closed-tab', handleReopenClosedTab)
     document.addEventListener('shortcut:close-current-tab', handleCloseCurrentTab)
@@ -205,8 +202,8 @@ export function useHomeEventHandlers(
     handleReopenClosedTab: () => void,
     handleCloseCurrentTab: () => void
   ) => {
-    window.removeEventListener('home-tag-selected', handleTagSelected)
-    window.removeEventListener('home-folder-selected', handleFolderSelected)
+    miraEventBus.off('home-tag-selected', handleTagSelected)
+    miraEventBus.off('home-folder-selected', handleFolderSelected)
     document.removeEventListener('shortcut:activate-last-tab', handleActivateLastTab)
     document.removeEventListener('shortcut:reopen-closed-tab', handleReopenClosedTab)
     document.removeEventListener('shortcut:close-current-tab', handleCloseCurrentTab)

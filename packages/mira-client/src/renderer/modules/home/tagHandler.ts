@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import { useTagStore } from '@renderer/stores/tag'
 import { useMediaStore } from '@renderer/stores/media'
+import { miraEventBus } from '@renderer/services/EventBus'
 
 /**
  * 首页标签处理模块
@@ -81,9 +82,7 @@ export function useHomeTagHandler() {
       }
       
       // 通知其他组件标签已选中
-      window.dispatchEvent(new CustomEvent('home-tag-selected', {
-        detail: currentTag.value
-      }))
+      miraEventBus.emit('home-tag-selected', currentTag.value)
       
       return true
     } catch (err) {
@@ -106,7 +105,7 @@ export function useHomeTagHandler() {
     }
     
     // 通知其他组件标签已清除
-    window.dispatchEvent(new CustomEvent('home-tag-cleared'))
+    miraEventBus.emit('home-tag-cleared', undefined)
     
   }
 
@@ -185,16 +184,15 @@ export function useHomeTagHandler() {
    * 监听来自路由的标签事件
    */
   const listenToRouteEvents = () => {
-    const handleRouteTag = (event: CustomEvent) => {
-      const { tagId, libraryId, title } = event.detail
+    const handleRouteTag = ({ tagId, libraryId, title }: { tagId?: string; libraryId?: string; title?: string }) => {
+      if (!tagId) return
       openTag(tagId, { libraryId, title })
     }
-    
-    window.addEventListener('home-route-tag', handleRouteTag as EventListener)
+    miraEventBus.on('home-route-tag', handleRouteTag)
     
     // 返回清理函数
     return () => {
-      window.removeEventListener('home-route-tag', handleRouteTag as EventListener)
+      miraEventBus.off('home-route-tag', handleRouteTag)
     }
   }
 

@@ -3,6 +3,7 @@ import { useI18n } from 'vue-i18n'
 import { useFolderStore } from '@renderer/stores/folder'
 import { useTagStore } from '@renderer/stores/tag'
 import type { BreadcrumbItem } from '@renderer/controllers/HomeController'
+import { miraEventBus } from '@renderer/services/EventBus'
 
 /**
  * 面包屑导航：显示当前 文件夹/标签 的层级路径，点击原地替换当前 Tab 内容
@@ -106,7 +107,7 @@ export function useMediaTabBreadcrumb(deps: {
     } else {
       return
     }
-    window.dispatchEvent(new CustomEvent('home-tab-replace', { detail: { kind, payload } }))
+    miraEventBus.emit('home-tab-replace', { kind, payload })
   }
 
   return {

@@ -3,6 +3,7 @@ import { useFolderStore } from '@renderer/stores/folder'
 import { useLibraryStore } from '@renderer/stores/library'
 import { useTabs } from '@renderer/composables/useTabs'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
+import { miraEventBus } from '@renderer/services/EventBus'
 import type { useHomeController } from '@renderer/controllers/HomeController'
 import type { BrowserItem } from '@renderer/components/business/GroupedCardBrowserDialog.vue'
 import type { FolderItem } from '@renderer/types/components'
@@ -150,22 +151,18 @@ export function useMediaTabFolders(deps: {
   function handleChildFolderSelect(folder: any, event?: MouseEvent | KeyboardEvent) {
     const title = folder.title || folder.name
     if (event && (event.ctrlKey || event.metaKey)) {
-      window.dispatchEvent(new CustomEvent('home-route-folder', {
-        detail: {
-          folderId: folder.id,
-          libraryId: props.libraryId || libraryStore.currentLibrary?.id,
-          title,
-        },
-      }))
+      miraEventBus.emit('home-route-folder', {
+        folderId: folder.id,
+        libraryId: props.libraryId || libraryStore.currentLibrary?.id,
+        title,
+      })
       return
     }
 
-    window.dispatchEvent(new CustomEvent('home-tab-replace', {
-      detail: {
-        kind: 'folder',
-        payload: { id: String(folder.id), title },
-      },
-    }))
+    miraEventBus.emit('home-tab-replace', {
+      kind: 'folder',
+      payload: { id: String(folder.id), title },
+    })
   }
 
   function getFolderColor(color: unknown): string | undefined {

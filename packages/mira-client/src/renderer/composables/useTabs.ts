@@ -89,13 +89,17 @@ const restoreTabsFromSnapshot = (savedState: { tabs: TabState[], activeTabId: st
       restoreTabAppliedFilterId(tabState.id, tabState.appliedFilterId)
     }
 
+    const restoredData = tabState.type === 'tag' && tabState.data
+      ? { ...tabState.data, id: String(tabState.data.id ?? '').replace(/^tag-/, '') }
+      : tabState.data
+
     restoredTabs.push({
       id: tabState.id,
       label: tabState.label,
       icon: tabState.icon,
       iconColor: tabState.iconColor,
       type: tabState.type,
-      data: tabState.data,
+      data: restoredData,
       active: false,
       needUpdate: true,
       filters: tabState.filters
@@ -485,28 +489,30 @@ export function useTabs() {
   const createTabFromTag = async (tag: any, libraryId?: string) => {
     // 获取正确的标签名，优先级: title > name > label > id
     const originalTagId = String(tag.id || tag.name)
-    const tagName = tag.title || tag.name || tag.label || originalTagId
+    const normalizedTagId = originalTagId.replace(/^tag-/, '')
+    const tagName = tag.title || tag.name || tag.label || normalizedTagId
     const tabLabel = i18n.global.t('composables.tagTab.tabLabel', { name: tagName })
 
     // 确保tab ID不会重复添加前缀
-    const tagId = originalTagId.startsWith('tag-') ? originalTagId : `tag-${originalTagId}`
+    const tagId = `tag-${normalizedTagId}`
+    const tagData = { ...tag, id: normalizedTagId }
 
     // 使用注册系统创建Tab
     return await createTabFromRegisteredType('tag', {
       id: tagId,
       label: tabLabel,
-      data: tag,
+      data: tagData,
       libraryId,
       context: {
         // 明确传递标签上下文信息
-        id: tag.id,
-        tagId: tag.id,
+        id: normalizedTagId,
+        tagId: normalizedTagId,
         name: tagName,
         tagName,
         title: tag.title,
         color: tag.color,
         fileCount: tag.fileCount,
-        tabData: tag
+        tabData: tagData
       },
       iconColor: normalizeTabColor(tag.color)
     })

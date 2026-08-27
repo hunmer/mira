@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import { useFolderStore } from '@renderer/stores/folder'
 import { useMediaStore } from '@renderer/stores/media'
+import { miraEventBus } from '@renderer/services/EventBus'
 
 /**
  * 首页文件夹处理模块
@@ -95,9 +96,7 @@ export function useHomeFolderHandler() {
       }
       
       // 通知其他组件文件夹已选中
-      window.dispatchEvent(new CustomEvent('home-folder-selected', {
-        detail: currentFolder.value
-      }))
+      miraEventBus.emit('home-folder-selected', currentFolder.value)
       
       return true
     } catch (err) {
@@ -120,7 +119,7 @@ export function useHomeFolderHandler() {
     }
     
     // 通知其他组件文件夹已清除
-    window.dispatchEvent(new CustomEvent('home-folder-cleared'))
+    miraEventBus.emit('home-folder-cleared', undefined)
     
   }
 
@@ -199,16 +198,15 @@ export function useHomeFolderHandler() {
    * 监听来自路由的文件夹事件
    */
   const listenToRouteEvents = () => {
-    const handleRouteFolder = (event: CustomEvent) => {
-      const { folderId, libraryId, title } = event.detail
+    const handleRouteFolder = ({ folderId, libraryId, title }: { folderId?: string; libraryId?: string; title?: string }) => {
+      if (!folderId) return
       openFolder(folderId, { libraryId, title })
     }
-    
-    window.addEventListener('home-route-folder', handleRouteFolder as EventListener)
+    miraEventBus.on('home-route-folder', handleRouteFolder)
     
     // 返回清理函数
     return () => {
-      window.removeEventListener('home-route-folder', handleRouteFolder as EventListener)
+      miraEventBus.off('home-route-folder', handleRouteFolder)
     }
   }
 

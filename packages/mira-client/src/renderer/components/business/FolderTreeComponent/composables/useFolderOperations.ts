@@ -4,6 +4,7 @@ import type { FolderItem } from '@renderer/types/components'
 import type { MenuItem } from '@/renderer/types/menu'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { useLibraryStore } from '@renderer/stores/library'
+import { miraEventBus } from '@renderer/services/EventBus'
 
 export type ContextType = 'folder' | 'tag'
 type OperationType = 'add' | 'addSub' | 'edit' | 'move' | 'clone' | 'delete'
@@ -342,9 +343,7 @@ export function useFolderOperations(emit: FolderOperationsEmits) {
           await new Promise(resolve => setTimeout(resolve, 100))
           emit['refresh-folders']()
           if (data.autoOpenTab && result) {
-            window.dispatchEvent(new CustomEvent('home-folder-selected', {
-              detail: { id: String(folderId), title: data.title, libraryId, color: data.color }
-            }))
+            miraEventBus.emit('home-folder-selected', { id: String(folderId), title: data.title, libraryId, color: data.color })
           }
         } else {
           const result = await miraSDKService.createTag(
@@ -356,9 +355,7 @@ export function useFolderOperations(emit: FolderOperationsEmits) {
           await new Promise(resolve => setTimeout(resolve, 100))
           emit['refresh-tags']()
           if (data.autoOpenTab && result) {
-            window.dispatchEvent(new CustomEvent('home-tag-selected', {
-              detail: { id: String(tagId), title: data.title, libraryId, color: data.color }
-            }))
+            miraEventBus.emit('home-tag-selected', { id: String(tagId), title: data.title, libraryId, color: data.color })
           }
         }
       }

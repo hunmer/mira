@@ -46,10 +46,15 @@ export class UntaggedTabType extends MediaViewTabType {
   }
 
   shouldUpdateForEvent(tabData: any, eventData: any): boolean {
-    if (tabData?.libraryId !== eventData.libraryId) return false
+    if (String(tabData?.libraryId ?? '') !== String(eventData?.libraryId ?? '')) return false
     // 事件带 tags 信息且为空 → 未标签文件受影响
-    if (eventData.tags && Array.isArray(eventData.tags)) {
-      return eventData.tags.length === 0
+    if (eventData.tags !== undefined && eventData.tags !== null) {
+      const tags = typeof eventData.tags === 'string'
+        ? (() => {
+          try { return JSON.parse(eventData.tags) } catch { return undefined }
+        })()
+        : eventData.tags
+      if (Array.isArray(tags)) return tags.length === 0
     }
     return false
   }
