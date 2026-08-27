@@ -43,6 +43,34 @@ const customHover = ref(false);
 const importHover = ref(false);
 const copyHover = ref(false);
 const emptyHover = ref(false);
+const debugHover = ref(false);
+const debugDrop = ref('');
+const showBatchZones = true;
+const showDebugDropZone = false;
+
+function onDebugDrop(e: DragEvent) {
+  debugHover.value = false;
+  e.preventDefault();
+  e.stopPropagation();
+  const dt = e.dataTransfer;
+  if (!dt) {
+    debugDrop.value = 'dataTransfer: null';
+    console.info('[mira-drag-debug]', debugDrop.value);
+    return;
+  }
+  const types = Array.from(dt.types);
+  const data: Record<string, string> = {};
+  for (const type of types) {
+    if (type === 'Files') continue;
+    try { data[type] = dt.getData(type); } catch (error) { data[type] = `[读取失败: ${String(error)}]`; }
+  }
+  debugDrop.value = JSON.stringify({
+    types,
+    files: Array.from(dt.files ?? []).map(file => ({ name: file.name, type: file.type, size: file.size })),
+    data,
+  }, null, 2);
+  console.info('[mira-drag-debug]', JSON.parse(debugDrop.value));
+}
 
 onMounted(async () => {
   libraryId.value = (await props.getLibraryId().catch(() => null)) ?? '';
@@ -75,6 +103,16 @@ function onRootDrop(e: DragEvent) {
     </div>
 
     <div class="flex min-h-0 flex-1 flex-col gap-2 p-3">
+      <div v-if="showDebugDropZone"
+        class="mira-dropzone w-full text-left"
+        :class="debugHover && 'mira-hover'"
+        @dragover.prevent="debugHover = true"
+        @dragleave="debugHover = false"
+        @drop="onDebugDrop"
+      >
+        <div>接收所有拖拽（诊断）</div>
+        <pre v-if="debugDrop" class="mt-2 max-h-32 overflow-auto whitespace-pre-wrap break-all text-[10px]">{{ debugDrop }}</pre>
+      </div>
       <!-- 顶部 zone:根区直接上传 / 自定义上传(对话框) -->
       <div class="flex gap-2">
         <div
@@ -95,7 +133,7 @@ function onRootDrop(e: DragEvent) {
       </div>
 
       <!-- 批量动作区(拖拽源元素下含多图时) -->
-      <div v-if="batchUrls && batchUrls.length >= 2" class="mira-batch-zones flex gap-2">
+      <div v-if="showBatchZones && batchUrls && batchUrls.length >= 2" class="mira-batch-zones flex gap-2">
         <div
           v-if="onBatchImport"
           class="mira-dropzone w-auto flex-1"

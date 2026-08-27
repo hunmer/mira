@@ -283,10 +283,10 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     // 浏览器只有在 dragover 被取消默认行为时才显示可放置光标。
     // 先统一接受文件/链接拖拽,再由浮层内部决定具体落点。
     const dragTypes = Array.from(e.dataTransfer?.types ?? []);
-    const acceptsExternal = dragTypes.includes('Files')
-      || dragTypes.includes('text/uri-list')
-      || dragTypes.includes('text/html')
-      || dragTypes.includes('text/plain');
+    const acceptsExternal = dragTypes.some(type => {
+      const t = type.toLowerCase();
+      return t === 'files' || t === 'text/plain' || t.includes('html') || t.includes('uri') || t.includes('url') || t.includes('nativeimage') || t.includes('pinterest');
+    });
     if (acceptsExternal) {
       e.preventDefault();
       if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
@@ -297,7 +297,7 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     }
     // 从文件管理器拖入页面时不会触发页面 dragstart;仅凭 dragover 的 Files 类型
     // 也应显示浮层,释放后由 LibraryTreeView 读取 dataTransfer.files 上传。
-    if (!dragOrigin && e.dataTransfer?.types.includes('Files')) {
+    if (!dragOrigin && e.dataTransfer?.types.some(type => type.toLowerCase() === 'files')) {
       dragOrigin = {
         x: e.clientX,
         y: e.clientY,
@@ -323,7 +323,9 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
 
   // drop 在 document 捕获阶段触发时,先让浮层节点完成自身 drop 处理,
   // 再清理全局状态,避免卸载组件导致 upload.files/upload.urls 丢失。
-  function onDocumentDrop() {
+  function onDocumentDrop(e: DragEvent) {
+    // 浮层内部 drop 由组件自己处理(诊断区或树节点);不要在 document 捕获阶段卸载它。
+    if (overlayHost && e.composedPath().includes(overlayHost)) return;
     setTimeout(onDragEnd, 0);
   }
 

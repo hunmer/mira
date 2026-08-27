@@ -34,9 +34,15 @@ function parseUriList(raw: string): string[] {
  */
 function extractUrlsFromHtml(html: string): string[] {
   const imageUrls = new Set<string>();
-  const imgRe = /<img[^>]+src=["']([^"']+)["']/gi;
+  // Pinterest 等站点可能只写 data-src/data-original，或用 srcset 提供多张候选图。
+  const imgRe = /<img\b[^>]*?(?:src|data-src|data-original|data-lazy-src|data-image-url)=["']([^"']+)["'][^>]*>/gi;
   let m: RegExpExecArray | null;
   while ((m = imgRe.exec(html))) imageUrls.add(m[1]);
+  const srcsetRe = /<img\b[^>]*?srcset=["']([^"']+)["'][^>]*>/gi;
+  while ((m = srcsetRe.exec(html))) {
+    const candidates = m[1].split(',').map(candidate => candidate.trim().split(/\s+/)[0]).filter(Boolean);
+    if (candidates.length) imageUrls.add(candidates[candidates.length - 1]);
+  }
   // 图片被 <a> 包裹时，href 通常是图片所在页面，不是待上传资源。
   if (imageUrls.size) return [...imageUrls];
 
@@ -75,7 +81,7 @@ export function parseDrop(e: DragEvent): ParsedDrop {
     for (const u of htmlUrls) urls.add(u);
   }
   if (!htmlHasImage) {
-    const uriList = dt.getData('text/uri-list');
+    const uriList = dt.getData('text/uri-list') || dt.getData('text/x-moz-url') || dt.getData('text/url');
     if (uriList) {
       for (const u of parseUriList(uriList)) urls.add(u);
     }
@@ -90,6 +96,16 @@ export function parseDrop(e: DragEvent): ParsedDrop {
     // 没有标准 URI / 纯文本时，才回退到 HTML 中的链接。
     if (!urls.size) for (const u of htmlUrls) urls.add(u);
   }
+  // Pinterest 专用拖拽数据:application/x-pinterest-closeup-image(JSON previewImageUrl)
+  let pinterestUrl: string | undefined;
+  for (const type of Array.from(dt.types)) {
+    if (!type.toLowerCase().includes('pinterest')) continue;
+    try {
+      const payload = JSON.parse(dt.getData(type));
+      if (typeof payload?.previewImageUrl === 'string') pinterestUrl = payload.previewImageUrl;
+    } catch { /* 非 JSON 或读取失败时忽略 */ }
+  }
+  if (pinterestUrl) { urls.clear(); urls.add(pinterestUrl); }
 
   // data:image base64 可能出现在 text/uri-list 或 text/plain,上面已收
   // 过滤掉非 http(s) / data 协议(javascript: 等不安全)
@@ -104,12 +120,9 @@ export function parseDrop(e: DragEvent): ParsedDrop {
  */
 export function canAcceptDrop(dt: DataTransfer | null): boolean {
   if (!dt) return false;
-  const types = Array.from(dt.types);
-  return (
-    types.includes('Files') ||
-    types.includes('text/uri-list') ||
-    types.includes('text/html') ||
-    types.includes('text/plain')
+  const types = Array.from(dt.types).map(t => t.toLowerCase());
+  return types.includes('files') || types.some(t =>
+    t === 'text/plain' || t.includes('html') || t.includes('uri') || t.includes('url') || t.includes('nativeimage') || t.includes('pinterest'),
   );
 }
 

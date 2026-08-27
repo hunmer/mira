@@ -26,6 +26,10 @@ describe('canAcceptDrop', () => {
     expect(canAcceptDrop({ types: ['text/other'] } as any)).toBe(false);
     expect(canAcceptDrop(null)).toBe(false);
   });
+  it('兼容浏览器 HTML/URL 自定义 MIME', () => {
+    expect(canAcceptDrop({ types: ['text/x-moz-url'] } as any)).toBe(true);
+    expect(canAcceptDrop({ types: ['application/x-moz-nativeimage'] } as any)).toBe(true);
+  });
 });
 
 describe('parseDrop', () => {
@@ -65,6 +69,32 @@ describe('parseDrop', () => {
     expect(urls).toEqual(['https://cdn.site.com/img.webp']);
   });
 
+  it('text/html:提取 Pinterest 常见 data-src 和 srcset 中的多张图片', () => {
+    const { urls } = parseDrop(
+      makeEvent({
+        types: ['text/html'],
+        data: {
+          'text/html': '<div><img data-src="https://cdn.site.com/a.jpg"><img srcset="https://cdn.site.com/b.jpg 1x, https://cdn.site.com/b@2x.jpg 2x"></div>',
+        },
+      }),
+    );
+    expect(urls).toEqual([
+      'https://cdn.site.com/a.jpg',
+      'https://cdn.site.com/b@2x.jpg',
+    ]);
+  });
+
+  it('Pinterest payload 优先,避免同一图片的 HTML/srcset 候选重复上传', () => {
+    const { urls } = parseDrop(makeEvent({
+      types: ['application/x-pinterest-closeup-image', 'text/html'],
+      data: {
+        'application/x-pinterest-closeup-image': JSON.stringify({ previewImageUrl: 'https://i.pinimg.com/736x/pin.jpg' }),
+        'text/html': '<img src="https://i.pinimg.com/236x/pin.jpg" srcset="https://i.pinimg.com/474x/pin.jpg 1x, https://i.pinimg.com/736x/pin.jpg 2x">',
+      },
+    }));
+    expect(urls).toEqual(['https://i.pinimg.com/736x/pin.jpg']);
+  });
+
   it('text/plain 裸链接也被识别', () => {
     const { urls } = parseDrop(
       makeEvent({
@@ -73,6 +103,17 @@ describe('parseDrop', () => {
       }),
     );
     expect(urls).toEqual(['https://example.com/photo.gif']);
+  });
+
+  it('Pinterest 专用 MIME:从 JSON previewImageUrl 提取图片', () => {
+    const { urls } = parseDrop(makeEvent({
+      types: ['application/x-pinterest-closeup-image', 'chromium/x-drag-id'],
+      data: {
+        'application/x-pinterest-closeup-image': JSON.stringify({ previewImageUrl: 'https://i.pinimg.com/736x/a.jpg' }),
+      },
+    }));
+    expect(urls).toEqual(['https://i.pinimg.com/736x/a.jpg']);
+    expect(canAcceptDrop({ types: ['application/x-pinterest-closeup-image'] } as any)).toBe(true);
   });
 
   it('非 url 的纯文本被忽略', () => {
