@@ -53,9 +53,9 @@ const props = defineProps<{
   dialog?: LibraryTreeDialog;
   /** 上传服务:提供后启用拖放/选择文件上传 */
   upload?: LibraryTreeUpload;
-  /** 拖放文件/链接回调:与默认上传互斥,仅在默认上传关闭时触发(未显式传开关时提供本回调即视为关闭) */
+  /** 拖放文件/链接回调:与默认上传互斥,仅在默认上传关闭时触发(提供了本回调且未显式开默认上传时即走回调) */
   fileDrop?: (payload: LibraryTreeFileDropPayload) => void;
-  /** 是否使用默认拖放上传(经 defaultDropUpload 路由到 upload 服务);缺省 true(提供了 fileDrop 时缺省 false),false 时走 fileDrop 回调 */
+  /** 是否使用默认拖放上传(经 defaultDropUpload 路由到 upload 服务);提供了 fileDrop 时需显式传 true 才走默认上传 */
   useDefaultDropUpload?: boolean;
   /** 默认拖放上传模式:direct=直接走 upload.files/urls(缺省);dialog=打开 upload.pick 对话框并预填(未提供 pick 回退 direct) */
   defaultDropUploadMode?: LibraryTreeDropUploadMode;
@@ -170,8 +170,11 @@ function dispatchFileDrop(e: DragEvent, node?: LibraryTreeNode) {
   const target = node
     ? (props.mode === 'folder' ? { folderId: node.id } : { tags: [node.title] })
     : undefined;
-  // 缺省规则:未显式传 useDefaultDropUpload 时,提供 fileDrop 即视为自定义(关闭默认上传)
-  const useDefault = props.useDefaultDropUpload ?? !props.fileDrop;
+  // 缺省规则:提供 fileDrop 即视为自定义(走回调);未提供则始终走默认上传。
+  // 注意 Vue 对 Boolean prop 未传时缺省为 false(非 undefined),不能用 ?? 判断"未传":
+  // - 有 fileDrop: 开关显式传 true 才走默认上传(压制回调),缺省 false 走回调
+  // - 无 fileDrop: 无回调可走,直接默认上传(开关无意义,安全兜底)
+  const useDefault = props.fileDrop ? props.useDefaultDropUpload === true : true;
   if (useDefault) {
     defaultDropUpload(props.upload, files, urls, target, props.defaultDropUploadMode);
     return;

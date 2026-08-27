@@ -85,10 +85,11 @@
   --ring: oklch(0.556 0 0);
 }
 
-/* 品牌绿主色(树高亮/选中随 --primary 同色) */
+/* 品牌绿主色(树高亮/选中随 --primary 同色) + 左右两栏树加宽浮层 */
 .mira-dragdrop {
   --primary: #4ade80;
   --primary-foreground: #052e16;
+  width: min(660px, 94vw);
 }
 
 /* 原 dragdrop 专属布局样式(自 dragdrop.ts 迁入) */

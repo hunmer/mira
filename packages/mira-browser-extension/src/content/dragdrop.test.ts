@@ -144,18 +144,21 @@ describe('clampOverlayTop', () => {
 });
 
 describe('createDragDrop lifecycle', () => {
-  // 浮层(Vue 版)挂载在 #mira-dragdrop-host 容器内(无 shadow root),DOM 断言直接查 document
+  // 浮层挂载在 #mira-dragdrop-host 的 Shadow DOM 内,查询需穿透 shadow root
+  function overlayRoot(): ShadowRoot | null {
+    return document.getElementById('mira-dragdrop-host')?.shadowRoot ?? null;
+  }
   function overlayQuery<T extends HTMLElement>(selector: string): T | null {
-    return document.querySelector(selector) as T | null;
+    return overlayRoot()?.querySelector(selector) as T | null ?? null;
   }
   function overlayQueryAll<T extends HTMLElement>(selector: string): T[] {
-    return Array.from(document.querySelectorAll(selector)) as T[];
+    return Array.from(overlayRoot()?.querySelectorAll(selector) ?? []) as T[];
   }
 
   afterEach(() => {
     vi.restoreAllMocks();
     (window as any).__miraDragDropController__?.destroy();
-    document.querySelectorAll('.mira-overlay, #mira-overlay-base-style, #mira-dragdrop-style, #mira-dragdrop-host').forEach(el => el.remove());
+    document.querySelectorAll('#mira-dragdrop-host, #mira-overlay-base-style, #mira-dragdrop-style').forEach(el => el.remove());
   });
 
   it('重复初始化时销毁旧 controller，只保留最新实例', () => {

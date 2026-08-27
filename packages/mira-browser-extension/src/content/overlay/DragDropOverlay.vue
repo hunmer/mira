@@ -1,13 +1,13 @@
 <script setup lang="ts">
 /**
- * 拖拽上传浮层(Vue 版,挂载在 shadow DOM 内,宿主为 dragdrop.ts)。
+ * 拖拽上传浮层(Vue 版,宿主为 dragdrop.ts)。
  *
  * 外层 dragdrop.ts 负责拖拽侦测/浮层定位/页面级自动滚动;
  * 这里承载浮层 UI:
  *  - 顶部 zone:「📂 不设文件夹」(根区直接上传) + 「⚙ 自定义上传」(走宿主上传对话框/sidepanel)
  *  - 批量动作区(拖拽源元素下含多图时):批量导入 / 批量复制url
- *  - mira-plugin-ui 的 LibraryTreeView(文件夹/标签 tab 切换,树内拖放默认直接上传,
- *    右键「上传到此处」/工具栏上传走 upload.pick = 自定义上传对话框)
+ *  - 左右两栏树:文件夹树 | 标签树(mira-plugin-ui 的 LibraryTreeView,
+ *    树内拖放默认直接上传,右键「上传到此处」/工具栏上传走 upload.pick = 自定义上传对话框)
  *  - 未连接素材库时树区域替换为空态 zone,拖入释放打开自定义上传
  * 数据与动作全部经 props 注入(services/upload/回调),组件不直接访问 chrome API。
  */
@@ -35,7 +35,6 @@ const props = defineProps<{
   onDropped: () => void;
 }>();
 
-const tab = ref<'folder' | 'tag'>('folder');
 const libraryId = ref('');
 /** null=探测中;false=未连接(树区域替换为空态 zone) */
 const connected = ref<boolean | null>(null);
@@ -71,21 +70,8 @@ function onRootDrop(e: DragEvent) {
 
 <template>
   <div class="mira-overlay mira-dragdrop dark">
-    <!-- 标题 + 文件夹/标签 tab -->
-    <div class="mira-overlay-header flex items-center justify-between gap-2 border-b border-border px-3.5 py-2.5">
+    <div class="mira-overlay-header flex items-center justify-between border-b border-border px-3.5 py-2.5">
       <span class="text-[13px] font-semibold">{{ connected === false ? '未连接素材库' : '拖到下方上传到 Mira' }}</span>
-      <div v-if="connected !== false" class="flex gap-1">
-        <button
-          v-for="m in (['folder', 'tag'] as const)"
-          :key="m"
-          type="button"
-          class="cursor-pointer rounded-md border-none px-2 py-0.5 text-xs transition-colors duration-100"
-          :class="tab === m
-            ? 'bg-primary text-primary-foreground'
-            : 'bg-transparent text-muted-foreground hover:bg-accent hover:text-foreground'"
-          @click="tab = m"
-        >{{ m === 'folder' ? '文件夹' : '标签' }}</button>
-      </div>
     </div>
 
     <div class="flex min-h-0 flex-1 flex-col gap-2 p-3">
@@ -138,15 +124,28 @@ function onRootDrop(e: DragEvent) {
         @drop.prevent="() => { emptyHover = false; onDropped(); onCustomUpload(); }"
       >未连接到素材库，将文件拖拽到此处打开侧边栏</div>
 
-      <!-- 树:拖到节点直接上传到目标文件夹/标签;右键「上传到此处」走自定义上传对话框 -->
-      <div v-else class="h-[44vh] min-h-0 overflow-hidden rounded-lg border border-border">
-        <LibraryTreeView
-          :mode="tab"
-          :library-id="libraryId"
-          :services="services"
-          :upload="upload"
-          :show-dropzone="false"
-        />
+      <!-- 左右两栏树:文件夹树 | 标签树;拖到节点直接上传到目标,右键「上传到此处」走自定义上传对话框 -->
+      <div v-else class="grid min-h-0 flex-1 grid-cols-2 gap-2">
+        <div class="h-[44vh] min-h-0 overflow-hidden rounded-lg border border-border" @dragover.prevent @drop.prevent>
+          <LibraryTreeView
+            mode="folder"
+            :library-id="libraryId"
+            :services="services"
+            :upload="upload"
+            :use-default-drop-upload="true"
+            :show-dropzone="false"
+          />
+        </div>
+        <div class="h-[44vh] min-h-0 overflow-hidden rounded-lg border border-border" @dragover.prevent @drop.prevent>
+          <LibraryTreeView
+            mode="tag"
+            :library-id="libraryId"
+            :services="services"
+            :upload="upload"
+            :use-default-drop-upload="true"
+            :show-dropzone="false"
+          />
+        </div>
       </div>
     </div>
   </div>

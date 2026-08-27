@@ -5,9 +5,9 @@ import { dbg } from '@/shared/debug';
 import { parseDrop, urlKind } from '@/shared/drag-data';
 import type { ResourceKind } from '@/shared/types';
 import DragDropOverlay from './overlay/DragDropOverlay.vue';
-// 浮层样式(tailwind utilities + shadcn 令牌,无 preflight):crxjs 自动收集进 content_scripts.css 注入 document
-import './overlay/dragdrop-overlay.css';
-import { ensureOverlayStyles } from './overlay/styles';
+// 仅在浮层 Shadow DOM 内加载,避免 Tailwind utilities 污染宿主页面
+import dragdropOverlayCssUrl from './overlay/dragdrop-overlay.css?url';
+import { ensureOverlayStyles, OVERLAY_BASE_CSS } from './overlay/styles';
 
 export interface DragDropPayload {
   /** 已有 File(本地拖动文件) */
@@ -280,14 +280,36 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
 
   /** document 级 dragover:判断位移,首次超过阈值时按拖拽方向显示浮层 */
   function onDragOverDoc(e: DragEvent) {
+    // 浏览器只有在 dragover 被取消默认行为时才显示可放置光标。
+    // 先统一接受文件/链接拖拽,再由浮层内部决定具体落点。
+    const dragTypes = Array.from(e.dataTransfer?.types ?? []);
+    const acceptsExternal = dragTypes.includes('Files')
+      || dragTypes.includes('text/uri-list')
+      || dragTypes.includes('text/html')
+      || dragTypes.includes('text/plain');
+    if (acceptsExternal) {
+      e.preventDefault();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+    }
     if (!dragOrigin && pointerOrigin) {
       dragOrigin = pointerOrigin;
       dbg.warn('dragdrop', 'dragstart missed, recovered from pointer candidate', { source: dragOrigin.source });
     }
+    // 从文件管理器拖入页面时不会触发页面 dragstart;仅凭 dragover 的 Files 类型
+    // 也应显示浮层,释放后由 LibraryTreeView 读取 dataTransfer.files 上传。
+    if (!dragOrigin && e.dataTransfer?.types.includes('Files')) {
+      dragOrigin = {
+        x: e.clientX,
+        y: e.clientY,
+        source: { url: '', kind: 'image' },
+        target: null,
+      };
+    }
     if (!dragOrigin || overlayHost) return; // 已显示或无起点不处理
+    const externalFiles = !dragOrigin.target && dragOrigin.source.url === '';
     const dx = e.clientX - dragOrigin.x;
     const dy = e.clientY - dragOrigin.y;
-    if (Math.abs(dx) < SHOW_THRESHOLD && Math.abs(dy) < SHOW_THRESHOLD) return;
+    if (!externalFiles && Math.abs(dx) < SHOW_THRESHOLD && Math.abs(dy) < SHOW_THRESHOLD) return;
     dbg.log('dragdrop', 'dragover exceed threshold → show', { dx, dy });
     showOverlay(dragOrigin.source, dragOrigin.target, e.clientX, e.clientY, dx, dy);
   }
@@ -297,6 +319,12 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     dragOrigin = null;
     pointerOrigin = null;
     hideOverlay();
+  }
+
+  // drop 在 document 捕获阶段触发时,先让浮层节点完成自身 drop 处理,
+  // 再清理全局状态,避免卸载组件导致 upload.files/upload.urls 丢失。
+  function onDocumentDrop() {
+    setTimeout(onDragEnd, 0);
   }
 
   /** 懒加载文件夹列表(dragstart 时触发,多次 dragstart 复用同一次请求) */
@@ -477,10 +505,28 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     hideOverlay();
     dbg.info('dragdrop', 'showOverlay', { source, hasGetFolders: !!handlers.getFolders, hasGetTags: !!handlers.getTags, x, y, dx, dy });
 
-    // 挂载容器:浮层根 .mira-overlay 自身 fixed 定位,容器只承担 Vue 挂载点与事件聚合
+    // 挂载在 Shadow DOM 内,隔离 Tailwind utilities / 主题变量与宿主页面
     const mount = document.createElement('div');
     mount.id = 'mira-dragdrop-host';
     document.documentElement.appendChild(mount);
+    const shadow = mount.attachShadow({ mode: 'open' });
+    const baseStyle = document.createElement('style');
+    baseStyle.textContent = OVERLAY_BASE_CSS;
+    shadow.appendChild(baseStyle);
+    const cssUrl = typeof chrome !== 'undefined' && chrome.runtime?.getURL
+      ? chrome.runtime.getURL(dragdropOverlayCssUrl.replace(/^\/+/, ''))
+      : new URL(dragdropOverlayCssUrl, import.meta.url).href;
+    // ShadowRoot 内的 <link> 在部分页面 CSP 下会被拦截;通过扩展上下文 fetch
+    // 读取产物后写入 <style>,确保样式可用且仍不会泄漏到宿主文档。
+    const shadowStyle = document.createElement('style');
+    shadowStyle.dataset.miraDragdrop = 'tailwind';
+    shadow.appendChild(shadowStyle);
+    void fetch(cssUrl)
+      .then(response => response.ok ? response.text() : Promise.reject(new Error(`CSS ${response.status}`)))
+      .then(css => { shadowStyle.textContent = css; })
+      .catch(error => {
+        dbg.warn('dragdrop', 'shadow stylesheet fetch failed', { cssUrl, error });
+      });
 
     vueApp = createApp(DragDropOverlay, {
       source,
@@ -497,10 +543,10 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
       onCopyUrls: handlers.onCopyUrls,
       onDropped: hideOverlay,
     });
-    vueApp.mount(mount);
+    vueApp.mount(shadow);
 
     overlayHost = mount;
-    overlayRoot = mount.querySelector<HTMLElement>('.mira-overlay');
+    overlayRoot = shadow.querySelector<HTMLElement>('.mira-overlay');
     // 树数据异步填充 → 高度变化 → 重钳制,防超出视口底部
     if (overlayRoot && resizeObserver) resizeObserver.observe(overlayRoot);
     attachAutoScroll(mount);
@@ -527,7 +573,7 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     document.removeEventListener('dragstart', onDragStart, true);
     document.removeEventListener('dragover', onDragOverDoc, true);
     document.removeEventListener('dragend', onDragEnd, true);
-    document.removeEventListener('drop', onDragEnd, true);
+    document.removeEventListener('drop', onDocumentDrop, true);
     listenersAttached = false;
   }
 
@@ -540,7 +586,7 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     document.addEventListener('dragstart', onDragStart, true);
     document.addEventListener('dragover', onDragOverDoc, true);
     document.addEventListener('dragend', onDragEnd, true);
-    document.addEventListener('drop', onDragEnd, true);
+    document.addEventListener('drop', onDocumentDrop, true);
     listenersAttached = true;
   }
 
