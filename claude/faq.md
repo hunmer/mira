@@ -14,7 +14,11 @@
 
 ## Q: 服务端和客户端的模块版本为什么和旧文档不一致?
 
-旧根文档曾写 core v1.0.24 / server v1.0.25,实际两者均已升至 **v2.0.1**(本次 2026-08-05 更新已修正)。
+core/server/client 当前均为 **v3.0.1**(2026-08-24 起;v3.0.0 = 导入三模式 + 设备分享 + 跨库导入,详见根 [CLAUDE.md](../CLAUDE.md) 扫描状态)。
+
+## Q: 文件导入的 copy/move/link 三种模式有什么区别?
+
+见 `docs/library-import-modes.md`:copy 完整副本(库内 `path=NULL`)、move 复制后源文件进系统回收站、link 符号链接(Windows 无权限时回退硬链接,`path` 存源路径);库级 `customFields.importType` 配置,改后即时生效。
 
 ## Q: 如何加一个新的 shadcn-vue 组件?
 
@@ -26,8 +30,11 @@
 
 ## Q: 客户端弹出层动画在 dev 下不生效?
 
-这是当前已知的未决技术债,排查记录见根目录 `handoff-dropdown-animation.md`。生产构建下正常。
+这是当前已知的未决技术债,排查记录见 `handoff/handoff-dropdown-animation.md`(已移入 handoff/ 目录)。生产构建下正常。
 
-## Q: 哪里看迁移整体进度?
+## Q: AI 上下文/交接类文档放在哪?
 
-根目录 `task_plan.md`(Phase 1–8 计划)与 `progress.md`(进度,已全部 complete)。这些是迁移期临时文件。
+- 各模块 AI 上下文:各目录 `CLAUDE.md` + `claude/` 详情文件
+- 任务交接设计文档:根目录 `handoff/`(device-share、dropdown-animation、thumbnail-cache、float-window、tiptap-notion)
+- SDK 覆盖审计:`.audit/`(manifest、coverage-report、decide 工具)
+- 迁移期的 `task_plan.md`/`progress.md` 与 `.claude/`、`tool.js`、`deploy.bat` 等已于 2026-08-24/25 清理删除

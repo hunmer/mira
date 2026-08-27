@@ -66,8 +66,11 @@ Mira 服务端插件集合(当前 **16 个**)。插件由 `ServerPluginManager`(
 | mira_swf_format | [plugins/mira_swf_format/CLAUDE.md](plugins/mira_swf_format/CLAUDE.md) |
 | mira_zipper_format | [plugins/mira_zipper_format/CLAUDE.md](plugins/mira_zipper_format/CLAUDE.md) |
 | pdf-viewer | [plugins/pdf-viewer/CLAUDE.md](plugins/pdf-viewer/CLAUDE.md) |
+| mira_image_cropper | [plugins/mira_image_cropper/CLAUDE.md](plugins/mira_image_cropper/CLAUDE.md) |
+| mira_format_converter | [plugins/mira_format_converter/CLAUDE.md](plugins/mira_format_converter/CLAUDE.md) |
+| mira_ai_sdk | [plugins/mira_ai_sdk/CLAUDE.md](plugins/mira_ai_sdk/CLAUDE.md) |
 
-> 16 个活跃插件中 13 个有独立 `CLAUDE.md`(三个新深度插件暂无)。
+> 16 个活跃插件全部有独立 `CLAUDE.md`(2026-08-25 补齐三个深度插件)。
 
 ## 已移除
 
@@ -78,8 +81,8 @@ Mira 服务端插件集合(当前 **16 个**)。插件由 `ServerPluginManager`(
 
 ## 扫描状态
 
-- **更新时间**: 2026-08-23
-- **已扫描**: `plugins/plugins/` 全部 16 个 git 跟踪目录;三个新深度插件的 index.ts 头部与 package.json;双注册表(`plugins.json` 3 条 / server 运行时 11 条)核对
-- **本次更新(2026-08-23)**: 插件 14→16(新增 mira_image_cropper/mira_format_converter/mira_ai_sdk,均为「HTTP 路由 + web/ SPA」深度插件形态,默认 enabled);recommend 12→11 条;新增源码侧展示注册表 `plugins/plugins/plugins.json`(3 条);mira_n8n 删除落档
-- **下一步建议**: 为三个新深度插件补建独立 CLAUDE.md;深扫 mira_ai_sdk 的 provider 管理 web 前端
+- **更新时间**: 2026-08-25
+- **已扫描**: `plugins/plugins/` 全部 16 个 git 跟踪目录;三个深度插件 index.ts 全文与 web/ 结构;三份注册表(展示 3 / 推荐 11 / server 运行时 11)核对
+- **本次更新(2026-08-25)**: **补齐 mira_image_cropper / mira_format_converter / mira_ai_sdk 三个独立 CLAUDE.md(16/16 齐全)**;落档清理事件——`plugins/librarys.json` 与 `librarys-mac.json` 删除(08-25,旧本机库注册表快照)、4 个 `data/config.json` 运行时文件从 git 移除(08-24,`.gitignore` 兜底)、mira_ai_sdk `components/AiSdkManager.js` 重构为「AI 测试」合并对话框(08-24)
+- **下一步建议**: 无紧迫项;可选:深扫 mira_tiptap_format web 端编辑器(85 文件)实现体
 - **web/ 与 online_client_plugins/ 关系**(2026-08-23 核对): 三个新插件的 `web/` 即客户端应用本体;`online_client_plugins/` 是**纯客户端插件市场**(已建独立 CLAUDE.md),两者渠道不同但形态趋同

@@ -4,36 +4,37 @@
 
 ## 活跃包(packages/)
 
-### mira-app-core (v2.0.8)
+### mira-app-core (v3.0.1)
 
 - 路径:`packages/mira-app-core`
 - 语言:TypeScript
 - 职责:核心库 —— 事件管理器(EventManager)、库列表管理、共享类型
 - 子模块:
-  - `src/storage/sqlite/`:SQLite 存储(ILibraryServerData / LibraryServerDataSQLite,文件/文件夹/标签 CRUD、事务、统计、MetadataImport)
-  - `src/shared/sdk/`:TypeScript SDK(MiraClient、HttpClient、WebSocketClient、17 个 API 模块,含 CookieSite/Settings/Admin/Download/FileSystem/Statistics/Thumbnail)
+  - `src/storage/sqlite/`:SQLite 存储(ILibraryServerData / LibraryServerDataSQLite,文件/文件夹/标签 CRUD、事务、统计、MetadataImport、**文件导入三模式 copy/move/link**)
+  - `src/shared/sdk/`:TypeScript SDK(MiraClient、HttpClient、WebSocketClient、17 个 API 模块,含 CookieSite/Settings/Admin/Download/FileSystem/Statistics/Thumbnail;v3.0 新增设备分享票据、用户文件读写、跨库导入、重复扫描 matchMode)
 - 入口:`src/index.ts`
-- 测试:vitest(27 个测试文件 + test-helpers)
+- 测试:vitest(27+ 个测试文件 + test-helpers + contract 测试)
 
-### mira-app-server (v2.0.9)
+### mira-app-server (v3.0.1)
 
 - 路径:`packages/mira-app-server`
 - 语言:TypeScript
-- 职责:独立服务端 —— Express HTTP(19 路由)+ WebSocket、素材库管理、插件管理器(双协议)、用户认证、内置 ThumbnailService / SettingsManager、MCP 服务(`--mcp` stdio)、数据同步(`src/sync/`)
+- 职责:独立服务端 —— Express HTTP(19 路由)+ WebSocket(含**设备间二进制端到端转发**)、素材库管理、插件管理器(双协议)、用户认证、内置 ThumbnailService / SettingsManager(插件源设置)、LibraryImportService(**Eagle/Billfish 跨库导入**)、MCP 服务(`--mcp` stdio)、数据同步(`src/sync/`)
 - 入口:`src/index.ts` | CLI:`src/cli.ts` + `src/cli/commands/`(顶层 5 命令 + 11 个域子命令 + doctor)
 - 关键文件:`src/ServerPluginManager.ts`(同时实现 `ServerPlugin` 基类与 `FileFormatManager.registerFileFormat` 两套协议)
-- 测试:Jest(`sdk/` 目录)
+- 静态资源:`public/pair.html` 设备配对页 + `public/vendor/`(vue/mira-plugin-ui/jszip)+ `public/sdk/mira-sdk.esm.mjs`
+- 测试:Jest(`sdk/` 目录)+ node --test(`src/sync/`)
 
-### mira-client (v2.0.9,mira-web)
+### mira-client (v3.0.1,mira-web)
 
 - 路径:`packages/mira-client`
 - 语言:TypeScript / Vue 3.5
-- 职责:Electron 桌面客户端 —— 媒体浏览/预览/管理、插件系统、Tab 导航、Pinia Store(15 个)、i18n(vue-i18n 11,zh-CN/en-US)
+- 职责:Electron 桌面客户端 —— 媒体浏览/预览/管理、插件系统、Tab 导航、Pinia Store(15 个)、i18n(vue-i18n 11,zh-CN/en-US)、**设备间分享(DeviceShareDialog + WS 二进制)**、**按库独立多开窗口**
 - 多窗口:`main`(主进程)、`renderer`(主 UI)、`preload`、`floating-ball-window`(悬浮球)、`notification-window`、`search-window`、`screenshot-window`(截图采集)
 - 入口:`src/main/main.ts`(主进程)、`src/renderer/`(渲染进程)
-- UI 技术栈:Tailwind v4 + shadcn-vue(new-york,基于 reka-ui,53 组件);**迁移已完成,合并到 main**
-- 测试:`procm-ui-tests/`(约 30 个 UI 用例,`pnpm run test:ui:remote`)+ `DownloadService.test.ts`;门禁 `pnpm run type-check`
-- 08-20 后新增:截图窗口(`screenshot-window/` + ScreenshotHandlers)、插件受控执行(PluginExecHandlers:ffmpeg/scenedetect 白名单)、Dashboard 卡片体系(grid-layout-plus + tabs/dashboard/cards/)、WebviewTabView + FaviconCacheService
+- UI 技术栈:Tailwind v4 + shadcn-vue(new-york,基于 reka-ui,**58 组件目录**);迁移已完成
+- 测试:`procm-ui-tests/`(31 文件 UI 用例,`pnpm run test:ui:remote`)+ `DownloadService.test.ts` + node --test 分屏/媒体 Tab 纯函数(`pnpm run test:split-tabs`);门禁 `pnpm run type-check`
+- 08-23 后新增:设备分享全链路、HomeView 侧边栏拆分(SidebarModuleList 886 行→8 文件)、LocalFolderTabView 拆分(13 子文件)、媒体 Tab 区块注册表(tabSections)、设置分区收敛 10→7(新 ExtensionsPanel/FileSharePanel)、ESLint 9 flat config、`fs.getPathForFile` preload API
 
 ### mira_mobile (v1.0.0+1)
 
@@ -74,11 +75,11 @@
 
 - 路径:`packages/mira-dashboard-next`
 - 语言:TypeScript / Vue 3.5
-- 职责:Web 管理面板 —— shadcn-vue 2.7 + Tailwind v4,功能页面 + 认证页,i18n 支持;API 层已迁移到 mira-app-core SDK(`src/lib/miraClient.ts`,12/13 模块)
+- 职责:Web 管理面板 —— shadcn-vue 2.7 + Tailwind v4,功能页面 + 认证页,i18n 支持;API 层走 mira-app-core SDK(`src/lib/miraClient.ts`,13 个 api 模块基本全走 SDK,少量老接口仍 axios);08-24 后新增 `/server` 运维页(SSE 实时日志/健康检查/停止服务,仅 super)、Eagle/Billfish `ImportDialog`、settings 拆 5 面板
 - 入口:`src/main.ts`
 - 测试:无
 
-### mira-browser-extension (v0.1.0)
+### mira-browser-extension (v0.0.1)
 
 - 路径:`packages/mira-browser-extension`
 - 语言:TypeScript / Vue 3
@@ -133,7 +134,7 @@
 
 ## 插件(plugins/)
 
-> **双协议**:旧版 `extends ServerPlugin` 深度介入服务端;新版 `registerFileFormat(ServerFileFormatHandler)` 声明格式扩展与缩略图。共 **16 个**(深度 5 + 格式 11)。注册表:`plugins/plugins/plugins.recommend.json`(推荐 11 条)、`plugins/plugins/plugins.json`(源码侧展示 meta 3 条)、`packages/mira-app-server/src/plugins/plugins.json`(服务端运行时 11 条)。
+> **双协议**:旧版 `extends ServerPlugin` 深度介入服务端;新版 `registerFileFormat(ServerFileFormatHandler)` 声明格式扩展与缩略图。共 **16 个**(深度 5 + 格式 11),**全部有独立 CLAUDE.md**。注册表:`plugins/plugins/plugins.recommend.json`(推荐 11 条)、`plugins/plugins/plugins.json`(源码侧展示 meta 3 条)、`packages/mira-app-server/src/plugins/plugins.json`(服务端运行时 11 条)。插件运行时数据(`data/`)已全部 git 忽略(2026-08-24 清理)。
 
 | 插件 | 版本 | 路径 | 协议 | 职责 |
 |------|------|------|------|------|
@@ -160,20 +161,17 @@
 
 **插件市场源仓库**(已建独立 [CLAUDE.md](../online_client_plugins/CLAUDE.md)):`scripts/build-client-plugins-index.mjs` 扫描含 `plugin.json` 的子目录生成 `plugins.json` 索引(sha256 + 原子写入),客户端从市场源 HTTP 地址拉取索引、下载插件到本地加载。与 `plugins/plugins/*/web`(服务端插件的查看器/SPA,由服务端静态托管、客户端加载)是两套独立机制,但 08-20 后三个新深度插件的 `web/` 形态已与在线插件趋同。
 
-当前索引共 **8 个**(2026-08-23 核对,generatedAt 2026-08-21):
+当前索引共 **5 个**(2026-08-25 核对,generatedAt 2026-08-24T11:21Z):
 
 | 在线插件 | 来源/类型 | 说明 |
 |----------|-----------|------|
-| mira-video-editor | 大型工具 | 视频剪辑器 v1.0.0:片段剪辑、PySceneDetect 场景分割、delogo、批量导出;依赖宿主 PluginExecHandlers 受控 ffmpeg/scenedetect |
+| mira-video-editor | 大型工具 | 视频剪辑器 v1.0.0:片段剪辑、PySceneDetect 场景分割、delogo、批量导出;依赖宿主 PluginExecHandlers 受控 ffmpeg/scenedetect(61 文件/约 1.3 万行,市场内最大) |
 | image-search | 采集 | 以图搜图聚合 v3.0.0:Pinterest + Google/Bing/Yandex/TinEye/SauceNAO/搜狗,webview 内嵌 |
-| mira-3d-format-preview | 格式预览 | GLB/GLTF 可交互 3D 预览 v1.2.1 |
-| mira-spine-format-preview | 格式预览 | Spine 4.2 骨骼动画预览 v1.0.0 |
-| psd-viewer | 格式预览 | PSD/PSB 浏览器本地分层预览 v1.0.0 |
 | mira-whiteboard | 独立 SPA(vite) | 自由白板 v1.0.0,@woven-canvas/vue 无限画板 + 独立窗口 |
 | mira-custom-tab-demo | 演示 | 自定义 Tab Demo v1.0.0,注册 Tab + DOM 回调渲染 |
-| mira-welcome-demo | 演示 | 欢迎示例 v1.0.0,配置/事件/UI/日志能力演示 |
+| mira-welcome-demo | 演示 | 欢迎示例插件 v1.0.0,配置/事件/UI/日志能力演示 |
 
-另有 `mira-pinterest-search-v2`(Pinterest 搜索 v2,重写自已删除的 v1)暂无 plugin.json,仅 dist 产物被跟踪,未入索引。
+> 2026-08-24 起 `mira-3d-format-preview`/`mira-spine-format-preview`/`psd-viewer`/`mira-pinterest-search-v2` 已从市场撤下(git 移除,磁盘仅剩 node_modules 空壳);格式预览能力由 `plugins/plugins/*` 服务端插件的 `web/` 承接。
 
 ## 已移除/合并模块
 
