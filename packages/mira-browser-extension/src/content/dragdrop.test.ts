@@ -144,10 +144,18 @@ describe('clampOverlayTop', () => {
 });
 
 describe('createDragDrop lifecycle', () => {
+  // 浮层(Vue 版)挂载在 #mira-dragdrop-host 容器内(无 shadow root),DOM 断言直接查 document
+  function overlayQuery<T extends HTMLElement>(selector: string): T | null {
+    return document.querySelector(selector) as T | null;
+  }
+  function overlayQueryAll<T extends HTMLElement>(selector: string): T[] {
+    return Array.from(document.querySelectorAll(selector)) as T[];
+  }
+
   afterEach(() => {
     vi.restoreAllMocks();
     (window as any).__miraDragDropController__?.destroy();
-    document.querySelectorAll('.mira-overlay, #mira-overlay-base-style, #mira-dragdrop-style').forEach(el => el.remove());
+    document.querySelectorAll('.mira-overlay, #mira-overlay-base-style, #mira-dragdrop-style, #mira-dragdrop-host').forEach(el => el.remove());
   });
 
   it('重复初始化时销毁旧 controller，只保留最新实例', () => {
@@ -162,10 +170,9 @@ describe('createDragDrop lifecycle', () => {
     expect(second.health().listenersAttached).toBe(true);
   });
 
-  it('pageshow 后恢复被移除的样式并保持监听可用', () => {
+  it('pageshow 后恢复监听可用(浮层样式已随 bundle 内嵌 shadow,不再依赖 document 样式节点)', () => {
     const controller = createDragDrop({ onUpload: vi.fn() });
     document.getElementById('mira-overlay-base-style')?.remove();
-    document.getElementById('mira-dragdrop-style')?.remove();
 
     window.dispatchEvent(new Event('pageshow'));
 
@@ -186,6 +193,7 @@ describe('createDragDrop lifecycle', () => {
     createDragDrop({
       onUpload: vi.fn(),
       getFolders: async () => [],
+      getLibraryId: async () => 'lib-1',
       createFolder: async () => 42,
       openCustomUpload,
     });
@@ -196,12 +204,12 @@ describe('createDragDrop lifecycle', () => {
     img.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0, clientX: 10, clientY: 10 }));
     img.dispatchEvent(new MouseEvent('dragstart', { bubbles: true, clientX: 10, clientY: 10 }));
     document.dispatchEvent(new MouseEvent('dragover', { bubbles: true, clientX: 100, clientY: 10 }));
-    const customUpload = document.querySelector<HTMLElement>('.mira-custom-upload');
+    const customUpload = overlayQuery<HTMLElement>('.mira-custom-upload');
     expect(customUpload?.textContent).toContain('自定义上传');
     customUpload?.dispatchEvent(new MouseEvent('drop', { bubbles: true }));
     expect(openCustomUpload).toHaveBeenCalledOnce();
     expect(openCustomUpload).toHaveBeenCalledWith({ url: img.src, kind: 'image' });
-    expect(document.querySelector('.mira-overlay input')).toBeNull();
+    expect(overlayQuery('.mira-overlay input')).toBeNull();
     img.remove();
   });
 
@@ -210,7 +218,7 @@ describe('createDragDrop lifecycle', () => {
       callback(0);
       return 1;
     });
-    createDragDrop({ onUpload: vi.fn() });
+    createDragDrop({ onUpload: vi.fn(), getLibraryId: async () => 'lib-1' });
     const img = document.createElement('img');
     img.src = 'https://example.com/image.jpg';
     document.body.appendChild(img);
@@ -218,7 +226,7 @@ describe('createDragDrop lifecycle', () => {
     img.dispatchEvent(new MouseEvent('dragstart', { bubbles: true, clientX: 10, clientY: 10 }));
     document.dispatchEvent(new MouseEvent('dragover', { bubbles: true, clientX: 100, clientY: 10 }));
 
-    expect(document.querySelector('.mira-dragdrop')).not.toBeNull();
+    expect(overlayQuery('.mira-dragdrop')).not.toBeNull();
     img.remove();
   });
 
@@ -229,7 +237,7 @@ describe('createDragDrop lifecycle', () => {
     });
     const onBatchImport = vi.fn();
     const onCopyUrls = vi.fn();
-    createDragDrop({ onUpload: vi.fn(), onBatchImport, onCopyUrls });
+    createDragDrop({ onUpload: vi.fn(), getLibraryId: async () => 'lib-1', onBatchImport, onCopyUrls });
     const container = document.createElement('div');
     const imgA = document.createElement('img');
     imgA.src = 'https://example.com/a.jpg';
@@ -241,7 +249,7 @@ describe('createDragDrop lifecycle', () => {
     container.dispatchEvent(new MouseEvent('dragstart', { bubbles: true, clientX: 10, clientY: 10 }));
     document.dispatchEvent(new MouseEvent('dragover', { bubbles: true, clientX: 100, clientY: 10 }));
 
-    const zones = document.querySelectorAll<HTMLElement>('.mira-batch-zones .mira-dropzone');
+    const zones = overlayQueryAll<HTMLElement>('.mira-batch-zones .mira-dropzone');
     expect(zones.length).toBe(2);
     expect(zones[0].textContent).toContain('批量导入(2)');
     zones[0].dispatchEvent(new MouseEvent('drop', { bubbles: true }));
@@ -251,7 +259,7 @@ describe('createDragDrop lifecycle', () => {
     // 再次拖拽,释放到「批量复制url」
     container.dispatchEvent(new MouseEvent('dragstart', { bubbles: true, clientX: 10, clientY: 10 }));
     document.dispatchEvent(new MouseEvent('dragover', { bubbles: true, clientX: 100, clientY: 10 }));
-    const copyZone = document.querySelector<HTMLElement>('.mira-batch-zones .mira-dropzone:nth-child(2)');
+    const copyZone = overlayQuery<HTMLElement>('.mira-batch-zones .mira-dropzone:nth-child(2)');
     expect(copyZone?.textContent).toContain('批量复制url');
     copyZone?.dispatchEvent(new MouseEvent('drop', { bubbles: true }));
     expect(onCopyUrls).toHaveBeenCalledOnce();
@@ -264,7 +272,7 @@ describe('createDragDrop lifecycle', () => {
       callback(0);
       return 1;
     });
-    createDragDrop({ onUpload: vi.fn(), onBatchImport: vi.fn(), onCopyUrls: vi.fn() });
+    createDragDrop({ onUpload: vi.fn(), getLibraryId: async () => 'lib-1', onBatchImport: vi.fn(), onCopyUrls: vi.fn() });
     const img = document.createElement('img');
     img.src = 'https://example.com/image.jpg';
     document.body.appendChild(img);
@@ -272,8 +280,8 @@ describe('createDragDrop lifecycle', () => {
     img.dispatchEvent(new MouseEvent('dragstart', { bubbles: true, clientX: 10, clientY: 10 }));
     document.dispatchEvent(new MouseEvent('dragover', { bubbles: true, clientX: 100, clientY: 10 }));
 
-    expect(document.querySelector('.mira-dragdrop')).not.toBeNull();
-    expect(document.querySelector('.mira-batch-zones')).toBeNull();
+    expect(overlayQuery('.mira-dragdrop')).not.toBeNull();
+    expect(overlayQuery('.mira-batch-zones')).toBeNull();
     img.remove();
   });
 
@@ -290,12 +298,11 @@ describe('createDragDrop lifecycle', () => {
 
     img.dispatchEvent(new MouseEvent('dragstart', { bubbles: true, clientX: 10, clientY: 10 }));
     document.dispatchEvent(new MouseEvent('dragover', { bubbles: true, clientX: 100, clientY: 10 }));
-    // fetchFolders 内部是 .then().catch() 链,resolve 依赖多层微任务;
-    // 用宏任务清空整个微任务队列,不依赖链路深度
+    // fetchFolders/组件 onMounted 探测是微任务链;用宏任务清空整个微任务队列,不依赖链路深度
     await new Promise(resolve => setTimeout(resolve, 0));
 
-    expect(document.querySelector('.mira-overlay-title')?.textContent).toBe('未连接素材库');
-    const empty = document.querySelector<HTMLElement>('.mira-empty-state-dropzone');
+    expect(overlayQuery('.mira-overlay-header')?.textContent).toBe('未连接素材库');
+    const empty = overlayQuery<HTMLElement>('.mira-empty-state-dropzone');
     expect(empty?.textContent).toBe('未连接到素材库，将文件拖拽到此处打开侧边栏');
     empty?.dispatchEvent(new Event('drop', { bubbles: true, cancelable: true }));
     expect(openCustomUpload).toHaveBeenCalledWith({ url: img.src, kind: 'image' });

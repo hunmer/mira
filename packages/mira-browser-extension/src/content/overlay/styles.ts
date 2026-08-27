@@ -1,23 +1,16 @@
 /**
  * content script 浮层共用样式注入器。
  *
- * dragdrop 浮层与「批量导入」对话框都跑在页面 DOM 里(非 Vue),共用同一套暗色风格。
+ * dragdrop 浮层与「批量导入」对话框都跑在页面 DOM 里,共用同一套暗色风格。
  * 多次调用幂等(用 style id 去重)。z-index 与 selection.ts(最高)/ dragdrop 浮层对齐。
+ *
+ * dragdrop 浮层现挂载在 shadow DOM 内(承载 Vue 版 LibraryTreeView),
+ * 基础样式以 OVERLAY_BASE_CSS 字符串同时供 document 注入与 shadow 注入复用。
  */
 export const OVERLAY_Z = 2147483646; // 仅次于选区覆盖层
 
-let baseInjected = false;
-
-/** 注入浮层基础样式(.mira-overlay / .mira-dropzone / .mira-folder-* 等)。 */
-export function ensureOverlayStyles(): void {
-  if (document.getElementById('mira-overlay-base-style')) {
-    baseInjected = true;
-    return;
-  }
-  baseInjected = true;
-  const style = document.createElement('style');
-  style.id = 'mira-overlay-base-style';
-  style.textContent = `
+/** 浮层基础样式文本(.mira-overlay / .mira-dropzone 等);document 注入与 dragdrop 浮层 shadow 注入共用。 */
+export const OVERLAY_BASE_CSS = `
 .mira-overlay {
   position: fixed; left: 0; top: 0;
   z-index: ${OVERLAY_Z};
@@ -72,5 +65,18 @@ export function ensureOverlayStyles(): void {
 .mira-overlay .mira-error { color: #f87171; font-size: 12px; }
 .mira-overlay .mira-hint { color: #71717a; font-size: 11px; }
 `;
+
+let baseInjected = false;
+
+/** 注入浮层基础样式到 document(非 shadow 场景,如批量导入对话框)。 */
+export function ensureOverlayStyles(): void {
+  if (document.getElementById('mira-overlay-base-style')) {
+    baseInjected = true;
+    return;
+  }
+  baseInjected = true;
+  const style = document.createElement('style');
+  style.id = 'mira-overlay-base-style';
+  style.textContent = OVERLAY_BASE_CSS;
   document.documentElement.appendChild(style);
 }

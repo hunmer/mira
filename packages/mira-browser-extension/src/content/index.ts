@@ -149,6 +149,26 @@ function showToast(message: string) {
 const dragdrop = createDragDrop({
   getFolders: fetchFolders,
   getTags: fetchTags,
+  getLibraryId,
+  // 浮层树(LibraryTreeView)的完整 CRUD:消息直连 background
+  createNode(kind, libraryId, title, parentId) {
+    return chrome.runtime.sendMessage({ type: 'NODE_CREATE', payload: { kind, libraryId, title, parentId } });
+  },
+  deleteNode(kind, libraryId, id, deleteFiles) {
+    return chrome.runtime.sendMessage({ type: 'NODE_DELETE', payload: { kind, libraryId, id, deleteFiles } });
+  },
+  updateNode(kind, libraryId, id, title, extra) {
+    return chrome.runtime.sendMessage({
+      type: 'NODE_UPDATE',
+      payload: { kind, libraryId, id, title, description: extra?.description, color: extra?.color, icon: extra?.icon },
+    });
+  },
+  updateSortIndex(kind, libraryId, items) {
+    return chrome.runtime.sendMessage({ type: 'NODE_SORT_INDEX', payload: { kind, libraryId, items } });
+  },
+  moveNode(kind, libraryId, id, parentId) {
+    return chrome.runtime.sendMessage({ type: 'NODE_MOVE', payload: { kind, libraryId, id, parentId } });
+  },
   createFolder,
   // 「批量导入」:复用右键批量导入对话框,对该元素下收集的图片 URL 选文件夹/标签后逐条上传
   onBatchImport(urls) {

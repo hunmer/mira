@@ -1,0 +1,113 @@
+/*
+ * dragdrop 浮层(Vue 版,LibraryTreeView)的样式,经 crxjs content_scripts.css 注入 document。
+ *
+ * 浮层外壳仍用自有 .mira-* 暗色类(dragdrop.ts 注入的 baseCss);
+ * 这里补 mira-plugin-ui 组件所需:
+ *  - tailwind 分部 import(theme + utilities,**不含 preflight**,不 reset 宿主页样式)
+ *  - shadcn 令牌(:root 亮色 + .dark 暗色;浮层根元素带 .dark 固定暗色)
+ *  - 品牌绿主色覆盖(与扩展 ui/style.css 一致)
+ *  - 原 dragdrop 浮层专属布局类(自 dragdrop.ts 迁入)
+ */
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+@import 'tw-animate-css';
+
+@source '../../../../mira-plugin-ui/src';
+
+@custom-variant dark (&:is(.dark *));
+
+/* token 映射与 mira-plugin-ui/src/assets/tailwind.css 保持一致 */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.55 0.2 260);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.65 0.2 260);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+}
+
+/* 品牌绿主色(树高亮/选中随 --primary 同色) */
+.mira-dragdrop {
+  --primary: #4ade80;
+  --primary-foreground: #052e16;
+}
+
+/* 原 dragdrop 专属布局样式(自 dragdrop.ts 迁入) */
+.mira-empty-state-dropzone {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 28px 16px;
+  border: 2px dashed #52525b;
+  border-radius: 8px;
+  cursor: copy;
+  color: #71717a;
+  text-align: center;
+  transition: border-color 0.12s, background 0.12s, color 0.12s;
+}
+.mira-empty-state-dropzone.mira-hover {
+  border-color: #4ade80;
+  background: rgba(74, 222, 128, 0.12);
+  color: #fafafa;
+}
+.mira-custom-upload { border-style: dotted; color: #71717a; }
+.mira-custom-upload.mira-hover { color: #fafafa; }
+.mira-batch-zones .mira-dropzone { padding: 10px 8px; font-size: 12px; }
