@@ -292,7 +292,8 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         sendResponse({ ok: true });
         return true;
       case 'DISPATCH_DRAGDROP':
-        dragdrop.setEnabled(msg.payload.enabled && isDragPopoverHostAllowed(location.host, msg.payload.hosts ?? []));
+        dragdrop.setEnabled(msg.payload.enabled
+          && isDragPopoverHostAllowed(location.host, msg.payload.mode, msg.payload.hosts));
         sendResponse({ ok: true, dragdrop: dragdrop.health() });
         return true;
       case 'DISPATCH_HOVER_BUTTON':
@@ -379,15 +380,20 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 chrome.runtime.sendMessage({ type: 'CONFIG_GET' }).then((settings: any) => {
   dbg.info('content', 'init CONFIG_GET', {
     dragPopoverEnabled: settings?.dragPopoverEnabled,
+    dragPopoverMode: settings?.dragPopoverMode,
     dragPopoverHosts: settings?.dragPopoverHosts,
     imageHoverButtonEnabled: settings?.imageHoverButtonEnabled,
     snifferEnabled: settings?.snifferEnabled,
     snifferKinds: settings?.snifferKinds,
     libraryId: settings?.libraryId,
   });
-  // 拖拽快传按钮:总开关关闭,或当前 host 不在启用站点列表(空列表 = 所有站点)时禁用
+  // 拖拽快传按钮:总开关关闭,或当前 host 不符合黑/白名单规则时禁用。
   if (settings?.dragPopoverEnabled === false
-    || !isDragPopoverHostAllowed(location.host, settings?.dragPopoverHosts)) dragdrop.setEnabled(false);
+    || !isDragPopoverHostAllowed(
+      location.host,
+      settings?.dragPopoverMode ?? 'blacklist',
+      settings?.dragPopoverHosts,
+    )) dragdrop.setEnabled(false);
   if (settings?.imageHoverButtonEnabled !== true) hoverButton.setEnabled(false);
   if (settings?.snifferEnabled) sniffer.start(settings.snifferKinds);
   dbg.info('content', 'initialization complete', { dragdrop: dragdrop.health() });

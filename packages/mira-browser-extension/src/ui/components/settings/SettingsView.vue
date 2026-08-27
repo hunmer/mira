@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useSettings } from '@/ui/composables/useSettings';
 import { useI18n } from 'vue-i18n';
-import type { Locale, Theme, LibraryTreeStyle } from '@/shared/types';
+import type { DragPopoverMode, Locale, Theme, LibraryTreeStyle } from '@/shared/types';
 import Input from '@/ui/components/ui/Input.vue';
 import Switch from '@/ui/components/ui/Switch.vue';
 import Button from '@/ui/components/ui/Button.vue';
@@ -76,7 +76,7 @@ function parseHosts(raw: string): string[] {
   return raw.split('\n').map(s => s.trim()).filter(Boolean);
 }
 
-/** 把当前活动标签页的 host 追加到拖拽快传启用站点列表 */
+/** 把当前活动标签页的 host 追加到当前模式的站点列表 */
 async function addCurrentHost() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   let host = '';
@@ -138,6 +138,13 @@ async function addCurrentHost() {
       </div>
       <div class="row"><span>{{ t('settings.dragPopover') }}</span><Switch :model-value="settings.dragPopoverEnabled" @update:model-value="v => update({ dragPopoverEnabled: v })" /></div>
       <div v-if="settings.dragPopoverEnabled" class="hosts-editor">
+        <div class="row">
+          <span>{{ t('settings.dragPopoverMode') }}</span>
+          <select :value="settings.dragPopoverMode" @change="e => update({ dragPopoverMode: (e.target as HTMLSelectElement).value as DragPopoverMode })">
+            <option value="blacklist">{{ t('settings.dragPopoverModeBlacklist') }}</option>
+            <option value="whitelist">{{ t('settings.dragPopoverModeWhitelist') }}</option>
+          </select>
+        </div>
         <label :title="t('settings.dragPopoverHostsHint')">{{ t('settings.dragPopoverHosts') }}</label>
         <textarea
           class="hosts-textarea"
@@ -147,7 +154,7 @@ async function addCurrentHost() {
           :value="(settings.dragPopoverHosts ?? []).join('\n')"
           @change="e => update({ dragPopoverHosts: parseHosts((e.target as HTMLTextAreaElement).value) })"
         />
-        <Button size="sm" variant="outline" @click="addCurrentHost">{{ t('settings.addCurrentSite') }}</Button>
+        <Button size="sm" variant="outline" @click="addCurrentHost">{{ t('settings.addCurrentSiteToList') }}</Button>
       </div>
       <div class="row" :title="t('settings.imageHoverButtonHint')">
         <span>{{ t('settings.imageHoverButton') }}</span><Switch :model-value="settings.imageHoverButtonEnabled" @update:model-value="v => update({ imageHoverButtonEnabled: v })" />

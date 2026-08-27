@@ -5,15 +5,17 @@ export interface ContextMenuDeps {
   uploadImageUrl: (url: string) => Promise<void>;
   /** 在指定 tab 打开「批量导入」对话框(由 content script 处理选区 → URL) */
   openImportDialog: (tabId: number) => Promise<void>;
+  /** 切换指定 host 的图片拖拽快传启用状态 */
+  toggleDragUploadHost: (host: string) => Promise<void>;
 }
 
 export function setupContextMenus(deps: ContextMenuDeps): void {
-  // 安装时创建菜单
   const menus: chrome.contextMenus.CreateProperties[] = [
     // 页面右键:截图三件套
     { id: 'mira-capture-visible', title: 'Mira · 截图可视区域', contexts: ['page', 'image'] },
     { id: 'mira-capture-fullpage', title: 'Mira · 整页截图', contexts: ['page'] },
     { id: 'mira-capture-selection', title: 'Mira · 选区截图', contexts: ['page'] },
+    { id: 'mira-toggle-drag-upload', title: 'Mira · 切换当前网站是否开启图片拖拽快速上传', contexts: ['all'] },
     // 图片右键:收藏到素材库(即上传此图片到当前库)
     { id: 'mira-separator-img', type: 'separator', contexts: ['image'] },
     { id: 'mira-favorite-image', title: 'Mira · 收藏到素材库', contexts: ['image'] },
@@ -26,9 +28,10 @@ export function setupContextMenus(deps: ContextMenuDeps): void {
     { id: 'mira-action-capture-fullpage', title: '整页截图', contexts: ['action'] },
     { id: 'mira-action-capture-selection', title: '选区截图', contexts: ['action'] },
   ];
-  // 清理旧的再建(chrome.runtime.onInstalled 时调用更佳)
-  chrome.contextMenus.removeAll(() => {
-    menus.forEach(m => chrome.contextMenus.create(m));
+  chrome.runtime.onInstalled.addListener(() => {
+    chrome.contextMenus.removeAll(() => {
+      menus.forEach(m => chrome.contextMenus.create(m));
+    });
   });
 
   chrome.contextMenus.onClicked.addListener(async (info, tab) => {
@@ -55,6 +58,12 @@ export function setupContextMenus(deps: ContextMenuDeps): void {
       case 'mira-import-selection':
         await deps.openImportDialog(tab.id);
         break;
+      case 'mira-toggle-drag-upload': {
+        let host = '';
+        try { host = tab.url ? new URL(tab.url).host : ''; } catch { host = ''; }
+        if (host) await deps.toggleDragUploadHost(host);
+        break;
+      }
     }
   });
 }

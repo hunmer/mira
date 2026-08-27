@@ -51,6 +51,10 @@ export function mergeWithDefaults(partial: Partial<ExtensionSettings>): Extensio
     : DEFAULT_IMAGE_URL_RULES;
   merged.tags = orDefault(merged.tags, DEFAULT_SETTINGS.tags);
   merged.dragPopoverHosts = orDefault(merged.dragPopoverHosts, DEFAULT_SETTINGS.dragPopoverHosts);
+  // 旧版本只有启用站点白名单:非空列表保持白名单语义;空列表原本代表全部启用,对应空黑名单。
+  merged.dragPopoverMode = partial.dragPopoverMode === 'whitelist' || partial.dragPopoverMode === 'blacklist'
+    ? partial.dragPopoverMode
+    : (merged.dragPopoverHosts.length > 0 ? 'whitelist' : 'blacklist');
   merged.snifferKinds = orDefault(merged.snifferKinds, DEFAULT_SETTINGS.snifferKinds);
   merged.snifferAspectRatios = orDefault(merged.snifferAspectRatios, DEFAULT_SETTINGS.snifferAspectRatios);
   merged.imuRules = validRules(merged.imuRules);

@@ -1,4 +1,4 @@
-import { initSettingsWatcher, getSettings, onSettingsChange } from './settings';
+import { initSettingsWatcher, getSettings, onSettingsChange, updateSettings } from './settings';
 import { ensureClient, isAuthError } from './mira-client';
 import { createUploader } from './uploader';
 import { createCapturer } from './capturer';
@@ -204,8 +204,12 @@ async function applyFeatureSettings(tabId: number, settings: ExtensionSettings):
   try {
     const dragdropResult = await sendToContent<{ ok: boolean; dragdrop?: unknown }>(tabId, {
       type: 'DISPATCH_DRAGDROP',
-      // hosts 由 content 按页面 location.host 过滤(空列表 = 所有站点)
-      payload: { enabled: settings.dragPopoverEnabled, hosts: settings.dragPopoverHosts },
+      // host 由 content 按页面 location.host 过滤。
+      payload: {
+        enabled: settings.dragPopoverEnabled,
+        mode: settings.dragPopoverMode,
+        hosts: settings.dragPopoverHosts,
+      },
     });
     dbg.info('inject', 'content dragdrop ready', { tabId, result: dragdropResult });
     await sendToContent(tabId, {
@@ -242,22 +246,31 @@ getSettings().then(settings => {
   }).catch(() => {});
 });
 
-// 安装时初始化右键菜单
-chrome.runtime.onInstalled.addListener(() => {
-  setupContextMenus({
-    captureVisible: capturer.captureVisible,
-    captureFullPage: capturer.captureFullPage,
-    captureSelection: capturer.captureSelection,
-    uploadImageUrl: async url => {
-      const settings = await getSettings();
-      const res = await fetch(url);
-      const blob = await res.blob();
-      const file = new File([blob], url.split('/').pop() || 'image', { type: blob.type });
-      uploader.enqueue({ file, libraryId: settings.libraryId, source: 'dragdrop' });
-    },
-    openImportDialog: async tabId => {
-      // content script 会从 window.getSelection().toString() 提取 URL 后开对话框
-      await sendToContent(tabId, { type: 'OPEN_IMPORT_DIALOG' });
-    },
-  });
+// 顶层注册点击监听；菜单项仅在安装/升级时重建。
+setupContextMenus({
+  captureVisible: capturer.captureVisible,
+  captureFullPage: capturer.captureFullPage,
+  captureSelection: capturer.captureSelection,
+  uploadImageUrl: async url => {
+    const settings = await getSettings();
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const file = new File([blob], url.split('/').pop() || 'image', { type: blob.type });
+    uploader.enqueue({ file, libraryId: settings.libraryId, source: 'dragdrop' });
+  },
+  openImportDialog: async tabId => {
+    // content script 会从 window.getSelection().toString() 提取 URL 后开对话框
+    await sendToContent(tabId, { type: 'OPEN_IMPORT_DIALOG' });
+  },
+  toggleDragUploadHost: async host => {
+    const settings = await getSettings();
+    const normalizedHost = host.trim().toLowerCase();
+    const hosts = settings.dragPopoverHosts
+      .map(item => item.trim().toLowerCase())
+      .filter(Boolean);
+    const index = hosts.indexOf(normalizedHost);
+    if (index >= 0) hosts.splice(index, 1);
+    else hosts.push(normalizedHost);
+    await updateSettings({ dragPopoverHosts: hosts });
+  },
 });

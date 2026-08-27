@@ -287,6 +287,8 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
 
   /** document 级 dragover:判断位移,首次超过阈值时按拖拽方向显示浮层 */
   function onDragOverDoc(e: DragEvent) {
+    // 外部页面/文件拖入不会触发本页 dragstart,因此必须在 dragover 入口再次检查开关。
+    if (!enabled || destroyed) return;
     // 浏览器只有在 dragover 被取消默认行为时才显示可放置光标。
     // 先统一接受文件/链接拖拽,再由浮层内部决定具体落点。
     const dragTypes = Array.from(e.dataTransfer?.types ?? []);

@@ -6,6 +6,7 @@ import type {
   ResourceKind,
   UploadStatus,
   ImageUrlRule,
+  DragPopoverMode,
 } from './types';
 
 export interface CustomUploadSession {
@@ -143,7 +144,7 @@ export type ContentCommand =
   | { type: 'AUTOSCROLL_STOP' }
   | { type: 'START_SCROLL_CAPTURE'; payload: { delay: number } }
   | { type: 'DRAW_SELECTION' }
-  | { type: 'DISPATCH_DRAGDROP'; payload: { enabled: boolean; hosts?: string[] } }
+  | { type: 'DISPATCH_DRAGDROP'; payload: { enabled: boolean; mode: DragPopoverMode; hosts?: string[] } }
   | { type: 'DISPATCH_HOVER_BUTTON'; payload: { enabled: boolean } }
   | { type: 'UPGRADE_IMAGE_URL'; payload: { url: string; timeout?: number; rules?: ImageUrlRule[] } }
   // 在当前页面打开「批量导入」对话框(urls 由页面选区提取)

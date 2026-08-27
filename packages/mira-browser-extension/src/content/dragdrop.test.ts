@@ -187,6 +187,19 @@ describe('createDragDrop lifecycle', () => {
     });
   });
 
+  it('禁用后接收其他网站图片的 dragover 不显示浮层', () => {
+    const controller = createDragDrop({ onUpload: vi.fn() });
+    controller.setEnabled(false);
+    const event = new Event('dragover', { bubbles: true, cancelable: true });
+    Object.defineProperty(event, 'clientX', { value: 100 });
+    Object.defineProperty(event, 'clientY', { value: 100 });
+    Object.defineProperty(event, 'dataTransfer', { value: { types: ['Files'], dropEffect: 'none' } });
+
+    document.dispatchEvent(event);
+
+    expect(document.getElementById('mira-dragdrop-host')).toBeNull();
+  });
+
   it('拖到自定义上传后由侧边栏完整表单接管', () => {
     vi.spyOn(window, 'requestAnimationFrame').mockImplementation(callback => {
       callback(0);

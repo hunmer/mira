@@ -42,6 +42,14 @@ describe('storage', () => {
     expect(merged.uiMode).toBe(DEFAULT_SETTINGS.uiMode);
     expect(merged.snifferEnabled).toBe(false);
     expect(merged.batchImportConcurrency).toBe(3);
+    expect(merged.dragPopoverMode).toBe('blacklist');
+  });
+
+  it('mergeWithDefaults 保持旧拖拽站点列表的白名单语义', () => {
+    expect(mergeWithDefaults({ dragPopoverHosts: ['example.com'] }).dragPopoverMode).toBe('whitelist');
+    expect(mergeWithDefaults({ dragPopoverHosts: [] }).dragPopoverMode).toBe('blacklist');
+    expect(mergeWithDefaults({ dragPopoverMode: 'blacklist', dragPopoverHosts: ['example.com'] }).dragPopoverMode)
+      .toBe('blacklist');
   });
 
   it('mergeWithDefaults 把批量导入并发数限制在 1 到 10', () => {

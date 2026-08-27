@@ -37,6 +37,9 @@ export type Locale = 'zh-CN' | 'en';
  */
 export type LibraryTreeStyle = 'tree' | 'tiles';
 
+/** 拖拽快传站点列表模式 */
+export type DragPopoverMode = 'whitelist' | 'blacklist';
+
 /**
  * 嗅探到的资源
  */
@@ -151,7 +154,9 @@ export interface ExtensionSettings {
   /** 界面语言:i18n locale */
   locale: Locale;
   dragPopoverEnabled: boolean;
-  /** 拖拽快传按钮启用站点(host 列表,空 = 所有站点) */
+  /** 白名单仅列表内启用;黑名单仅列表外启用 */
+  dragPopoverMode: DragPopoverMode;
+  /** 拖拽快传站点列表(host 精确匹配) */
   dragPopoverHosts: string[];
   dropZoneEnabled: boolean;
   /** 页面图片 hover 时右上角显示 dots 操作按钮(点击弹出「导入图片」菜单) */
@@ -195,6 +200,7 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   libraryTreeStyle: 'tree',
   locale: 'zh-CN',
   dragPopoverEnabled: true,
+  dragPopoverMode: 'blacklist',
   dragPopoverHosts: [],
   dropZoneEnabled: true,
   imageHoverButtonEnabled: false,
@@ -214,12 +220,16 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
 
 /**
  * 判断拖拽快传按钮是否在指定 host 启用。
- * hosts 为空 = 所有站点;否则按 host 精确匹配(忽略大小写与首尾空白)。
+ * 按 host 精确匹配,忽略大小写与首尾空白。
  */
-export function isDragPopoverHostAllowed(host: string, hosts: string[] | undefined): boolean {
-  if (!hosts?.length) return true;
+export function isDragPopoverHostAllowed(
+  host: string,
+  mode: DragPopoverMode,
+  hosts: string[] | undefined,
+): boolean {
   const h = (host || '').trim().toLowerCase();
-  return hosts.some(item => item.trim().toLowerCase() === h);
+  const listed = !!h && !!hosts?.some(item => item.trim().toLowerCase() === h);
+  return mode === 'whitelist' ? listed : !listed;
 }
 
 /**
