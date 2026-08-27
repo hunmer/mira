@@ -21,6 +21,7 @@ import {
   ListboxItemIndicator,
   ListboxRoot,
   useFilter,
+  type AcceptableValue,
 } from 'reka-ui'
 import { Button } from './components/ui/button'
 import { Label } from './components/ui/label'
@@ -223,11 +224,12 @@ function extOf (file: File): string {
 }
 
 // 切库:清掉已选位置并通知宿主刷新树数据
-function onLibraryChange (value: string) {
-  libraryId.value = value
+function onLibraryChange (value: AcceptableValue) {
+  const id = String(value)
+  libraryId.value = id
   folderId.value = ''
   selectedTagIds.value = new Set()
-  emit('library-change', value)
+  emit('library-change', id)
 }
 
 function confirm () {

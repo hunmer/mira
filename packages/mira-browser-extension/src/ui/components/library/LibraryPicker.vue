@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
- * 素材库卡片选择网格:未选素材库时铺满内容区。
+ * 素材库选择页:未选素材库时铺满内容区。
  *
- * - 卡片网格(2 列):icon + name + 描述/文件数;点击 → update({ libraryId })
+ * - LibrarySelect(mira-plugin-ui)下拉选择,v-model → update({ libraryId })
  * - 空态(无任何库):提示去服务器端创建
  * - 顶部标题 + 刷新按钮
  *
@@ -12,24 +12,24 @@ import { computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useConnection } from '@/ui/composables/useConnection';
 import { useSettings } from '@/ui/composables/useSettings';
-import LibIcon from './LibIcon.vue';
-import type { Library } from 'mira-app-core/shared/sdk';
+import { LibrarySelect } from 'mira-plugin-ui/library';
+import type { LibrarySelectServer } from 'mira-plugin-ui/library';
 
 const { t } = useI18n();
-const { libraries, refreshLibraries } = useConnection();
-const { update } = useSettings();
+const { libraries, activeServer, refreshLibraries } = useConnection();
+const { settings, update } = useSettings();
 
 onMounted(refreshLibraries);
 
-function desc(lib: Library): string {
-  if (lib.description) return lib.description;
-  return t('library.fileCount', { n: lib.fileCount ?? 0 });
-}
+/** LibrarySelect 按服务器分组:仅展示当前激活服务器的库列表(按名称排序) */
+const libServers = computed<LibrarySelectServer[]>(() => [{
+  id: activeServer.value?.id ?? '',
+  name: activeServer.value?.name || activeServer.value?.serverURL || '',
+  libraries: [...libraries.value].sort((a, b) => a.name.localeCompare(b.name)),
+}]);
 
-const sorted = computed(() => [...libraries.value].sort((a, b) => a.name.localeCompare(b.name)));
-
-async function pick(lib: Library) {
-  await update({ libraryId: lib.id });
+async function onLibChange(libraryId: string) {
+  await update({ libraryId });
 }
 </script>
 
@@ -41,18 +41,19 @@ async function pick(lib: Library) {
     </div>
     <p class="hint">{{ t('library.chooseHint') }}</p>
 
-    <div v-if="!sorted.length" class="empty">
+    <div v-if="!libraries.length" class="empty">
       <span class="big">📚</span>
       <span>{{ t('library.emptyLibraries') }}</span>
     </div>
 
-    <div v-else class="grid">
-      <button v-for="lib in sorted" :key="lib.id" class="card" @click="pick(lib)">
-        <LibIcon class="icon" :name="lib.icon" :size="26" />
-        <span class="name" :title="lib.name">{{ lib.name }}</span>
-        <span class="desc" :title="desc(lib)">{{ desc(lib) }}</span>
-      </button>
-    </div>
+    <LibrarySelect
+      v-else
+      class="select"
+      :servers="libServers"
+      :model-value="settings.libraryId"
+      :placeholder="t('header.selectLibrary')"
+      @update:model-value="onLibChange"
+    />
   </div>
 </template>
 
@@ -86,37 +87,7 @@ async function pick(lib: Library) {
 .refresh:hover { color: var(--fg); }
 .hint { font-size: 12px; color: var(--muted); margin: 4px 0 12px; }
 
-.grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-.card {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  padding: 12px;
-  background: var(--bg-elev);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  cursor: pointer;
-  text-align: left;
-  transition: border-color .12s, transform .06s;
-  min-height: 84px;
-}
-.card:hover { border-color: var(--primary); transform: translateY(-1px); }
-.icon { line-height: 1; }
-.name {
-  font-size: 13px; font-weight: 600;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  width: 100%;
-}
-.desc {
-  font-size: 11px; color: var(--muted);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  width: 100%;
-}
+.select { width: 100%; }
 
 .empty {
   flex: 1;

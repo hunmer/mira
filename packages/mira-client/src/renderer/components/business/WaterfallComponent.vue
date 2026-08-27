@@ -115,6 +115,7 @@ import {
   loadThumbnailRatio
 } from './WaterfallComponent/thumbnailRatioCache'
 import { miraSDKService } from '../../services/MiraSDKService'
+import { miraEventBus, type ThumbnailUpdatedDetail } from '../../services/EventBus'
 
 interface Props {
   items: FileInfo[]
@@ -622,8 +623,7 @@ const handleDebugImageLoad = (event: Event) => {
   debugLoadCount += 1
 }
 
-const handleThumbnailUpdated = async (event: Event) => {
-  const { fileId, thumbPath } = (event as CustomEvent).detail || {}
+const handleThumbnailUpdated = async ({ fileId, thumbPath }: ThumbnailUpdatedDetail) => {
   if (!fileId || !thumbPath) return
 
   const item = props.items.find(file => String(file.id) === String(fileId))
@@ -698,7 +698,7 @@ defineExpose({
 onMounted(() => {
   void preloadThumbnailRatios(props.items)
   window.addEventListener('keydown', handleDeleteKeyDown)
-  window.addEventListener('thumbnail-updated', handleThumbnailUpdated)
+  miraEventBus.on('thumbnail-updated', handleThumbnailUpdated)
   document.addEventListener('edit-action', handleEditAction)
   const selectionRoot = (selectionBoxRef.value as any)?.$el as HTMLElement | null
   if (selectionRoot) {
@@ -738,7 +738,7 @@ onUnmounted(() => {
   debugLongTaskObserver = null
   layoutResizeObserver = null
   window.removeEventListener('keydown', handleDeleteKeyDown)
-  window.removeEventListener('thumbnail-updated', handleThumbnailUpdated)
+  miraEventBus.off('thumbnail-updated', handleThumbnailUpdated)
   document.removeEventListener('edit-action', handleEditAction)
   stopVideoPreview()
 })

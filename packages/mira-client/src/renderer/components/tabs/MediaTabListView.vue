@@ -165,6 +165,7 @@ import MediaTabFoldersSection from './MediaTabListView/MediaTabFoldersSection.vu
 import MediaTabMediaSection from './MediaTabListView/MediaTabMediaSection.vue'
 import MediaTabFloatingToolbar from './MediaTabListView/MediaTabFloatingToolbar.vue'
 import MediaTabStatusBar from './MediaTabListView/MediaTabStatusBar.vue'
+import { miraEventBus } from '@renderer/services/EventBus'
 
 // Props
 interface Props {
@@ -503,13 +504,13 @@ onMounted(async () => {
   }
 
   // 监听 WebSocket 触发的活跃 tab 刷新事件
-  window.addEventListener('active-tab-refresh', handleActiveTabRefresh)
+  miraEventBus.on('active-tab-refresh', handleActiveTabRefresh)
 })
 
 // 组件卸载时清理
 onUnmounted(() => {
   // mediaTabData.cleanup()
-  window.removeEventListener('active-tab-refresh', handleActiveTabRefresh)
+  miraEventBus.off('active-tab-refresh', handleActiveTabRefresh)
 })
 
 // 监听器

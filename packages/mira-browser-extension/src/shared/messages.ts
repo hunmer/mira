@@ -102,7 +102,7 @@ export type Request =
       payload: { files: StagedFile[]; libraryId: string; tags?: string[]; folderId?: string };
     }
   | { type: 'UPLOAD_FROM_URL'; payload: { url: string; kind: ResourceKind; libraryId: string; folderId?: number; tags?: string[]; referrer?: string } }
-  | { type: 'BATCH_IMPORT'; payload: { items: { urls: string[]; fallbackUrl: string; filename: string; referrer?: string }[]; libraryId: string; folderId?: number } }
+  | { type: 'BATCH_IMPORT'; payload: { items: { urls: string[]; fallbackUrl: string; filename: string; referrer?: string }[]; libraryId: string; folderId?: number; tags?: string[] } }
   | { type: 'UPLOAD_STATUS' }
   | { type: 'UPLOAD_CANCEL'; payload: { id: string } }
   | { type: 'UPGRADE_IMAGE_URL'; payload: { tabId: number; url: string; timeout?: number; rules?: ImageUrlRule[] } }

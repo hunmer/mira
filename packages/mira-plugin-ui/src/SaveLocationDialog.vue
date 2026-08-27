@@ -25,6 +25,8 @@ withDefaults(defineProps<{
   initialNote?: string
   title?: string
   description?: string
+  submitText?: string
+  cancelText?: string
   /** 新建节点服务:透传给表单,创建成功返回新节点 id 供自动选中 */
   createNode?: (payload: { kind: 'folder' | 'tag'; parentId: number; title: string; description?: string; color?: number; icon?: string }) => Promise<number | undefined>
 }>(), {
@@ -67,6 +69,8 @@ function close () { emit('update:open', false) }
         :initial-file-name="initialFileName"
         :initial-url="initialUrl"
         :initial-note="initialNote"
+        :submit-text="submitText"
+        :cancel-text="cancelText"
         :create-node="createNode"
         @save="emit('save', $event)"
         @library-change="emit('library-change', $event)"

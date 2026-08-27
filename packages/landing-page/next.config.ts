@@ -7,6 +7,9 @@ const basePath = "/introduction";
 const nextConfig: NextConfig = {
   // 静态导出,build 产物输出到 out/ 目录,适合 CDN/Nginx 等纯静态托管
   output: "export",
+  // 每个路由导出为 <route>/index.html,直接访问 /introduction/privacy 时
+  // 静态服务器可自动映射到目录下的 index.html,避免 404
+  trailingSlash: true,
   // 部署到子路径 /introduction/ 下
   basePath,
   // 把 basePath 暴露为 NEXT_PUBLIC_BASE_PATH,供 withBasePath() 使用

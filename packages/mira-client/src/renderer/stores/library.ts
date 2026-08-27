@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { miraSDKService } from '../services/MiraSDKService'
 import { LibraryStorage } from '../utils/LibraryStorage'
 import type { LibraryInfo } from '../../shared/types'
+import { miraEventBus } from '../services/EventBus'
 
 // 扩展的集合信息类型，支持临时状态
 interface ExtendedLibraryInfo extends LibraryInfo {
@@ -201,9 +202,7 @@ export const useLibraryStore = defineStore('libraries', () => {
       }
 
       // 触发文件夹刷新事件
-      window.dispatchEvent(new CustomEvent('refresh-folders', {
-        detail: { colletionId: targetLibraryId }
-      }))
+      miraEventBus.emit('refresh-folders', { libraryId: targetLibraryId })
 
     } catch (error) {
       console.error('Failed to refresh folders:', error)
@@ -222,9 +221,7 @@ export const useLibraryStore = defineStore('libraries', () => {
       }
 
       // 触发标签刷新事件
-      window.dispatchEvent(new CustomEvent('refresh-tags', {
-        detail: { colletionId: targetLibraryId }
-      }))
+      miraEventBus.emit('refresh-tags', { libraryId: targetLibraryId })
 
     } catch (error) {
       console.error('Failed to refresh tags:', error)

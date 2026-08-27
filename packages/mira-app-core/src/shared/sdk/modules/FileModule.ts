@@ -348,8 +348,13 @@ export class FileModule {
             batchImport: true,
             urlItems,
         };
-        if (options?.folderId !== undefined) {
-            uploadRequest.payload = { data: { folder_id: String(options.folderId) } };
+        if (options?.folderId !== undefined || options?.tags) {
+            uploadRequest.payload = {
+                data: {
+                    folder_id: options?.folderId !== undefined ? String(options.folderId) : undefined,
+                    tags: options?.tags,
+                },
+            };
         }
         return await this.upload(uploadRequest) as unknown as BatchImportResponse;
     }

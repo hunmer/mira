@@ -12,7 +12,11 @@ describe('FileModule.batchImport', () => {
         await expect(files.batchImport([first, second], 'library-1', {
             folderId: 3,
             clientId: 'client-1',
+            tags: ['收藏'],
         })).resolves.toEqual(response);
         expect(upload).toHaveBeenCalledWith(expect.objectContaining({ files: [first], urlItems: [second], libraryId: 'library-1', batchImport: true }));
+        expect(upload).toHaveBeenCalledWith(expect.objectContaining({
+            payload: { data: { folder_id: '3', tags: ['收藏'] } },
+        }));
     });
 });

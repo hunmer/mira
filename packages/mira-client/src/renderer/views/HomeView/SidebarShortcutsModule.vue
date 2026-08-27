@@ -15,6 +15,7 @@ import {
   ContextMenuItem,
 } from '@/components/ui/context-menu'
 import { miraSDKService } from '@/renderer/services/MiraSDKService'
+import { miraEventBus } from '@/renderer/services/EventBus'
 
 defineOptions({ name: 'SidebarShortcutsModule' })
 
@@ -70,12 +71,11 @@ watch([
   else shortcutCountState.value = { all: 0, uncategorized: 0, untagged: 0, trash: 0 }
 }, { immediate: true, deep: true })
 
-const onLibraryFileChanged = (event: Event) => {
-  const libraryId = (event as CustomEvent<{ libraryId?: string }>).detail?.libraryId
+const onLibraryFileChanged = ({ libraryId }: { libraryId?: string }) => {
   if (libraryId && libraryId === props.libraryId) loadShortcutCounts(libraryId)
 }
-window.addEventListener('library-file-changed', onLibraryFileChanged)
-onBeforeUnmount(() => window.removeEventListener('library-file-changed', onLibraryFileChanged))
+miraEventBus.on('library-file-changed', onLibraryFileChanged)
+onBeforeUnmount(() => miraEventBus.off('library-file-changed', onLibraryFileChanged))
 
 const baseCategories = computed(() => [
   { id: 'all', label: t('views.sidebarModuleList.all'), icon: 'folder_open', iconColor: 'text-muted-foreground', count: shortcutCounts.value.all },

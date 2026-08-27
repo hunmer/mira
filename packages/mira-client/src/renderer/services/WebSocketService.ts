@@ -9,6 +9,7 @@ import { cancelBinarySend, cancelBinaryReceive, onBinaryShareAccept } from '../c
 import ConfigStorage from '../utils/ConfigStorage'
 import { toFileUrl } from '../utils/fileUtils'
 import i18n from '../i18n'
+import { miraEventBus } from './EventBus'
 
 const t = i18n.global.t.bind(i18n.global)
 
@@ -871,6 +872,8 @@ function setupEventListeners(libraryStore: any): void {
   })
 
   webSocketService.addEventListener('file::upload-completed', (data) => {
+    // file::created 可能早于统计数据最终落盘；上传批次完成后再刷新一次文件夹树。
+    scheduleTreeRefresh(data?.libraryId)
     if (data?.silent !== true) completeUploadNotification(data)
     flushUploadBatchRefresh(data?.uploadBatchId)
   })
@@ -902,19 +905,19 @@ function setupEventListeners(libraryStore: any): void {
     const { markTabsForEvent } = useTabs()
     const markedIds = markTabsForEvent(data, 'trash-emptied')
     for (const tabId of markedIds) {
-      window.dispatchEvent(new CustomEvent('active-tab-refresh', {
-        detail: { tabId, eventType: 'trash-emptied', data }
-      }))
+      miraEventBus.emit('active-tab-refresh', { tabId, eventType: 'trash-emptied', data })
     }
   })
 
   // 监听缩略图生成事件
   webSocketService.addEventListener('thumbnail::generated', (data) => {
     console.log('Thumbnail generated:', data)
+    // 外部导入可能在缩略图阶段才完成最终文件处理，确保 Tree 读取最新数量。
+    scheduleTreeRefresh(data?.libraryId)
     const thumbUrl = appendThumbToken(toFileUrl(data.thumb))
-    window.dispatchEvent(new CustomEvent('thumbnail-updated', {
-      detail: { fileId: String(data.id), thumbPath: thumbUrl }
-    }))
+    if (thumbUrl) {
+      miraEventBus.emit('thumbnail-updated', { fileId: String(data.id), thumbPath: thumbUrl })
+    }
     // 缩略图就绪后补发到最近一次导入通知（file::created 时缩略图尚未生成）
     updateImportThumbIfPending(data.id, data.thumb)
     const eagleGroup = eagleImportGroupsByFileId.get(String(data.id))
@@ -961,12 +964,11 @@ const uploadBatchRefreshes = new Map<string, Map<string, { eventType: 'created',
 const uploadBatchRefreshTimers = new Map<string, ReturnType<typeof setTimeout>>()
 const treeRefreshTimers = new Map<string, ReturnType<typeof setTimeout>>()
 const TREE_REFRESH_DELAY = 300
+const TREE_REFRESH_RETRY_DELAY = 1500
 const UPLOAD_BATCH_REFRESH_FALLBACK_DELAY = 2000
 
 function dispatchActiveTabRefresh(tabId: string, eventType: 'created' | 'updated' | 'deleted' | 'recovered', data: any): void {
-  window.dispatchEvent(new CustomEvent('active-tab-refresh', {
-    detail: { tabId, eventType, data }
-  }))
+  miraEventBus.emit('active-tab-refresh', { tabId, eventType, data })
 }
 
 function flushUploadBatchRefresh(uploadBatchId?: string): void {
@@ -999,8 +1001,8 @@ function queueUploadBatchRefresh(uploadBatchId: string, tabId: string, data: any
   }, UPLOAD_BATCH_REFRESH_FALLBACK_DELAY))
 }
 
-function scheduleTreeRefresh(libraryStore: any, libraryId?: string): void {
-  const targetLibraryId = libraryId || libraryStore.currentLibrary?.id
+function scheduleTreeRefresh(libraryId?: string): void {
+  const targetLibraryId = libraryId || useLibraryStore().currentLibrary?.id
   if (!targetLibraryId) return
 
   const existing = treeRefreshTimers.get(targetLibraryId)
@@ -1008,15 +1010,20 @@ function scheduleTreeRefresh(libraryStore: any, libraryId?: string): void {
 
   treeRefreshTimers.set(targetLibraryId, setTimeout(() => {
     treeRefreshTimers.delete(targetLibraryId)
-    libraryStore.refreshFolders?.(targetLibraryId)
+    void import('../stores/folder').then(({ useFolderStore }) => useFolderStore().refreshFolders(targetLibraryId)).finally(() => {
+      // 文件监听/扩展导入可能在广播后才完成统计相关写入，再读一次最终值。
+      const retryTimer = setTimeout(() => {
+        treeRefreshTimers.delete(targetLibraryId)
+        void import('../stores/folder').then(({ useFolderStore }) => useFolderStore().refreshFolders(targetLibraryId))
+      }, TREE_REFRESH_RETRY_DELAY)
+      treeRefreshTimers.set(targetLibraryId, retryTimer)
+    })
   }, TREE_REFRESH_DELAY))
 }
 
 function handleFileEvent(data: any, eventType: 'created' | 'updated' | 'deleted' | 'recovered'): void {
-  window.dispatchEvent(new CustomEvent('library-file-changed', {
-    detail: { libraryId: data?.libraryId, eventType },
-  }))
-  scheduleTreeRefresh(useLibraryStore(), data?.libraryId)
+  miraEventBus.emit('library-file-changed', { libraryId: data?.libraryId, eventType })
+  scheduleTreeRefresh(data?.libraryId)
 
   const { markTabsForEvent, tabs } = useTabs()
   const markedIds = markTabsForEvent(data, eventType)

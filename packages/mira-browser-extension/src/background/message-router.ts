@@ -195,7 +195,7 @@ export function createRouter(deps: RouterDeps): RequestHandler {
           });
           // 所有文件抓取完毕,进入服务端上传阶段(整批一次请求,无逐项进度)
           broadcast({ type: 'BATCH_PROGRESS', payload: { phase: 'upload', done: total, total, stage: 'finish' } });
-          return client.files().batchImport(items, req.payload.libraryId, { folderId: req.payload.folderId });
+          return client.files().batchImport(items, req.payload.libraryId, { folderId: req.payload.folderId, tags: req.payload.tags });
         });
       case 'UPLOAD_STATUS':
         return deps.uploader.getQueue();

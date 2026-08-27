@@ -31,6 +31,7 @@ import { getFileTypeIcon, toFileUrl } from '@renderer/utils/fileUtils'
 import { getExtIconUrl } from '@renderer/utils/extIconHelper'
 import type { FileInfo } from '../../../shared/types'
 import { getPluginFileFormat } from '@renderer/plugins/instanceManager'
+import { miraEventBus } from '@renderer/services/EventBus'
 
 const props = withDefaults(defineProps<{
   fileId: string
@@ -76,8 +77,7 @@ watch(() => props.src, (src) => {
   hasError.value = false
 })
 
-function onThumbnailUpdate(event: Event) {
-  const { fileId, thumbPath } = (event as CustomEvent).detail
+function onThumbnailUpdate({ fileId, thumbPath }: { fileId: string; thumbPath: string }) {
   if (fileId === props.fileId && thumbPath) {
     const url = toFileUrl(thumbPath)
     if (!url) return
@@ -115,11 +115,11 @@ watch(shouldRenderCustom, async (enabled) => {
 })
 
 onMounted(() => {
-  window.addEventListener('thumbnail-updated', onThumbnailUpdate)
+  miraEventBus.on('thumbnail-updated', onThumbnailUpdate)
   renderCustomThumbnail()
 })
 onUnmounted(() => {
-  window.removeEventListener('thumbnail-updated', onThumbnailUpdate)
+  miraEventBus.off('thumbnail-updated', onThumbnailUpdate)
   if (customCleanup) customCleanup()
 })
 </script>

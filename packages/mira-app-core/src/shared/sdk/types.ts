@@ -371,6 +371,8 @@ export interface BatchImportOptions {
     clientId?: string;
     /** 下载导入后自动附加的标签 ID */
     tagIds?: string[];
+    /** 导入后附加的标签(按标题,服务端按名称关联) */
+    tags?: string[];
 }
 
 export interface BatchImportResponse {

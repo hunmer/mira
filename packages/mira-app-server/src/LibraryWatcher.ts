@@ -185,12 +185,13 @@ export class LibraryWatcher {
         const timer = setTimeout(() => {
           this.pendingUnlinks.delete(filePath);
           // 超时未匹配到 add → 确认是删除，从 DB 移除
-          this.libraryService.deleteFile(file.id).catch((e: unknown) => {
+          void this.libraryService.deleteFile(file.id).then(() => {
+            this.webSocketServer.broadcastLibraryEvent(this.libraryId, 'file::deleted', {
+              libraryId: this.libraryId,
+              fileId: file.id,
+            });
+          }).catch((e: unknown) => {
             console.error(`[Watcher] Failed to delete record:`, e);
-          });
-          this.webSocketServer.broadcastLibraryEvent(this.libraryId, 'file::deleted', {
-            libraryId: this.libraryId,
-            fileId: file.id,
           });
         }, 3000);
 

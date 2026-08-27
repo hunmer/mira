@@ -4,12 +4,14 @@ import { useI18n } from 'vue-i18n';
 import { useBackground } from '@/ui/composables/useBackground';
 import { useSniffer } from '@/ui/composables/useSniffer';
 import { useSettings } from '@/ui/composables/useSettings';
+import { useConnection } from '@/ui/composables/useConnection';
 import type { SnifferViewMode, SnifferSortOrder, SniffedResource } from '@/shared/types';
 import Switch from '@/ui/components/ui/Switch.vue';
 import Button from '@/ui/components/ui/Button.vue';
 import Input from '@/ui/components/ui/Input.vue';
 import ResourceList from './ResourceList.vue';
 import MasonryView from './MasonryView.vue';
+import SaveLocationDialog from 'mira-plugin-ui/src/SaveLocationDialog.vue';
 import { dbg } from '@/shared/debug';
 import { runConcurrent } from '@/shared/concurrency';
 
@@ -17,6 +19,7 @@ const { t } = useI18n();
 
 const bg = useBackground();
 const { settings, load: loadSettings, update } = useSettings();
+const { libraries } = useConnection();
 // 当前 tab id(同步缓存,挂载时取一次)
 const tabIdRef = ref<number | 'all'>(0);
 const tabs = ref<chrome.tabs.Tab[]>([]);
@@ -24,8 +27,8 @@ const activeTabId = ref(0);
 const tabReady = ref(false);
 const { resources, load, start, stop } = useSniffer(() => tabIdRef.value);
 
-// ---- 批量操作进度(由后台 BATCH_PROGRESS 事件驱动) ----
-type BatchProgress = { phase: 'upload' | 'download'; done: number; total: number; stage: 'fetch' | 'finish' };
+// ---- 批量操作进度(由后台 BATCH_PROGRESS 事件驱动;预处理阶段由本地驱动) ----
+type BatchProgress = { phase: 'upload' | 'download' | 'upgrade'; done: number; total: number; stage: 'fetch' | 'finish' };
 const progress = ref<BatchProgress | null>(null);
 let offBatchProgress: (() => void) | undefined;
 const progressPct = computed(() => {
@@ -38,6 +41,7 @@ const progressText = computed(() => {
   if (p.stage === 'finish') {
     return p.phase === 'upload' ? t('sniffer.progressUploading') : t('sniffer.progressZipping');
   }
+  if (p.phase === 'upgrade') return t('sniffer.progressUpgrading', { done: p.done, total: p.total });
   return t(p.phase === 'upload' ? 'sniffer.progressFetching' : 'sniffer.progressDownloading', { done: p.done, total: p.total });
 });
 
@@ -258,10 +262,21 @@ const visibleResources = computed(() => {
   return sorted;
 });
 
-async function uploadSelected() {
+/** 与 mira-plugin-ui 的 SaveLocation 对齐(exports 通配符下 types 路径解析不稳,故内联) */
+interface ImportLocation {
+  libraryId: string;
+  folderId?: string;
+  tags?: string[];
+}
+
+/** 批量导入选中资源;loc 指定导入落点(素材库/文件夹/标签),缺省导入当前库 */
+async function importSelected(loc?: ImportLocation) {
   const targets = resources.value.filter(r => selected.value.has(r.id));
   if (!targets.length) return;
   const importCandidates = new Map(targets.map(r => [r.id, [r.url]]));
+  // 预处理(解析大图地址)阶段进度:后台 BATCH_PROGRESS 只覆盖其后的抓取/上传,这里本地驱动
+  progress.value = { phase: 'upgrade', done: 0, total: targets.length, stage: 'fetch' };
+  let resolved = 0;
   await runConcurrent(targets, settings.value.batchImportConcurrency, async r => {
     if (settings.value.imuEnabled && r.tabId) {
       try {
@@ -275,6 +290,8 @@ async function uploadSelected() {
     } else {
       dbg.log('sniffer', 'upload selected maxurl skipped', { url: r.url, imuEnabled: settings.value.imuEnabled, tabId: r.tabId });
     }
+    resolved++;
+    progress.value = { phase: 'upgrade', done: resolved, total: targets.length, stage: 'fetch' };
   });
   try {
     await bg.batchImport(targets.map(r => ({
@@ -282,11 +299,58 @@ async function uploadSelected() {
       fallbackUrl: r.url,
       filename: filenameOf(r),
       referrer: r.referrer || r.pageUrl,
-    })), settings.value.libraryId);
+    })), loc?.libraryId ?? settings.value.libraryId,
+      loc?.folderId ? Number(loc.folderId) : undefined,
+      loc?.tags?.length ? loc.tags : undefined);
     selected.value.clear();
   } finally {
     progress.value = null;
   }
+}
+
+/** 上传所选:导入当前素材库(不带落点) */
+async function uploadSelected() {
+  await importSelected();
+}
+
+// ---- 导入到(SaveLocationDialog,内为 mira-plugin-ui 的 SaveLocationForm) ----
+const importToOpen = ref(false);
+const importToLibraryId = ref('');
+const importToInitialFolderId = ref('');
+const importToFolders = ref<any[]>([]);
+const importToTags = ref<any[]>([]);
+
+async function loadImportToTree() {
+  if (!importToLibraryId.value) return;
+  importToFolders.value = await bg.listFolders(importToLibraryId.value).catch(() => []);
+  importToTags.value = await bg.listTags(importToLibraryId.value).catch(() => []);
+}
+
+async function openImportTo() {
+  if (!selected.value.size) return;
+  importToLibraryId.value = settings.value.libraryId;
+  importToInitialFolderId.value = '';
+  await loadImportToTree();
+  importToOpen.value = true;
+}
+
+/** 切库:刷新树数据并清初始落点 */
+async function onImportToLibraryChange(id: string) {
+  importToLibraryId.value = id;
+  importToInitialFolderId.value = '';
+  await loadImportToTree();
+}
+
+/** 树内「新增」:走 background 创建后刷新树(background 不回新节点 id,不自动选中) */
+async function importToCreateNode({ kind, parentId, title }: { kind: 'folder' | 'tag'; parentId: number; title: string }): Promise<number | undefined> {
+  await bg.createNode(kind, importToLibraryId.value, title, parentId);
+  await loadImportToTree();
+  return undefined;
+}
+
+async function onImportToSave(loc: ImportLocation) {
+  importToOpen.value = false;
+  await importSelected(loc);
 }
 
 /** url 末段当文件名;解码失败回退 resource */
@@ -513,9 +577,26 @@ async function downloadSelected() {
       </template>
       <template v-else>
         <Button @click="uploadSelected">{{ t('sniffer.uploadSelected', { n: selected.size }) }}</Button>
+        <Button variant="ghost" @click="openImportTo">{{ t('sniffer.importTo') }}</Button>
         <Button variant="ghost" @click="downloadSelected">{{ t('sniffer.downloadSelected', { n: selected.size }) }}</Button>
       </template>
     </div>
+
+    <!-- 导入到:选素材库/文件夹/标签后批量导入(SaveLocationForm) -->
+    <SaveLocationDialog
+      v-model:open="importToOpen"
+      :libraries="libraries"
+      :folders="importToFolders"
+      :tags="importToTags"
+      :initial-library-id="importToLibraryId"
+      :initial-folder-id="importToInitialFolderId"
+      :title="t('sniffer.importTo')"
+      :description="t('sniffer.importToHint')"
+      :submit-text="t('sniffer.importToSubmit')"
+      :create-node="importToCreateNode"
+      @save="onImportToSave"
+      @library-change="onImportToLibraryChange"
+    />
   </div>
 </template>
 

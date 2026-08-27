@@ -105,6 +105,7 @@ import FolderTreeBaseCategories from './components/FolderTreeBaseCategories.vue'
 import FolderTreeHeader from './components/FolderTreeHeader.vue'
 import FolderTreeNode from './components/FolderTreeNode.vue'
 import FolderTreeDialogs from './components/FolderTreeDialogs.vue'
+import { miraEventBus } from '@renderer/services/EventBus'
 
 interface Props {
   folders?: FolderItem[]
@@ -475,16 +476,16 @@ defineExpose({
 })
 
 // 生命周期
-let refreshListener: ((event: CustomEvent) => void) | null = null
+let refreshListener: (() => void) | null = null
 
 onMounted(() => {
   refreshListener = () => emit('refresh')
-  window.addEventListener(`refresh-${isFolder.value ? 'folders' : 'tags'}`, refreshListener as EventListener)
+  miraEventBus.on(isFolder.value ? 'refresh-folders' : 'refresh-tags', refreshListener)
 })
 
 onUnmounted(() => {
   if (refreshListener) {
-    window.removeEventListener(`refresh-${isFolder.value ? 'folders' : 'tags'}`, refreshListener as EventListener)
+    miraEventBus.off(isFolder.value ? 'refresh-folders' : 'refresh-tags', refreshListener)
   }
 })
 </script>

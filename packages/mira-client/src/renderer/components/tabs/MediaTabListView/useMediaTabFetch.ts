@@ -4,6 +4,7 @@ import { useMediaStore } from '@renderer/stores/media'
 import type { useMediaTabData } from '@renderer/composables/useMediaTabData'
 import type { useHomeController } from '@renderer/controllers/HomeController'
 import { mergeMediaTabFilters } from './mediaTabRuntime'
+import type { ActiveTabRefreshDetail } from '@renderer/services/EventBus'
 
 /**
  * 数据加载：分页取数、排序、刷新（含 WebSocket 活跃 tab 刷新回调）
@@ -116,10 +117,10 @@ export function useMediaTabFetch(deps: {
   const handleManualRefresh = () => handleRefresh()
 
   // WebSocket 活跃 tab 刷新回调
-  const handleActiveTabRefresh = (e: Event) => {
-    const { tabId } = (e as CustomEvent).detail
+  const handleActiveTabRefresh = (detail: ActiveTabRefreshDetail) => {
+    const { tabId } = detail
     if (tabId === props.tabId) {
-      const eventType = (e as CustomEvent).detail?.eventType
+      const eventType = detail.eventType
       // 文件属性更新可能影响当前排序（例如按名称、星标或更新时间排序）。
       // 重新按当前排序查询，避免局部更新把文件留在列表首位；保留用户选中状态。
       if (eventType === 'updated') {
