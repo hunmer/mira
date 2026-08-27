@@ -207,7 +207,7 @@ function rowClass(node: LibraryTreeNode): string[] {
 </script>
 
 <template>
-  <!-- 平铺视图:本层全为叶子 → badge 样式多行平铺(未设置 icon 不显示图标;选择/右键/拖拽上传/排序交互与行一致;父级仍为树形) -->
+  <!-- 平铺视图:本层全为叶子 → badge 样式多行平铺(统一默认图标;选择/右键/拖拽上传/排序交互与行一致;父级为分组卡片) -->
   <div
     v-if="isLeafTier && !root"
     class="flex flex-wrap gap-1"
@@ -254,12 +254,27 @@ function rowClass(node: LibraryTreeNode): string[] {
         </svg>
       </span>
 
-      <!-- 图标:未设置 icon 不显示;设置了显示 Material 图标(字体与 IconPicker 同源,由宿主 tailwind.css 提供) -->
+      <!-- 图标:统一默认文件夹/标签图标,不展示节点自定义 icon -->
       <span
-        v-if="node.icon"
-        class="material-icons shrink-0 leading-none"
-        :style="{ fontSize: '14px', ...iconStyle(node) }"
-      >{{ node.icon }}</span>
+        v-if="kind === 'folder'"
+        class="inline-flex shrink-0 text-primary"
+        :style="iconStyle(node)"
+      >
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+          <path
+            d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"
+            fill="currentColor"
+          />
+        </svg>
+      </span>
+      <span v-else class="inline-flex shrink-0 text-muted-foreground" :style="iconStyle(node)">
+        <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
+          <path
+            d="M10 4l-1 4H5a1 1 0 1 0 0 2h3.5l-1 4H4a1 1 0 1 0 0 2h3l-1 4h2l1-4h4l-1 4h2l1-4h3.5a1 1 0 1 0 0-2H15l1-4h3.5a1 1 0 1 0 0-2H16l1-4h-2l-1 4h-4l1-4h-2zm-.5 6h4l-1 4h-4l1-4z"
+            fill="currentColor"
+          />
+        </svg>
+      </span>
 
       <!-- 标题 -->
       <span
