@@ -5,7 +5,8 @@
  *
  * - 顶部:拖放/点击选择上传到素材库根目录(需传 upload)
  * - 工具栏:搜索切换(输入即过滤,自 SaveLocationForm 移入) + 上传(upload.pick) + 新增(CreateNodeDialog)
- * - 中部:树(支持拖拽文件 → 上传到目标文件夹/标签;传 v-model:selected 受控启用选择)
+ * - 中部:树(支持拖拽文件 → 上传到目标文件夹/标签;树内拖拽排序,跨层移动内置 AlertDialog 确认;
+ *   传 v-model:selected 受控启用选择;view='tiles' 时末级叶子层多行平铺,切换 UI 由宿主实现)
  * - 右键菜单:上传到此处(upload.pick,由宿主弹上传对话框)、新建同级/子级(CreateNodeDialog)、
  *   编辑(services.updateNode)、删除(内置 AlertDialog 确认;folder 带「同时删除其中的文件」勾选)
  *
@@ -44,12 +45,14 @@ const props = defineProps<{
   libraryId: string;
   /** 数据服务:树数据加载 + 节点 CRUD */
   services: LibraryTreeServices;
-  /** 弹窗服务:提供后启用拖拽跨层移动的确认 */
+  /** 弹窗服务:提供后用于拖拽排序/移动失败的错误提示(alert) */
   dialog?: LibraryTreeDialog;
   /** 上传服务:提供后启用拖放/选择文件上传 */
   upload?: LibraryTreeUpload;
   /** 顶部根目录上传 Dropzone;传 false 隐藏(树节点拖放/右键/工具栏上传不受影响),缺省显示 */
   showDropzone?: boolean;
+  /** 视图:tree=经典树(默认);tiles=末级叶子层多行平铺(父级仍树形缩进)。受控 prop,切换 UI 由宿主实现 */
+  view?: 'tree' | 'tiles';
   /** 文案函数,缺省用内置中文 */
   t?: LibraryTreeT;
 }>();
@@ -166,7 +169,7 @@ function onDrop(node: LibraryTreeNode, e: DragEvent) {
 }
 
 // ---- 树内拖拽排序(参考 mira-client FolderTreeComponent/useDragSort 语义) ----
-// services.updateSortIndex 提供后启用;跨层移动需 services.moveNode + dialog 确认。
+// services.updateSortIndex 提供后启用;跨层移动需 services.moveNode,确认走内置 AlertDialog。
 const sortable = computed(() => !!props.services.updateSortIndex);
 const movable = computed(() => !!props.services.moveNode);
 const dragNode = ref<LibraryTreeNode | null>(null);
@@ -259,7 +262,40 @@ async function onRootNodeDrop() {
   await applyDragSort(drag, ROOT_ID, siblings, tt('tree.root'));
 }
 
-/** 保存拖拽结果:同层直接写排序;跨层先确认 + moveNode,再写新层排序 */
+/** 拖拽跨层移动确认(内置 AlertDialog):暂存待保存参数,确认后执行 */
+const moveConfirm = ref<{
+  drag: LibraryTreeNode;
+  newParentId: number;
+  items: { id: number; sort_index: number }[];
+  parentTitle: string;
+} | null>(null);
+const moving = ref(false);
+
+/** 保存拖拽结果:跨层先 moveNode,再写新层排序;失败走宿主 dialog.alert */
+async function saveDragSort(
+  drag: LibraryTreeNode,
+  newParentId: number,
+  items: { id: number; sort_index: number }[],
+  move: boolean,
+) {
+  const updateSortIndex = props.services.updateSortIndex;
+  if (!updateSortIndex) return;
+  const alertDialog = props.dialog ?? silentDialog;
+  try {
+    if (move) {
+      await props.services.moveNode?.(props.mode, props.libraryId, drag.id, newParentId || null);
+    }
+    await updateSortIndex.call(props.services, props.mode, props.libraryId, items);
+  } catch (error) {
+    console.error('[LibraryTreeView] drag sort failed:', error);
+    alertDialog.alert({ message: tt(move ? 'tree.moveFailed' : 'tree.sortFailed', { error: String(error) }) });
+    return;
+  }
+  if (newParentId !== ROOT_ID) expandNode(newParentId);
+  await load(props.libraryId);
+}
+
+/** 拖拽入口:同层直接写排序;跨层先弹内置 AlertDialog 确认(对齐桌面端拖拽移动语义),取消则不动 */
 async function applyDragSort(
   drag: LibraryTreeNode,
   newParentId: number,
@@ -274,25 +310,25 @@ async function applyDragSort(
   if (sameLevel && siblings.map(n => n.id).join() === oldOrder) return;
 
   const items = siblings.map((n, i) => ({ id: n.id, sort_index: i }));
-  const confirmDialog = props.dialog ?? silentDialog;
-  try {
-    if (!sameLevel) {
-      if (!props.services.moveNode) return;
-      // 跨层移动弹确认(对齐桌面端拖拽移动语义),取消则不动
-      const ok = await confirmDialog.confirm({
-        message: tt('tree.dragMoveConfirm', { name: drag.title, parent: parentTitle }),
-      });
-      if (!ok) return;
-      await props.services.moveNode(props.mode, props.libraryId, drag.id, newParentId || null);
-    }
-    await updateSortIndex.call(props.services, props.mode, props.libraryId, items);
-  } catch (error) {
-    console.error('[LibraryTreeView] drag sort failed:', error);
-    confirmDialog.alert({ message: tt(sameLevel ? 'tree.sortFailed' : 'tree.moveFailed', { error: String(error) }) });
+  if (!sameLevel) {
+    if (!props.services.moveNode) return;
+    moveConfirm.value = { drag, newParentId, items, parentTitle };
     return;
   }
-  if (newParentId !== ROOT_ID) expandNode(newParentId);
-  await load(props.libraryId);
+  await saveDragSort(drag, newParentId, items, false);
+}
+
+/** 跨层移动确认对话框「确定」:执行 moveNode + 新层排序 */
+async function confirmMove() {
+  const pending = moveConfirm.value;
+  if (!pending || moving.value) return;
+  moving.value = true;
+  try {
+    await saveDragSort(pending.drag, pending.newParentId, pending.items, true);
+  } finally {
+    moving.value = false;
+    moveConfirm.value = null;
+  }
 }
 
 // ---- 初始加载 + libraryId 变化重载 ----
@@ -323,7 +359,7 @@ const titleText = computed(() => props.mode === 'folder' ? tt('common.folder') :
 
 const noData = computed(() => !loading.value && !error.value && count.value === 0);
 
-/** dialog 未注入时的占位:跨层拖拽移动确认静默取消 */
+/** dialog 未注入时的占位:错误提示静默忽略 */
 const silentDialog: LibraryTreeDialog = {
   alert: async () => {},
   confirm: async () => false,
@@ -555,6 +591,9 @@ const ctxItem = 'flex w-full cursor-pointer items-center gap-1.5 rounded-[4px] b
         :sortable="sortable && !isSearching"
         :drop-mark="dropMark"
         :dragging-id="dragNode?.id ?? null"
+        :tile-leaves="view === 'tiles'"
+        :root="true"
+        :root-label="tt(mode === 'folder' ? 'tree.root' : 'tree.tagRoot')"
         @toggle="toggle"
         @select="onSelect"
         @drop="onDrop"
@@ -624,6 +663,25 @@ const ctxItem = 'flex w-full cursor-pointer items-center gap-1.5 rounded-[4px] b
           <Button variant="destructive" :disabled="deleting" @click="confirmDelete">
             <Loader2 v-if="deleting" class="size-4 animate-spin" />
             {{ tt('tree.delete') }}
+          </Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
+    <!-- 拖拽跨层移动确认:内置 AlertDialog(取消则不动) -->
+    <AlertDialog :open="!!moveConfirm" @update:open="(value: boolean) => !value && !moving && (moveConfirm = null)">
+      <AlertDialogContent class="sm:max-w-sm">
+        <AlertDialogHeader>
+          <AlertDialogTitle>{{ tt('tree.moveTitle', { type: titleText }) }}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {{ tt('tree.dragMoveConfirm', { name: moveConfirm?.drag.title, parent: moveConfirm?.parentTitle }) }}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <Button variant="outline" :disabled="moving" @click="moveConfirm = null">{{ tt('common.cancel') }}</Button>
+          <Button :disabled="moving" @click="confirmMove">
+            <Loader2 v-if="moving" class="size-4 animate-spin" />
+            {{ tt('common.confirm') }}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

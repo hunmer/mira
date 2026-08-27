@@ -376,7 +376,7 @@ export interface MediaLibraryServices {
   media: MediaBrowserServices
   /** 右侧详情面板(编辑能力;listFolders/listTags 缺省回退 tree) */
   detail?: MediaDetailServices
-  /** 弹窗服务(树拖拽跨层移动确认等) */
+  /** 弹窗服务(树排序/移动失败的错误提示等) */
   dialog?: LibraryTreeDialog
   /** 上传服务(树拖放/右键上传) */
   upload?: LibraryTreeUpload

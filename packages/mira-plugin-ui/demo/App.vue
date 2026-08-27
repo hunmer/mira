@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { Loader2, LogOut, Moon, Server, Sun } from '@lucide/vue'
+import { LayoutGrid, ListTree, Loader2, LogOut, Moon, Server, Sun } from '@lucide/vue'
 import { MiraClient, type HealthResponse } from 'mira-app-core/shared/sdk'
 import { BatchUploadDialog, DeviceListPicker, Progress, SaveLocationDialog, type BatchUploadFileService, type DeviceListItem, type DeviceListPickerServices, type SaveLocation } from '@/index'
 import { Dropzone, LibrarySelect, LibraryTreeView, MediaBrowser, MediaLibraryView, ServerManagerDialog, toApiFilters } from '@/library'
@@ -241,6 +241,9 @@ const browserServerManager = computed<MediaBrowserServerManager>(() => ({
 // 受控选择:传 v-model:selected 启用(文件夹单选 + 标签多选勾选)
 const selectedFolder = ref<LibraryTreeNode[]>([])
 const selectedTags = ref<LibraryTreeNode[]>([])
+// 文件夹树视图:tree=经典树 / tiles=末级叶子层多行平铺(外部切换图标示例)
+const folderView = ref<'tree' | 'tiles'>('tree')
+const tagView = ref<'tree' | 'tiles'>('tree')
 
 // mock 数据(未连接时使用;可变,右键新建/删除直接改内存,完整演示编辑流程)
 const mockFolders = ref<LibraryFlatItem[]>([
@@ -788,10 +791,23 @@ async function startUpload () {
         <h2 class="text-base font-semibold">LibraryTreeView 树视图</h2>
         <div class="grid grid-cols-2 gap-4">
           <div class="flex min-w-0 flex-col gap-2">
-            <span class="text-muted-foreground text-xs font-medium">文件夹树</span>
+            <div class="flex items-center justify-between">
+              <span class="text-muted-foreground text-xs font-medium">文件夹树</span>
+              <!-- 外部切换视图图标:tree ↔ tiles(平铺视图由 LibraryTreeView 的 view prop 受控) -->
+              <button
+                type="button"
+                class="inline-flex size-6 cursor-pointer items-center justify-center rounded-md border-none bg-transparent text-muted-foreground transition-[color,background-color,transform] duration-150 hover:bg-accent hover:text-foreground active:scale-90"
+                :class="folderView === 'tiles' && 'text-primary'"
+                :title="folderView === 'tree' ? '切换为平铺视图' : '切换为树视图'"
+                @click="folderView = folderView === 'tree' ? 'tiles' : 'tree'"
+              >
+                <component :is="folderView === 'tree' ? LayoutGrid : ListTree" class="size-4" />
+              </button>
+            </div>
             <div class="h-96 overflow-hidden rounded-lg border">
               <LibraryTreeView
                 mode="folder"
+                :view="folderView"
                 :library-id="currentLibraryId || 'mock'"
                 :services="treeServices"
                 :dialog="treeDialog"
@@ -802,10 +818,22 @@ async function startUpload () {
             </div>
           </div>
           <div class="flex min-w-0 flex-col gap-2">
-            <span class="text-muted-foreground text-xs font-medium">标签树</span>
+            <div class="flex items-center justify-between">
+              <span class="text-muted-foreground text-xs font-medium">标签树</span>
+              <button
+                type="button"
+                class="inline-flex size-6 cursor-pointer items-center justify-center rounded-md border-none bg-transparent text-muted-foreground transition-[color,background-color,transform] duration-150 hover:bg-accent hover:text-foreground active:scale-90"
+                :class="tagView === 'tiles' && 'text-primary'"
+                :title="tagView === 'tree' ? '切换为平铺视图' : '切换为树视图'"
+                @click="tagView = tagView === 'tree' ? 'tiles' : 'tree'"
+              >
+                <component :is="tagView === 'tree' ? LayoutGrid : ListTree" class="size-4" />
+              </button>
+            </div>
             <div class="h-96 overflow-hidden rounded-lg border">
               <LibraryTreeView
                 mode="tag"
+                :view="tagView"
                 :library-id="currentLibraryId || 'mock'"
                 :services="treeServices"
                 :dialog="treeDialog"

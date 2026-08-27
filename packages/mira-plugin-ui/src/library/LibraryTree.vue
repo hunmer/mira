@@ -39,8 +39,16 @@ const props = withDefaults(
     dropMark?: { id: number; position: LibraryTreeDropPosition } | null;
     /** 拖拽中的节点 id(半透明反馈) */
     draggingId?: number | null;
+    /** 平铺视图:当前层全部为叶子节点时渲染为多行平铺 chip(上层仍为树形缩进) */
+    tileLeaves?: boolean;
+    /** 内部用:本平铺层嵌在分组卡片体内,去掉容器左缩进与上下留白 */
+    inline?: boolean;
+    /** 顶层标记(仅根层调用传 true):平铺视图下无子节点的散叶子聚合进「根目录」虚拟分组卡 */
+    root?: boolean;
+    /** 根目录虚拟分组卡的头部文案(root 时显示) */
+    rootLabel?: string;
   }>(),
-  { kind: 'folder', indent: 20, checkable: false, sortable: false, dropMark: null, draggingId: null },
+  { kind: 'folder', indent: 20, checkable: false, sortable: false, dropMark: null, draggingId: null, tileLeaves: false, inline: false, root: false, rootLabel: '' },
 );
 
 const emit = defineEmits<{
@@ -62,12 +70,32 @@ const emit = defineEmits<{
 // 选中模式:点行 = select;非选中模式保持原行为(点行折叠/展开)
 const selectable = computed(() => props.checkable || props.selectedIds !== undefined);
 
+// 平铺视图:本层节点全部为叶子 → 该层渲染为多行平铺(父级层级仍走树形缩进)
+const isLeafTier = computed(
+  () => props.tileLeaves && props.nodes.length > 0 && props.nodes.every(n => !n.children.length),
+);
+
+/** 分组卡片:平铺视图下 children 全为叶子的节点 → li 整体作为卡片(头=节点行,体=平铺子节点),恒展开不折叠 */
+function isGroupCard(node: LibraryTreeNode): boolean {
+  return props.tileLeaves && node.children.length > 0 && node.children.every(n => !n.children.length);
+}
+
+/** 平铺视图根层:无子节点的散叶子 → 聚合进「根目录」虚拟分组卡(置顶渲染) */
+const rootLeaves = computed(() =>
+  props.tileLeaves && props.root ? props.nodes.filter(n => !n.children.length) : [],
+);
+
+/** 主列表:平铺根层剔除散叶子(进虚拟卡),其余场景全量 */
+const mainNodes = computed(() =>
+  rootLeaves.value.length ? props.nodes.filter(n => n.children.length) : props.nodes,
+);
+
 // 当前被拖拽悬停的节点 id(用于高亮落点)
 const dragOverId = ref<number | null>(null);
 
 function onToggle(node: LibraryTreeNode) {
-  // 仅有子节点的项可折叠/展开
-  if (node.children.length) emit('toggle', node.id);
+  // 仅有子节点的项可折叠/展开;平铺视图的分组卡片始终展开,不响应折叠
+  if (node.children.length && !isGroupCard(node)) emit('toggle', node.id);
 }
 
 function onRowClick(node: LibraryTreeNode) {
@@ -179,12 +207,126 @@ function rowClass(node: LibraryTreeNode): string[] {
 </script>
 
 <template>
-  <ul class="m-0 list-none p-0" role="tree">
-    <li
+  <!-- 平铺视图:本层全为叶子 → badge 样式多行平铺(未设置 icon 不显示图标;选择/右键/拖拽上传/排序交互与行一致;父级仍为树形) -->
+  <div
+    v-if="isLeafTier && !root"
+    class="flex flex-wrap gap-1"
+    role="tree"
+    :class="inline ? 'py-0.5' : 'py-1'"
+    :style="inline ? undefined : { marginLeft: indent + 'px' }"
+  >
+    <div
       v-for="node in nodes"
       :key="node.id"
       role="treeitem"
-      :aria-expanded="node.children.length ? expanded.has(node.id) : undefined"
+      class="inline-flex h-6 max-w-48 shrink-0 items-center gap-1 rounded-full border border-border bg-accent/60 px-2.5 text-xs text-foreground transition-[background-color,border-color,box-shadow,opacity] duration-100 select-none"
+      :class="rowClass(node)"
+      :title="node.title"
+      :draggable="sortable"
+      @dragstart="onNodeDragStart(node, $event)"
+      @dragover="onDragOver($event, node); onNodeDragOver(node, $event)"
+      @dragleave="onNodeDragLeave(node, $event)"
+      @drop="onNodeDrop(node, $event); onDrop($event, node)"
+      @dragend="emit('node-drag-end', node, $event)"
+      @click="onRowClick(node)"
+      @contextmenu="onContextMenu($event, node)"
+    >
+      <!-- 多选 checkbox:点击勾选/取消,阻止冒泡到 badge -->
+      <span
+        v-if="checkable"
+        role="checkbox"
+        :aria-checked="checked?.has(node.id) ?? false"
+        tabindex="0"
+        class="inline-flex size-3.5 shrink-0 cursor-pointer items-center justify-center rounded-[4px] border-[1.5px] border-border bg-accent text-white transition-colors duration-100 hover:border-primary"
+        :class="checked?.has(node.id) && 'border-primary bg-primary'"
+        @click.stop="emit('select', node)"
+        @keydown.enter.prevent="emit('select', node)"
+      >
+        <svg v-if="checked?.has(node.id)" viewBox="0 0 16 16" width="10" height="10" aria-hidden="true">
+          <path
+            d="M3 8.5l3 3 7-7"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </span>
+
+      <!-- 图标:未设置 icon 不显示;设置了显示 Material 图标(字体与 IconPicker 同源,由宿主 tailwind.css 提供) -->
+      <span
+        v-if="node.icon"
+        class="material-icons shrink-0 leading-none"
+        :style="{ fontSize: '14px', ...iconStyle(node) }"
+      >{{ node.icon }}</span>
+
+      <!-- 标题 -->
+      <span
+        class="min-w-0 truncate"
+        :class="[
+          selectedIds?.has(node.id) && 'text-primary',
+          matched?.has(node.id) && 'font-semibold text-primary',
+        ]"
+      >{{ node.title }}</span>
+    </div>
+  </div>
+
+  <ul v-else class="m-0 list-none p-0" role="tree">
+    <!-- 平铺根层:「根目录」虚拟分组卡置顶,收纳无子节点的散叶子(恒展开,头部仅展示无节点交互) -->
+    <li v-if="rootLeaves.length" class="my-1 rounded-lg border border-border bg-accent/35 p-1">
+      <div class="flex h-7 items-center gap-1.5 rounded-md pr-2 pl-2 text-foreground select-none" :title="rootLabel">
+        <span v-if="kind === 'folder'" class="inline-flex shrink-0 text-primary">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+            <path
+              d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"
+              fill="currentColor"
+            />
+          </svg>
+        </span>
+        <span v-else class="inline-flex shrink-0 text-muted-foreground">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+            <path
+              d="M10 4l-1 4H5a1 1 0 1 0 0 2h3.5l-1 4H4a1 1 0 1 0 0 2h3l-1 4h2l1-4h4l-1 4h2l1-4h3.5a1 1 0 1 0 0-2H15l1-4h3.5a1 1 0 1 0 0-2H16l1-4h-2l-1 4h-4l1-4h-2zm-.5 6h4l-1 4h-4l1-4z"
+              fill="currentColor"
+            />
+          </svg>
+        </span>
+        <span class="min-w-0 flex-1 truncate">{{ rootLabel }}</span>
+        <span class="shrink-0 rounded-full border border-border bg-accent px-[5px] py-0.5 text-[10px] leading-none text-muted-foreground">{{ rootLeaves.length }}</span>
+      </div>
+      <LibraryTree
+        :nodes="rootLeaves"
+        :kind="kind"
+        :indent="indent"
+        :expanded="expanded"
+        :matched="matched"
+        :selected-ids="selectedIds"
+        :checkable="checkable"
+        :checked="checked"
+        :sortable="sortable"
+        :drop-mark="dropMark"
+        :dragging-id="draggingId"
+        :tile-leaves="tileLeaves"
+        :inline="true"
+        @toggle="emit('toggle', $event)"
+        @select="emit('select', $event)"
+        @drop="(n, f) => emit('drop', n, f)"
+        @contextmenu="(n, x, y) => emit('contextmenu', n, x, y)"
+        @node-drag-start="(n, e) => emit('node-drag-start', n, e)"
+        @node-drag-over="(n, p, e) => emit('node-drag-over', n, p, e)"
+        @node-drag-leave="(n, e) => emit('node-drag-leave', n, e)"
+        @node-drop="(n, p, e) => emit('node-drop', n, p, e)"
+        @node-drag-end="(n, e) => emit('node-drag-end', n, e)"
+      />
+    </li>
+
+    <li
+      v-for="node in mainNodes"
+      :key="node.id"
+      role="treeitem"
+      :aria-expanded="node.children.length ? (isGroupCard(node) || expanded.has(node.id)) : undefined"
+      :class="isGroupCard(node) && 'my-1 rounded-lg border border-border bg-accent/35 p-1'"
     >
       <div
         class="flex h-7 items-center gap-1.5 rounded-md pr-2 text-foreground transition-[background-color,box-shadow,opacity] duration-100 select-none"
@@ -223,8 +365,9 @@ function rowClass(node: LibraryTreeNode): string[] {
           </svg>
         </span>
 
-        <!-- 展开/折叠:有子节点显示切换图标;无子节点占位对齐 -->
+        <!-- 展开/折叠:有子节点显示切换图标;无子节点占位对齐;分组卡片(平铺下恒展开)不渲染,不占左边距 -->
         <span
+          v-if="!isGroupCard(node)"
           class="inline-flex w-3.5 shrink-0 justify-center"
           :class="!node.children.length && 'invisible'"
           @click.stop="onToggle(node)"
@@ -310,9 +453,9 @@ function rowClass(node: LibraryTreeNode): string[] {
         >{{ node.children.length }}</span>
       </div>
 
-      <!-- 子树:展开时渲染 -->
+      <!-- 子树:展开时渲染;分组卡片体强制展开(传 inline 去缩进) -->
       <LibraryTree
-        v-if="node.children.length && expanded.has(node.id)"
+        v-if="node.children.length && (isGroupCard(node) || expanded.has(node.id))"
         :nodes="node.children"
         :kind="kind"
         :indent="indent"
@@ -324,6 +467,8 @@ function rowClass(node: LibraryTreeNode): string[] {
         :sortable="sortable"
         :drop-mark="dropMark"
         :dragging-id="draggingId"
+        :tile-leaves="tileLeaves"
+        :inline="isGroupCard(node)"
         @toggle="emit('toggle', $event)"
         @select="emit('select', $event)"
         @drop="(n, f) => emit('drop', n, f)"
