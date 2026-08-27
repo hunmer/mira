@@ -23,6 +23,8 @@ const props = defineProps<{
   services: LibraryTreeServices;
   /** 树上传服务:files/urls 直接上传,pick = 自定义上传对话框 */
   upload: LibraryTreeUpload;
+  /** 树视图样式:tree 经典树 / tiles 叶子层平铺(设置「快捷导入样式」,由 dragdrop.ts 注入) */
+  view?: 'tree' | 'tiles';
   /** 提供后才显示「⚙ 自定义上传」zone */
   showCustomUpload: boolean;
   /** 「📂 不设文件夹」zone 释放 → 根区上传(沿用 DragDropPayload 语义) */
@@ -172,6 +174,7 @@ function onRootDrop(e: DragEvent) {
             :upload="upload"
             :use-default-drop-upload="true"
             :show-dropzone="false"
+            :view="view"
           />
         </div>
         <div class="h-[44vh] min-h-0 overflow-hidden rounded-lg border border-border" @dragover.prevent @drop.prevent>
@@ -182,6 +185,7 @@ function onRootDrop(e: DragEvent) {
             :upload="upload"
             :use-default-drop-upload="true"
             :show-dropzone="false"
+            :view="view"
           />
         </div>
       </div>

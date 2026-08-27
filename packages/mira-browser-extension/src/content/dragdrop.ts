@@ -3,10 +3,11 @@ import { createApp, type App } from 'vue';
 import type { LibraryFlatItem, LibraryTreeServices, LibraryTreeUpload } from 'mira-plugin-ui/library';
 import { dbg } from '@/shared/debug';
 import { parseDrop, urlKind } from '@/shared/drag-data';
-import type { ResourceKind } from '@/shared/types';
+import type { LibraryTreeStyle, ResourceKind } from '@/shared/types';
 import DragDropOverlay from './overlay/DragDropOverlay.vue';
 // 仅在浮层 Shadow DOM 内加载,避免 Tailwind utilities 污染宿主页面
-import dragdropOverlayCssUrl from './overlay/dragdrop-overlay.css?url';
+// 引用已编译的插件 UI CSS 产物;直接对源码 CSS 使用 ?url 会被 CRX 保留为不存在的 src 路径
+import dragdropOverlayCssUrl from 'mira-plugin-ui/mira-plugin-ui.css?url';
 import { ensureOverlayStyles, OVERLAY_BASE_CSS } from './overlay/styles';
 
 export interface DragDropPayload {
@@ -33,6 +34,8 @@ export interface DragDropHandlers {
   getTags?: () => Promise<Tag[] | null>;
   /** 当前素材库 id;未连接返回 null(浮层树据此加载) */
   getLibraryId?: () => Promise<string | null>;
+  /** 浮层树视图样式(设置「快捷导入样式」);未提供或失败时用 tree */
+  getTreeStyle?: () => Promise<LibraryTreeStyle | null>;
   /**
    * 新建文件夹(浮层树「新建」对话框);返回新文件夹 id;失败返回 null。
    */
@@ -214,6 +217,9 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
   let scrollTimer: ReturnType<typeof setInterval> | null = null;
   let pendingFolders: Promise<Folder[] | null> | null = null;
   let pendingTags: Promise<Tag[] | null> | null = null;
+  let pendingStyle: Promise<LibraryTreeStyle | null> | null = null;
+  // 浮层树的视图样式;dragstart 预热拉取,挂载浮层时取当前缓存值
+  let treeStyle: LibraryTreeStyle = 'tree';
   let listenersAttached = false;
   // jsdom 无 ResizeObserver(单测环境跳过高度重钳制)
   const resizeObserver = typeof ResizeObserver !== 'undefined'
@@ -276,6 +282,7 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     };
     void fetchFolders(); // 预热文件夹拉取,移动达到阈值时已就绪
     void fetchTags(); // 预热标签拉取
+    void fetchTreeStyle(); // 预热树视图样式(快捷导入样式设置)
   }
 
   /** document 级 dragover:判断位移,首次超过阈值时按拖拽方向显示浮层 */
@@ -298,6 +305,7 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     // 从文件管理器拖入页面时不会触发页面 dragstart;仅凭 dragover 的 Files 类型
     // 也应显示浮层,释放后由 LibraryTreeView 读取 dataTransfer.files 上传。
     if (!dragOrigin && e.dataTransfer?.types.some(type => type.toLowerCase() === 'files')) {
+      void fetchTreeStyle(); // 外部文件拖入无 dragstart,这里补预热
       dragOrigin = {
         x: e.clientX,
         y: e.clientY,
@@ -345,6 +353,26 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
       setTimeout(() => { pendingFolders = null; }, 5000);
     }
     return pendingFolders;
+  }
+
+  /** 懒加载树视图样式(与 fetchFolders 同策略:结果缓存,5 秒后允许重新拉取) */
+  function fetchTreeStyle(): Promise<LibraryTreeStyle | null> {
+    if (!handlers.getTreeStyle) return Promise.resolve(null);
+    if (!pendingStyle) {
+      pendingStyle = handlers.getTreeStyle().then(style => {
+        if (style === 'tree' || style === 'tiles') {
+          if (style !== treeStyle) dbg.log('dragdrop', 'tree style', { style });
+          treeStyle = style;
+        }
+        return style;
+      }).catch(e => {
+        dbg.error('dragdrop', 'fetchTreeStyle failed', e);
+        return null;
+      }).finally(() => {
+        setTimeout(() => { pendingStyle = null; }, 5000);
+      });
+    }
+    return pendingStyle;
   }
 
   /** 懒加载标签列表(与文件夹同策略) */
@@ -515,26 +543,28 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     const baseStyle = document.createElement('style');
     baseStyle.textContent = OVERLAY_BASE_CSS;
     shadow.appendChild(baseStyle);
-    const cssUrl = typeof chrome !== 'undefined' && chrome.runtime?.getURL
-      ? chrome.runtime.getURL(dragdropOverlayCssUrl.replace(/^\/+/, ''))
-      : new URL(dragdropOverlayCssUrl, import.meta.url).href;
-    // ShadowRoot 内的 <link> 在部分页面 CSP 下会被拦截;通过扩展上下文 fetch
-    // 读取产物后写入 <style>,确保样式可用且仍不会泄漏到宿主文档。
-    const shadowStyle = document.createElement('style');
-    shadowStyle.dataset.miraDragdrop = 'tailwind';
-    shadow.appendChild(shadowStyle);
-    void fetch(cssUrl)
-      .then(response => response.ok ? response.text() : Promise.reject(new Error(`CSS ${response.status}`)))
-      .then(css => { shadowStyle.textContent = css; })
-      .catch(error => {
-        dbg.warn('dragdrop', 'shadow stylesheet fetch failed', { cssUrl, error });
-      });
+    // 开发模式资源由 Vite dev server 提供,必须相对当前模块解析;
+    // 生产模式才使用 chrome.runtime.getURL 获取扩展内 assets 路径。
+    const isViteDevAsset = dragdropOverlayCssUrl.startsWith('/@fs/') || dragdropOverlayCssUrl.startsWith('/@id/');
+    const cssUrl = isViteDevAsset
+      ? `http://localhost:5174${dragdropOverlayCssUrl}`
+      : import.meta.env.DEV
+        ? new URL(dragdropOverlayCssUrl, import.meta.url).href
+      : typeof chrome !== 'undefined' && chrome.runtime?.getURL
+        ? chrome.runtime.getURL(dragdropOverlayCssUrl.replace(/^\/+/, ''))
+        : new URL(dragdropOverlayCssUrl, import.meta.url).href;
+    // 通过 ShadowRoot 内的 stylesheet link 加载,避免 content script fetch 受宿主页面 CORS 限制。
+    const styleLink = document.createElement('link');
+    styleLink.rel = 'stylesheet';
+    styleLink.href = cssUrl;
+    shadow.appendChild(styleLink);
 
     vueApp = createApp(DragDropOverlay, {
       source,
       getLibraryId: handlers.getLibraryId ?? (async () => null),
       services: treeServices,
       upload: makeUploadAdapter(source),
+      view: treeStyle,
       showCustomUpload: !!handlers.openCustomUpload,
       onUploadPayload: handlers.onUpload,
       onCustomUpload: () => {

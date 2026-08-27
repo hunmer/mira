@@ -7,7 +7,7 @@
  * - 工具栏:搜索切换(输入即过滤,自 SaveLocationForm 移入) + 上传(upload.pick) + 新增(CreateNodeDialog)
  * - 中部:树(拖拽文件 → fileDrop 回调 或 默认上传 direct/dialog 模式,互斥;useDefaultDropUpload 开关控制;
  *   树内拖拽排序,跨层移动内置 AlertDialog 确认;
- *   传 v-model:selected 受控启用选择;view='tiles' 时末级叶子层多行平铺,切换 UI 由宿主实现)
+ *   传 v-model:selected 受控启用选择;view='tiles' 时叶子层多行平铺、父级恒展开,切换 UI 由宿主实现)
  * - 右键菜单:上传到此处(upload.pick,由宿主弹上传对话框)、新建同级/子级(CreateNodeDialog)、
  *   编辑(services.updateNode)、删除(内置 AlertDialog 确认;folder 带「同时删除其中的文件」勾选)
  *
@@ -61,7 +61,7 @@ const props = defineProps<{
   defaultDropUploadMode?: LibraryTreeDropUploadMode;
   /** 顶部根目录上传 Dropzone;传 false 隐藏(树节点拖放/右键/工具栏上传不受影响),缺省显示 */
   showDropzone?: boolean;
-  /** 视图:tree=经典树(默认);tiles=末级叶子层多行平铺(父级仍树形缩进)。受控 prop,切换 UI 由宿主实现 */
+  /** 视图:tree=经典树(默认);tiles=叶子层多行平铺(所有父级分组卡片恒展开,无折叠按钮)。受控 prop,切换 UI 由宿主实现 */
   view?: 'tree' | 'tiles';
   /** 文案函数,缺省用内置中文 */
   t?: LibraryTreeT;

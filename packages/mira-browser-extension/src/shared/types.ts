@@ -33,6 +33,11 @@ export type SnifferSortOrder = 'asc' | 'desc';
 export type Locale = 'zh-CN' | 'en';
 
 /**
+ * 素材库树视图样式:tree 经典树 / tiles 末级叶子层平铺
+ */
+export type LibraryTreeStyle = 'tree' | 'tiles';
+
+/**
  * 嗅探到的资源
  */
 export interface SniffedResource {
@@ -141,6 +146,8 @@ export interface ExtensionSettings {
   tags: string[];
   uiMode: UIMode;
   theme: Theme;
+  /** 素材库树视图样式(快捷导入面板的文件夹/标签树) */
+  libraryTreeStyle: LibraryTreeStyle;
   /** 界面语言:i18n locale */
   locale: Locale;
   dragPopoverEnabled: boolean;
@@ -185,6 +192,7 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   tags: [],
   uiMode: 'popup',
   theme: 'auto',
+  libraryTreeStyle: 'tree',
   locale: 'zh-CN',
   dragPopoverEnabled: true,
   dragPopoverHosts: [],

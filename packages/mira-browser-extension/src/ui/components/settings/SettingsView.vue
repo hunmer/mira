@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useSettings } from '@/ui/composables/useSettings';
 import { useI18n } from 'vue-i18n';
-import type { Locale, Theme } from '@/shared/types';
+import type { Locale, Theme, LibraryTreeStyle } from '@/shared/types';
 import Input from '@/ui/components/ui/Input.vue';
 import Switch from '@/ui/components/ui/Switch.vue';
 import Button from '@/ui/components/ui/Button.vue';
@@ -120,6 +120,13 @@ async function addCurrentHost() {
         <select :value="settings.uiMode" @change="e => update({ uiMode: (e.target as HTMLSelectElement).value as any })">
           <option value="popup">{{ t('settings.uiModePopup') }}</option>
           <option value="sidePanel">{{ t('settings.uiModeSidePanel') }}</option>
+        </select>
+      </div>
+      <div class="row" :title="t('settings.quickImportStyleHint')">
+        <span>{{ t('settings.quickImportStyle') }}</span>
+        <select :value="settings.libraryTreeStyle" @change="e => update({ libraryTreeStyle: (e.target as HTMLSelectElement).value as LibraryTreeStyle })">
+          <option value="tree">{{ t('settings.quickImportStyleTree') }}</option>
+          <option value="tiles">{{ t('settings.quickImportStyleTiles') }}</option>
         </select>
       </div>
       <div class="row">

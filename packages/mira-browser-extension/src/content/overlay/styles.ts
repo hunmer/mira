@@ -26,6 +26,19 @@ export const OVERLAY_BASE_CSS = `
   transform: translateY(8px);
   transition: opacity .16s ease-out, transform .16s ease-out;
 }
+.mira-dragdrop {
+  --radius: .625rem;
+  --background: oklch(.145 0 0); --foreground: oklch(.985 0 0);
+  --card: oklch(.205 0 0); --card-foreground: oklch(.985 0 0);
+  --popover: oklch(.205 0 0); --popover-foreground: oklch(.985 0 0);
+  --primary: #4ade80; --primary-foreground: #052e16;
+  --secondary: oklch(.269 0 0); --secondary-foreground: oklch(.985 0 0);
+  --muted: oklch(.269 0 0); --muted-foreground: oklch(.708 0 0);
+  --accent: oklch(.269 0 0); --accent-foreground: oklch(.985 0 0);
+  --destructive: oklch(.704 .191 22.216); --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%); --ring: oklch(.556 0 0);
+  width: min(660px, 94vw);
+}
 .mira-overlay.mira-ready { visibility: visible; opacity: 1; transform: translateY(0); }
 .mira-overlay-title { padding: 10px 14px; font-weight: 600; border-bottom: 1px solid #3f3f46; }
 .mira-overlay-body { display: flex; gap: 8px; padding: 12px; min-height: 0; }

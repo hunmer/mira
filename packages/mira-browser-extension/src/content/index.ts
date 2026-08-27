@@ -150,6 +150,15 @@ const dragdrop = createDragDrop({
   getFolders: fetchFolders,
   getTags: fetchTags,
   getLibraryId,
+  // 浮层树视图样式:设置「快捷导入样式」(CONFIG_GET 返回完整 settings)
+  async getTreeStyle() {
+    try {
+      const settings = await chrome.runtime.sendMessage({ type: 'CONFIG_GET' });
+      return settings?.libraryTreeStyle ?? null;
+    } catch {
+      return null;
+    }
+  },
   // 浮层树(LibraryTreeView)的完整 CRUD:消息直连 background
   createNode(kind, libraryId, title, parentId) {
     return chrome.runtime.sendMessage({ type: 'NODE_CREATE', payload: { kind, libraryId, title, parentId } });

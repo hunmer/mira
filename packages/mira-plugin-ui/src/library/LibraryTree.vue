@@ -39,7 +39,7 @@ const props = withDefaults(
     dropMark?: { id: number; position: LibraryTreeDropPosition } | null;
     /** 拖拽中的节点 id(半透明反馈) */
     draggingId?: number | null;
-    /** 平铺视图:当前层全部为叶子节点时渲染为多行平铺 chip(上层仍为树形缩进) */
+    /** 平铺视图:叶子层渲染为多行平铺 chip,父级一律分组卡片恒展开(不显示折叠按钮) */
     tileLeaves?: boolean;
     /** 内部用:本平铺层嵌在分组卡片体内,去掉容器左缩进与上下留白 */
     inline?: boolean;
@@ -75,9 +75,9 @@ const isLeafTier = computed(
   () => props.tileLeaves && props.nodes.length > 0 && props.nodes.every(n => !n.children.length),
 );
 
-/** 分组卡片:平铺视图下 children 全为叶子的节点 → li 整体作为卡片(头=节点行,体=平铺子节点),恒展开不折叠 */
+/** 分组卡片:平铺视图下所有父节点(有子节点) → li 整体作为卡片(头=节点行,体=子内容),恒展开不折叠 */
 function isGroupCard(node: LibraryTreeNode): boolean {
-  return props.tileLeaves && node.children.length > 0 && node.children.every(n => !n.children.length);
+  return props.tileLeaves && node.children.length > 0;
 }
 
 /** 平铺视图根层:无子节点的散叶子 → 聚合进「根目录」虚拟分组卡(置顶渲染) */
