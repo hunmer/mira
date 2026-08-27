@@ -145,8 +145,28 @@ export interface LibraryTreeUpload {
   files(files: File[], target?: LibraryTreeUploadTarget): void
   /** 链接落点;target 缺省表示素材库根目录 */
   urls(urls: string[], target?: LibraryTreeUploadTarget): void
-  /** 打开宿主的上传对话框(如 BatchUploadDialog);提供后右键菜单显示「上传」入口,target 为右键节点落点 */
-  pick?(target?: LibraryTreeUploadTarget): void
+  /**
+   * 打开宿主的上传对话框(如 BatchUploadDialog);提供后右键菜单显示「上传」入口,target 为右键节点落点。
+   * files/urls 为拖放预填(默认拖放上传 dialog 模式传入),宿主可忽略。
+   */
+  pick?(target?: LibraryTreeUploadTarget, files?: File[], urls?: string[]): void
+}
+
+/** 默认拖放上传模式:direct=直接上传(upload.files/urls);dialog=打开宿主上传对话框(upload.pick 预填) */
+export type LibraryTreeDropUploadMode = 'direct' | 'dialog'
+
+/** 拖放文件/链接到树视图的载荷(fileDrop 回调参数;node 缺省=拖到根目录空白区) */
+export interface LibraryTreeFileDropPayload {
+  /** 落点节点;undefined 表示拖到根目录空白区域 */
+  node?: LibraryTreeNode
+  /** 本地文件(若有) */
+  files: File[]
+  /** 解析出的链接(若有) */
+  urls: string[]
+  /** 上传落点(folder 模式为 { folderId },tag 模式为 { tags }) */
+  target?: LibraryTreeUploadTarget
+  /** 原始拖放事件(需要时可再读 dataTransfer) */
+  event: DragEvent
 }
 
 /** 文案函数:vue-i18n 风格(key + {n} 命名插值),缺省用内置中文 */

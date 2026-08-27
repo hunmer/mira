@@ -5,7 +5,8 @@
  *
  * - 顶部:拖放/点击选择上传到素材库根目录(需传 upload)
  * - 工具栏:搜索切换(输入即过滤,自 SaveLocationForm 移入) + 上传(upload.pick) + 新增(CreateNodeDialog)
- * - 中部:树(支持拖拽文件 → 上传到目标文件夹/标签;树内拖拽排序,跨层移动内置 AlertDialog 确认;
+ * - 中部:树(拖拽文件 → fileDrop 回调 或 默认上传 direct/dialog 模式,互斥;useDefaultDropUpload 开关控制;
+ *   树内拖拽排序,跨层移动内置 AlertDialog 确认;
  *   传 v-model:selected 受控启用选择;view='tiles' 时末级叶子层多行平铺,切换 UI 由宿主实现)
  * - 右键菜单:上传到此处(upload.pick,由宿主弹上传对话框)、新建同级/子级(CreateNodeDialog)、
  *   编辑(services.updateNode)、删除(内置 AlertDialog 确认;folder 带「同时删除其中的文件」勾选)
@@ -23,6 +24,7 @@ import CreateNodeDialog from './CreateNodeDialog.vue';
 import ContextMenu from './ContextMenu.vue';
 import Dropzone from './Dropzone.vue';
 import { parseDrop, canAcceptDrop, isNodeDrag } from './drag-data';
+import { defaultDropUpload } from './defaultDropUpload';
 // 注意:library 子入口以源码供宿主直接消费,这里必须用相对路径(宿主的 @ 别名指向其自身 src)
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../components/ui/alert-dialog';
 import { Button } from '../components/ui/button';
@@ -32,6 +34,8 @@ import type {
   LibraryTreeUpdatePayload,
   LibraryTreeDialog,
   LibraryTreeDropPosition,
+  LibraryTreeDropUploadMode,
+  LibraryTreeFileDropPayload,
   LibraryTreeNode,
   LibraryTreeKind,
   LibraryTreeServices,
@@ -49,6 +53,12 @@ const props = defineProps<{
   dialog?: LibraryTreeDialog;
   /** 上传服务:提供后启用拖放/选择文件上传 */
   upload?: LibraryTreeUpload;
+  /** 拖放文件/链接回调:与默认上传互斥,仅在默认上传关闭时触发(未显式传开关时提供本回调即视为关闭) */
+  fileDrop?: (payload: LibraryTreeFileDropPayload) => void;
+  /** 是否使用默认拖放上传(经 defaultDropUpload 路由到 upload 服务);缺省 true(提供了 fileDrop 时缺省 false),false 时走 fileDrop 回调 */
+  useDefaultDropUpload?: boolean;
+  /** 默认拖放上传模式:direct=直接走 upload.files/urls(缺省);dialog=打开 upload.pick 对话框并预填(未提供 pick 回退 direct) */
+  defaultDropUploadMode?: LibraryTreeDropUploadMode;
   /** 顶部根目录上传 Dropzone;传 false 隐藏(树节点拖放/右键/工具栏上传不受影响),缺省显示 */
   showDropzone?: boolean;
   /** 视图:tree=经典树(默认);tiles=末级叶子层多行平铺(父级仍树形缩进)。受控 prop,切换 UI 由宿主实现 */
@@ -150,22 +160,34 @@ function onRootDrop(e: DragEvent) {
   }
   e.preventDefault();
   rootHover.value = false;
-  const { files, urls } = parseDrop(e);
-  if (files.length) props.upload?.files(files);
-  if (urls.length) props.upload?.urls(urls);
+  dispatchFileDrop(e);
 }
+
+/** 拖放文件/链接统一分发:与默认上传互斥 —— 默认上传启用时走 defaultDropUpload,关闭时走 fileDrop 回调 */
+function dispatchFileDrop(e: DragEvent, node?: LibraryTreeNode) {
+  const { files, urls } = parseDrop(e);
+  if (!files.length && !urls.length) return;
+  const target = node
+    ? (props.mode === 'folder' ? { folderId: node.id } : { tags: [node.title] })
+    : undefined;
+  // 缺省规则:未显式传 useDefaultDropUpload 时,提供 fileDrop 即视为自定义(关闭默认上传)
+  const useDefault = props.useDefaultDropUpload ?? !props.fileDrop;
+  if (useDefault) {
+    defaultDropUpload(props.upload, files, urls, target, props.defaultDropUploadMode);
+    return;
+  }
+  props.fileDrop?.({ node, files, urls, target, event: e });
+}
+
 /** 顶部上传区回调(点击选择 / 拖放文件)→ 上传到素材库根目录 */
 function onRootDropFiles(files: File[]) {
   if (files.length) props.upload?.files(files);
 }
 
-// ---- 节点落点 → 上传到目标文件夹 / 标签 ----
+// ---- 节点落点 → 拖放文件分发(fileDrop 回调 + 默认上传到目标文件夹/标签) ----
 function onDrop(node: LibraryTreeNode, e: DragEvent) {
   rootHover.value = false;
-  const { files, urls } = parseDrop(e);
-  const target = props.mode === 'folder' ? { folderId: node.id } : { tags: [node.title] };
-  if (files.length) props.upload?.files(files, target);
-  if (urls.length) props.upload?.urls(urls, target);
+  dispatchFileDrop(e, node);
 }
 
 // ---- 树内拖拽排序(参考 mira-client FolderTreeComponent/useDragSort 语义) ----

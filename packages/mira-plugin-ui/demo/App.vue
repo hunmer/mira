@@ -4,7 +4,7 @@ import { LayoutGrid, ListTree, Loader2, LogOut, Moon, Server, Sun } from '@lucid
 import { MiraClient, type HealthResponse } from 'mira-app-core/shared/sdk'
 import { BatchUploadDialog, DeviceListPicker, Progress, SaveLocationDialog, type BatchUploadFileService, type DeviceListItem, type DeviceListPickerServices, type SaveLocation } from '@/index'
 import { Dropzone, LibrarySelect, LibraryTreeView, MediaBrowser, MediaLibraryView, ServerManagerDialog, toApiFilters } from '@/library'
-import type { LibraryFlatItem, LibrarySelectServer, LibraryTreeDialog, LibraryTreeServices, LibraryTreeNode, LibraryTreeUpload, ManagedServer, MediaBrowserFilters, MediaBrowserItem, MediaBrowserServerManager, MediaBrowserServices, MediaDetailItem, MediaDetailServices, MediaLibraryServices, ServerManagerServices } from '@/library'
+import type { LibraryFlatItem, LibrarySelectServer, LibraryTreeDialog, LibraryTreeDropUploadMode, LibraryTreeFileDropPayload, LibraryTreeServices, LibraryTreeNode, LibraryTreeUpload, LibraryTreeUploadTarget, ManagedServer, MediaBrowserFilters, MediaBrowserItem, MediaBrowserServerManager, MediaBrowserServices, MediaDetailItem, MediaDetailServices, MediaLibraryServices, ServerManagerServices } from '@/library'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -133,17 +133,12 @@ async function handleLibraryChange (libraryId: string) {
 
 /** 保存对话框「新增」:名称/描述/颜色/图标由组件内对话框收集,创建成功返回新节点 id 供组件自动选中 */
 async function handleCreateNode ({ kind, parentId, title, color, description, icon }: { kind: 'folder' | 'tag'; parentId: number; title: string; color?: number; description?: string; icon?: string }): Promise<number | undefined> {
+  if (!client || !connected.value) throw new Error('未连接 Mira 服务器')
   if (!currentLibraryId.value) throw new Error('未选择素材库')
-  if (connected.value && client) {
-    const id = kind === 'folder'
-      ? await client.folders().createFolder(currentLibraryId.value, title, parentId, color, description, icon)
-      : await client.tags().createTag(currentLibraryId.value, title, parentId, color, description, icon)
-    await loadLibraryData()
-    return id
-  }
-  const pool = kind === 'folder' ? mockFolders : mockTags
-  const id = Date.now()
-  pool.value = [...pool.value, { id, title, parent_id: parentId }]
+  const id = kind === 'folder'
+    ? await api().folders().createFolder(currentLibraryId.value, title, parentId, color, description, icon)
+    : await api().tags().createTag(currentLibraryId.value, title, parentId, color, description, icon)
+  await loadLibraryData()
   return id
 }
 
@@ -245,16 +240,27 @@ const selectedTags = ref<LibraryTreeNode[]>([])
 const folderView = ref<'tree' | 'tiles'>('tree')
 const tagView = ref<'tree' | 'tiles'>('tree')
 
-// mock 数据(未连接时使用;可变,右键新建/删除直接改内存,完整演示编辑流程)
-const mockFolders = ref<LibraryFlatItem[]>([
-  { id: 1, title: '设计素材', parent_id: 0 },
-  { id: 2, title: '参考图', parent_id: 1 },
-  { id: 3, title: '未整理', parent_id: 0 },
-])
-const mockTags = ref<LibraryFlatItem[]>([
-  { id: 1, title: '灵感', parent_id: 0 },
-  { id: 2, title: '插画', parent_id: 1 },
-])
+// 拖放文件处理演示:开=默认上传(模式见 dropUploadMode),关=fileDrop 自定义回调(alert 展示回调收到的拖放信息)
+const useDefaultDropUpload = ref(true)
+// 默认上传方式:direct=直接上传(立即调 API 传到落点) / dialog=弹批量上传对话框(upload.pick 预填)
+const dropUploadMode = ref<LibraryTreeDropUploadMode>('direct')
+const dropModeHint = computed(() => {
+  if (!useDefaultDropUpload.value) return '走 fileDrop 回调，alert 展示拖放信息（文件/链接/落点）'
+  return dropUploadMode.value === 'dialog'
+    ? '走默认上传（dialog 模式）：经 upload.pick 打开批量上传对话框并预填文件与落点'
+    : '走默认上传（direct 模式）：立即调 API 上传到落点文件夹/标签（进度与结果显示在下方上传卡片）'
+})
+// 自定义回调演示:alert 展示 payload 内容(实际宿主可自行路由到自己的上传逻辑)
+function onTreeFileDrop ({ node, files, urls, target }: LibraryTreeFileDropPayload) {
+  const lines = [
+    node ? `落点节点：${node.title}（#${node.id}）` : '落点：根目录（空白区域）',
+    target?.folderId != null ? `目标文件夹 id：${target.folderId}` : '',
+    target?.tags?.length ? `目标标签：${target.tags.join('、')}` : '',
+    files.length ? `文件（${files.length} 个）：\n${files.map(f => `  ${f.name}（${formatSize(f.size)}）`).join('\n')}` : '',
+    urls.length ? `链接（${urls.length} 条）：\n  ${urls.join('\n  ')}` : '',
+  ].filter(Boolean)
+  window.alert(lines.join('\n'))
+}
 
 function adaptRows (rows: any[]): LibraryFlatItem[] {
   return rows.map(r => ({
@@ -268,81 +274,47 @@ function adaptRows (rows: any[]): LibraryFlatItem[] {
   }))
 }
 
-// 连接后走 SDK 真实 CRUD;未连接操作内存 mock
+// 树视图服务:直接走 SDK 真实 CRUD(未连接时抛错,树视图显示加载失败)
+function api (): MiraClient {
+  if (!client) throw new Error('未连接 Mira 服务器')
+  return client
+}
 const treeServices: LibraryTreeServices = {
   async listFolders () {
-    if (!connected.value || !client) return mockFolders.value
-    return adaptRows(await client.folders().getAll(currentLibraryId.value))
+    return adaptRows(await api().folders().getAll(currentLibraryId.value))
   },
   async listTags () {
-    if (!connected.value || !client) return mockTags.value
-    return adaptRows(await client.tags().getAll(currentLibraryId.value))
+    return adaptRows(await api().tags().getAll(currentLibraryId.value))
   },
   async createNode (kind, libId, title, parentId, extra) {
-    if (!connected.value || !client) {
-      const list = kind === 'folder' ? mockFolders : mockTags
-      const id = Math.max(0, ...list.value.map(i => i.id)) + 1
-      list.value = [...list.value, { id, title, parent_id: parentId ?? 0, color: extra?.color }]
-      return id
-    }
     return kind === 'folder'
-      ? client.folders().createFolder(libId, title, parentId, extra?.color, extra?.description, extra?.icon)
-      : client.tags().createTag(libId, title, parentId, extra?.color, extra?.description, extra?.icon)
+      ? api().folders().createFolder(libId, title, parentId, extra?.color, extra?.description, extra?.icon)
+      : api().tags().createTag(libId, title, parentId, extra?.color, extra?.description, extra?.icon)
   },
   async deleteNode (kind, libId, id, deleteFiles) {
-    if (!connected.value || !client) {
-      const list = kind === 'folder' ? mockFolders : mockTags
-      list.value = list.value.filter(i => i.id !== id)
-      return
-    }
     return kind === 'folder'
-      ? client.folders().deleteFolder(libId, id, deleteFiles)
-      : client.tags().deleteTag(libId, id)
+      ? api().folders().deleteFolder(libId, id, deleteFiles)
+      : api().tags().deleteTag(libId, id)
   },
-  // 右键「编辑」:改名称/颜色/图标/描述(未连接时写内存 mock)
+  // 右键「编辑」:改名称/颜色/图标/描述
   async updateNode (kind, libId, id, title, extra) {
-    if (!connected.value || !client) {
-      const list = kind === 'folder' ? mockFolders : mockTags
-      const row = list.value.find(i => i.id === id)
-      if (row) {
-        row.title = title
-        row.color = extra?.color
-        row.description = extra?.description
-        row.icon = extra?.icon
-      }
-      return
-    }
     const updates = { title, color: extra?.color, description: extra?.description, icon: extra?.icon }
     return kind === 'folder'
-      ? client.folders().updateFolder(libId, id, updates)
-      : client.tags().updateTag(libId, id, updates)
+      ? api().folders().updateFolder(libId, id, updates)
+      : api().tags().updateTag(libId, id, updates)
   },
-  // 拖拽排序:同层 sort_index(未连接时写内存 mock)
+  // 拖拽排序:同层 sort_index
   async updateSortIndex (kind, libId, items) {
-    if (!connected.value || !client) {
-      const list = kind === 'folder' ? mockFolders : mockTags
-      for (const item of items) {
-        const row = list.value.find(i => i.id === item.id)
-        if (row) row.sort_index = item.sort_index
-      }
-      return
-    }
     return kind === 'folder'
-      ? client.folders().updateSortIndex(libId, items)
-      : client.tags().updateSortIndex(libId, items)
+      ? api().folders().updateSortIndex(libId, items)
+      : api().tags().updateSortIndex(libId, items)
   },
   // 拖拽跨层移动:改 parent_id(null=移到根,需绕过 SDK 的 number? 类型与桌面端一致)
   async moveNode (kind, libId, id, parentId) {
-    if (!connected.value || !client) {
-      const list = kind === 'folder' ? mockFolders : mockTags
-      const row = list.value.find(i => i.id === id)
-      if (row) row.parent_id = parentId ?? 0
-      return
-    }
     const update = { parent_id: parentId } as any
     return kind === 'folder'
-      ? client.folders().updateFolder(libId, id, update)
-      : client.tags().updateTag(libId, id, update)
+      ? api().folders().updateFolder(libId, id, update)
+      : api().tags().updateTag(libId, id, update)
   },
 }
 
@@ -357,12 +329,12 @@ const treeDialog: LibraryTreeDialog = {
   },
 }
 
-// 树视图上传服务:右键「上传到此处」→ pick 打开批量上传对话框(预选文件夹);
-// 拖放/点击选择的文件先入 Dropzone 暂存区,由「真实上传」卡片统一上传
+// 树视图上传服务:右键「上传到此处」与默认拖放 dialog 模式 → pick 打开批量上传对话框(预选文件夹,可预填拖放文件);
+// direct 模式 → files 立即调 API 上传到拖放落点(不进暂存区)
 const treeUpload: LibraryTreeUpload = {
-  files (files) { stagedFiles.value = [...stagedFiles.value, ...files] },
+  files (files, target) { void uploadDirect(files, target) },
   urls () {},
-  pick (target) { openBatchUpload(target?.folderId ? String(target.folderId) : '', target?.tags ?? []) },
+  pick (target, files) { openBatchUpload(target?.folderId ? String(target.folderId) : '', target?.tags ?? [], files ?? []) },
 }
 
 /* ---------- MediaBrowser 文件浏览器演示(网格/瀑布流 + 选择) ---------- */
@@ -437,7 +409,7 @@ const mediaServices: MediaBrowserServices = {
     // 三栏视图左侧树选中的过滤:文件夹按 folder_id,标签把选中 id 映射回标题匹配
     if (filters?.folders?.length) list = list.filter(f => f.folder_id != null && filters.folders!.some(id => String(f.folder_id) === String(id)))
     if (filters?.tags?.length) {
-      const titles = filters.tags!.map(id => mockTags.value.find(t => t.id === Number(id))?.title ?? String(id))
+      const titles = filters.tags!.map(id => tags.value.find(t => t.id === Number(id))?.title ?? String(id))
       list = list.filter(f => (f.tags ?? []).some(tag => titles.includes(tag)))
     }
     const key = filters?.sort || 'imported_at'
@@ -626,6 +598,36 @@ async function startUpload () {
     uploading.value = false
   }
 }
+
+// 树拖放 direct 模式:立即调 API 上传到拖放落点(文件夹/标签),不进暂存区
+async function uploadDirect (files: File[], target?: LibraryTreeUploadTarget) {
+  if (!files.length) return
+  if (!client || !connected.value) {
+    window.alert('未连接服务器，无法直接上传（请先在顶部连接 Mira 服务器）')
+    return
+  }
+  if (uploading.value) {
+    window.alert('已有上传进行中，请稍候')
+    return
+  }
+  uploading.value = true
+  uploadPercent.value = 0
+  uploadResult.value = ''
+  try {
+    await client.files().uploadFiles(files, currentLibraryId.value, {
+      folderId: target?.folderId != null ? String(target.folderId) : undefined,
+      tags: target?.tags?.length ? target.tags : undefined,
+      onUploadProgress: e => { uploadPercent.value = e.percent ?? 0 },
+    })
+    uploadPercent.value = 100
+    uploadResult.value = `已直接上传 ${files.length} 个文件${target?.folderId != null ? `（文件夹 #${target.folderId}）` : target?.tags?.length ? `（标签：${target.tags.join('、')}）` : ''}`
+    await loadLibraryData()
+  } catch (error: any) {
+    uploadResult.value = `上传失败: ${error?.response?.data?.message || error?.message || String(error)}`
+  } finally {
+    uploading.value = false
+  }
+}
 </script>
 
 <template>
@@ -788,7 +790,35 @@ async function startUpload () {
 
       <!-- 树视图演示卡片(受控选择:为上传卡片选目标) -->
       <section class="bg-card text-card-foreground flex flex-col gap-4 rounded-xl border p-6 shadow-sm">
-        <h2 class="text-base font-semibold">LibraryTreeView 树视图</h2>
+        <div class="flex flex-col gap-1">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <h2 class="text-base font-semibold">LibraryTreeView 树视图</h2>
+            <div class="flex flex-wrap items-center gap-2">
+              <!-- 拖放文件处理模式切换:默认上传(经 upload 服务) ↔ 自定义回调(fileDrop,alert 展示拖放信息) -->
+              <button
+                type="button"
+                class="cursor-pointer rounded-md border border-border bg-accent px-2 py-1 text-[11px] leading-none text-muted-foreground transition-colors duration-100 hover:text-foreground"
+                :class="{ 'border-primary text-primary': !useDefaultDropUpload }"
+                @click="useDefaultDropUpload = !useDefaultDropUpload"
+              >拖放上传：{{ useDefaultDropUpload ? '默认上传' : '自定义回调' }}</button>
+              <!-- 默认上传方式(仅默认上传时可用):直接上传 ↔ 弹出对话框 -->
+              <button
+                type="button"
+                class="rounded-md border px-2 py-1 text-[11px] leading-none transition-colors duration-100"
+                :class="[
+                  useDefaultDropUpload && dropUploadMode === 'dialog' && 'border-primary text-primary',
+                  useDefaultDropUpload
+                    ? 'cursor-pointer border-border bg-accent text-muted-foreground hover:text-foreground'
+                    : 'cursor-not-allowed border-border border-dashed text-muted-foreground opacity-50',
+                ]"
+                :disabled="!useDefaultDropUpload"
+                :title="dropUploadMode === 'direct' ? '切换为弹出对话框' : '切换为直接上传'"
+                @click="dropUploadMode = dropUploadMode === 'direct' ? 'dialog' : 'direct'"
+              >默认方式：{{ dropUploadMode === 'direct' ? '直接上传' : '弹出对话框' }}</button>
+            </div>
+          </div>
+          <p class="text-muted-foreground text-xs">拖文件到树节点：{{ dropModeHint }}</p>
+        </div>
         <div class="grid grid-cols-2 gap-4">
           <div class="flex min-w-0 flex-col gap-2">
             <div class="flex items-center justify-between">
@@ -808,10 +838,13 @@ async function startUpload () {
               <LibraryTreeView
                 mode="folder"
                 :view="folderView"
-                :library-id="currentLibraryId || 'mock'"
+                :library-id="currentLibraryId"
                 :services="treeServices"
                 :dialog="treeDialog"
                 :upload="treeUpload"
+                :file-drop="onTreeFileDrop"
+                :use-default-drop-upload="useDefaultDropUpload"
+                :default-drop-upload-mode="dropUploadMode"
                 :selected="selectedFolder"
                 @update:selected="selectedFolder = $event"
               />
@@ -834,10 +867,13 @@ async function startUpload () {
               <LibraryTreeView
                 mode="tag"
                 :view="tagView"
-                :library-id="currentLibraryId || 'mock'"
+                :library-id="currentLibraryId"
                 :services="treeServices"
                 :dialog="treeDialog"
                 :upload="treeUpload"
+                :file-drop="onTreeFileDrop"
+                :use-default-drop-upload="useDefaultDropUpload"
+                :default-drop-upload-mode="dropUploadMode"
                 :selected="selectedTags"
                 @update:selected="selectedTags = $event"
               />

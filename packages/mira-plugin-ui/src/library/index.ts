@@ -25,6 +25,7 @@ export { useLibraryTreeData } from './useLibraryTreeData'
 export { useLibraryTreeActions, type LibraryTreeMenuState, type UseLibraryTreeActionsOptions, type UseLibraryTreeActionsDeps } from './useLibraryTreeActions'
 export { buildTree, filterTree, flattenTree, collectIds, ROOT_ID } from './tree'
 export { parseDrop, canAcceptDrop, urlKind, type ParsedDrop } from './drag-data'
+export { defaultDropUpload } from './defaultDropUpload'
 export { createLibraryTreeT } from './i18n'
 export {
   createDefaultFilterRules,
@@ -47,6 +48,8 @@ export type {
   LibraryTreeDialog,
   LibraryTreeUpload,
   LibraryTreeUploadTarget,
+  LibraryTreeFileDropPayload,
+  LibraryTreeDropUploadMode,
   LibraryTreeT,
   MediaBrowserItem,
   MediaBrowserFilters,
