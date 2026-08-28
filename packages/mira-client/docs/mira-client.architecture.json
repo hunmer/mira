@@ -1,0 +1,391 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Mira Client 桌面应用架构",
+    "output": "mira-client-architecture.html",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1384,
+      586
+    ],
+    "views": [
+      {
+        "id": "request-path",
+        "label": "媒体请求主路径",
+        "focus": [
+          "app-shell",
+          "pinia-stores",
+          "mira-api",
+          "mira-server",
+          "mira-data"
+        ],
+        "note": "一次媒体浏览/上传：视图 → 状态仓 → SDK → mira-app-server → 磁盘库。"
+      },
+      {
+        "id": "ipc-boundary",
+        "label": "Electron IPC 边界",
+        "focus": [
+          "app-shell",
+          "preload",
+          "ipc-handlers",
+          "main-entry"
+        ],
+        "note": "渲染进程仅经 contextBridge 暴露的 electronAPI 触达主进程特权能力。"
+      },
+      {
+        "id": "realtime",
+        "label": "实时事件通道",
+        "focus": [
+          "ws-service",
+          "mira-server",
+          "pinia-stores"
+        ],
+        "note": "WebSocket 推送库变更与设备间共享，回流刷新 Pinia 状态仓。"
+      },
+      {
+        "id": "plugins",
+        "label": "插件扩展",
+        "focus": [
+          "plugin-system",
+          "app-shell",
+          "native-services"
+        ],
+        "note": "贡献点注入 UI 与文件格式，插件运行在独立沙箱窗口。"
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "main-entry",
+      "type": "backend",
+      "label": "主进程入口",
+      "sublabel": "main.ts · 窗口/多库管理",
+      "pos": [
+        56,
+        58
+      ],
+      "size": [
+        180,
+        66
+      ],
+      "tag": "BrowserView 多开"
+    },
+    {
+      "id": "ipc-handlers",
+      "type": "backend",
+      "label": "IPC 处理层",
+      "sublabel": "约 20 组 ipcMain.handle",
+      "pos": [
+        56,
+        196
+      ],
+      "size": [
+        180,
+        66
+      ]
+    },
+    {
+      "id": "local-server-ctl",
+      "type": "backend",
+      "label": "本地服务器控制",
+      "sublabel": "LocalServerService",
+      "pos": [
+        56,
+        334
+      ],
+      "size": [
+        180,
+        66
+      ]
+    },
+    {
+      "id": "native-services",
+      "type": "backend",
+      "label": "系统能力服务",
+      "sublabel": "托盘/下载/更新/Procm",
+      "pos": [
+        56,
+        472
+      ],
+      "size": [
+        180,
+        66
+      ]
+    },
+    {
+      "id": "preload",
+      "type": "security",
+      "label": "Preload 桥",
+      "sublabel": "contextBridge",
+      "pos": [
+        300,
+        196
+      ],
+      "size": [
+        140,
+        66
+      ],
+      "tag": "唯一通道"
+    },
+    {
+      "id": "app-shell",
+      "type": "frontend",
+      "label": "视图层 App Shell",
+      "sublabel": "Vue Router · Views",
+      "pos": [
+        470,
+        58
+      ],
+      "size": [
+        180,
+        66
+      ]
+    },
+    {
+      "id": "plugin-system",
+      "type": "frontend",
+      "label": "插件系统",
+      "sublabel": "PluginSystemCore",
+      "pos": [
+        720,
+        58
+      ],
+      "size": [
+        180,
+        66
+      ],
+      "tag": "沙箱插件窗口"
+    },
+    {
+      "id": "pinia-stores",
+      "type": "frontend",
+      "label": "Pinia 状态仓",
+      "sublabel": "media/library/auth 等 15 个",
+      "pos": [
+        470,
+        196
+      ],
+      "size": [
+        180,
+        66
+      ]
+    },
+    {
+      "id": "ws-service",
+      "type": "messagebus",
+      "label": "WebSocket 服务",
+      "sublabel": "WebSocketService",
+      "pos": [
+        720,
+        196
+      ],
+      "size": [
+        180,
+        66
+      ],
+      "tag": "心跳/重连"
+    },
+    {
+      "id": "mira-api",
+      "type": "frontend",
+      "label": "API 门面 / SDK",
+      "sublabel": "MiraAPI · MiraClient",
+      "pos": [
+        470,
+        334
+      ],
+      "size": [
+        180,
+        66
+      ]
+    },
+    {
+      "id": "mira-server",
+      "type": "backend",
+      "label": "mira-app-server",
+      "sublabel": "HTTP :8081 · WS :8018",
+      "pos": [
+        920,
+        329
+      ],
+      "size": [
+        200,
+        76
+      ],
+      "tag": "本机子进程 / 远程实例"
+    },
+    {
+      "id": "mira-data",
+      "type": "database",
+      "label": "媒体库存储",
+      "sublabel": "~/.mira-data",
+      "pos": [
+        1180,
+        329
+      ],
+      "size": [
+        150,
+        76
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Electron 主进程（特权：文件系统 / 进程 / 协议）",
+      "wraps": [
+        "main-entry",
+        "ipc-handlers",
+        "local-server-ctl",
+        "native-services"
+      ]
+    },
+    {
+      "kind": "security-group",
+      "label": "IPC 信任边界",
+      "wraps": [
+        "preload"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "渲染进程（Vue 3 · 不可信页面环境）",
+      "wraps": [
+        "app-shell",
+        "plugin-system",
+        "pinia-stores",
+        "ws-service",
+        "mira-api"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "服务端信任边界",
+      "wraps": [
+        "mira-server",
+        "mira-data"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "path-view-store",
+      "from": "app-shell",
+      "to": "pinia-stores",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "path-store-sdk",
+      "from": "pinia-stores",
+      "to": "mira-api",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "path-sdk-server",
+      "from": "mira-api",
+      "to": "mira-server",
+      "label": "HTTP REST + token",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "path-server-data",
+      "from": "mira-server",
+      "to": "mira-data",
+      "label": "读写",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "shell-to-preload",
+      "from": "app-shell",
+      "to": "preload",
+      "label": "window.electronAPI",
+      "fromSide": "left",
+      "toSide": "top"
+    },
+    {
+      "id": "preload-to-ipc",
+      "from": "preload",
+      "to": "ipc-handlers",
+      "label": "contextBridge IPC",
+      "fromSide": "left",
+      "toSide": "right",
+      "labelDy": 57
+    },
+    {
+      "id": "spawn-server",
+      "from": "local-server-ctl",
+      "to": "mira-server",
+      "label": "spawn 子进程",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "bottom"
+    },
+    {
+      "id": "ws-events",
+      "from": "ws-service",
+      "to": "mira-server",
+      "label": "WS :8018",
+      "fromSide": "right",
+      "toSide": "top"
+    },
+    {
+      "id": "ws-refresh",
+      "from": "ws-service",
+      "to": "pinia-stores",
+      "label": "库变更/共享事件",
+      "variant": "dashed",
+      "fromSide": "left",
+      "toSide": "right",
+      "labelDy": 57
+    },
+    {
+      "id": "plugin-inject",
+      "from": "plugin-system",
+      "to": "app-shell",
+      "label": "贡献点注入",
+      "variant": "dashed",
+      "fromSide": "left",
+      "toSide": "right"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "渲染进程与状态",
+      "items": [
+        "Vue 3.5 + Vite + TS，Pinia 15 个 store",
+        "reka-ui + Tailwind 4，unovis 图表，vue-i18n 多语言",
+        "初始化：连接 → 认证 → 库加载 → 插件装载",
+        "插件经贡献点注入 UI，运行于沙箱窗口"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "连接与外部依赖",
+      "items": [
+        "MiraClient SDK 来自 mira-app-core（shared/sdk）",
+        "本地数据 ~/.mira-data，serverList 支持远程实例",
+        "electron-updater / hls.js / plyr / extract-zip"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "信任与安全边界",
+      "items": [
+        "渲染进程不可信，仅 contextBridge 白名单透出 electronAPI",
+        "资源 URL 附 token，业务请求经 MiraClient 鉴权",
+        "协议 mira://、托盘、下载与更新仅在主进程特权侧"
+      ]
+    }
+  ]
+}
