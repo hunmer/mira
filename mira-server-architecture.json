@@ -1,0 +1,507 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "mira-app-server 运行时架构",
+    "locale": "zh-CN",
+    "output": "mira-server-architecture.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/hunmer/mira",
+      "revision": "34107cd6ce3977523e12acdd89989413b5c8f7a4"
+    },
+    "viewBox": [
+      1300,
+      480
+    ],
+    "views": [
+      {
+        "id": "main-path",
+        "label": "主数据路径",
+        "focus": [
+          "clients",
+          "entry",
+          "routes",
+          "storage",
+          "sqlite"
+        ],
+        "note": "一次 API 请求从鉴权到 SQLite 的数据链路。"
+      },
+      {
+        "id": "media-pipeline",
+        "label": "文件与媒体处理",
+        "focus": [
+          "watcher",
+          "thumb",
+          "binaries",
+          "hostfs"
+        ],
+        "note": "监听入库、缩略图与转码子进程。"
+      },
+      {
+        "id": "plugins-egress",
+        "label": "插件与出口",
+        "focus": [
+          "plugins",
+          "media",
+          "internet",
+          "ws"
+        ],
+        "note": "进程内插件与外部下载出口。"
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "clients",
+      "type": "external",
+      "label": "客户端与工具",
+      "sublabel": "Electron/Web · CLI · MCP",
+      "pos": [
+        56,
+        150
+      ],
+      "size": [
+        150,
+        58
+      ],
+      "sources": [
+        {
+          "path": "packages/mira-app-core/src/shared/sdk/client/MiraClient.ts"
+        }
+      ]
+    },
+    {
+      "id": "ws",
+      "type": "messagebus",
+      "label": "WebSocket 推送",
+      "sublabel": ":8018 · 库事件 / 进度",
+      "pos": [
+        300,
+        44
+      ],
+      "size": [
+        165,
+        50
+      ],
+      "sources": [
+        {
+          "path": "packages/mira-app-server/src/WebSocketServer.ts"
+        }
+      ]
+    },
+    {
+      "id": "entry",
+      "type": "security",
+      "label": "HTTP 入口与鉴权",
+      "sublabel": "Express :8081 · Bearer · RBAC",
+      "pos": [
+        300,
+        150
+      ],
+      "size": [
+        170,
+        60
+      ],
+      "sources": [
+        {
+          "path": "packages/mira-app-server/src/HttpServer.ts"
+        },
+        {
+          "path": "packages/mira-app-server/src/middleware/permission.ts"
+        }
+      ]
+    },
+    {
+      "id": "plugins",
+      "type": "backend",
+      "label": "插件宿主",
+      "sublabel": "进程内 plugins/ · HTTP 钩子",
+      "pos": [
+        300,
+        280
+      ],
+      "size": [
+        170,
+        52
+      ],
+      "sources": [
+        {
+          "path": "packages/mira-app-server/src/ServerPluginManager.ts"
+        }
+      ]
+    },
+    {
+      "id": "internet",
+      "type": "external",
+      "label": "外部站点",
+      "sublabel": "下载源 · Cookie 站点",
+      "pos": [
+        300,
+        380
+      ],
+      "size": [
+        170,
+        48
+      ],
+      "sources": [
+        {
+          "path": "packages/mira-app-server/src/routes/CookieSitesRouter.ts"
+        }
+      ]
+    },
+    {
+      "id": "thumb",
+      "type": "backend",
+      "label": "缩略图与转码",
+      "sublabel": "并发队列 · HLS · 生成器",
+      "pos": [
+        615,
+        44
+      ],
+      "size": [
+        185,
+        50
+      ],
+      "sources": [
+        {
+          "path": "packages/mira-app-server/src/services/ThumbnailService.ts"
+        }
+      ]
+    },
+    {
+      "id": "routes",
+      "type": "backend",
+      "label": "REST 路由与 Handlers",
+      "sublabel": "File · Tag · Library · Fs 等 15+",
+      "pos": [
+        615,
+        150
+      ],
+      "size": [
+        185,
+        60
+      ],
+      "sources": [
+        {
+          "path": "packages/mira-app-server/src/routes/FileRoutes.ts"
+        }
+      ]
+    },
+    {
+      "id": "media",
+      "type": "backend",
+      "label": "元数据 / 导入 / 下载",
+      "sublabel": "Metadata · Import · Download",
+      "pos": [
+        615,
+        280
+      ],
+      "size": [
+        185,
+        52
+      ],
+      "sources": [
+        {
+          "path": "packages/mira-app-server/src/services/DownloadExecutorService.ts"
+        }
+      ]
+    },
+    {
+      "id": "watcher",
+      "type": "backend",
+      "label": "LibraryWatcher",
+      "sublabel": "chokidar 监听 · 初始同步",
+      "pos": [
+        615,
+        380
+      ],
+      "size": [
+        185,
+        48
+      ],
+      "sources": [
+        {
+          "path": "packages/mira-app-server/src/LibraryWatcher.ts"
+        }
+      ]
+    },
+    {
+      "id": "binaries",
+      "type": "external",
+      "label": "外部工具链",
+      "sublabel": "ffmpeg · magick · ghostscript",
+      "pos": [
+        950,
+        44
+      ],
+      "size": [
+        170,
+        50
+      ],
+      "sources": [
+        {
+          "path": "packages/mira-app-server/package.json"
+        }
+      ]
+    },
+    {
+      "id": "storage",
+      "type": "backend",
+      "label": "LibraryStorage",
+      "sublabel": "多库启停 · 实例加载",
+      "pos": [
+        950,
+        150
+      ],
+      "size": [
+        165,
+        60
+      ],
+      "sources": [
+        {
+          "path": "packages/mira-app-server/src/LibraryStorage.ts"
+        }
+      ]
+    },
+    {
+      "id": "sqlite",
+      "type": "database",
+      "label": "SQLite 存储引擎",
+      "sublabel": "mira-app-core · 进程内",
+      "pos": [
+        950,
+        280
+      ],
+      "size": [
+        165,
+        52
+      ],
+      "sources": [
+        {
+          "path": "packages/mira-app-core/src/storage/sqlite/LibraryServerDataSQLite.ts"
+        }
+      ]
+    },
+    {
+      "id": "hostfs",
+      "type": "external",
+      "label": "宿主文件系统",
+      "sublabel": "媒体库目录 · data/",
+      "pos": [
+        950,
+        380
+      ],
+      "size": [
+        165,
+        48
+      ],
+      "sources": [
+        {
+          "path": "packages/mira-app-server/src/SettingsManager.ts"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "mira-app-server · Node.js 进程",
+      "wraps": [
+        "entry",
+        "routes",
+        "storage",
+        "sqlite",
+        "watcher",
+        "thumb",
+        "media",
+        "ws",
+        "plugins"
+      ]
+    },
+    {
+      "kind": "security-group",
+      "label": "信任边界 ① 网络入口（令牌 / 角色）",
+      "wraps": [
+        "entry"
+      ]
+    },
+    {
+      "kind": "security-group",
+      "label": "信任边界 ② 进程内插件（全权限）",
+      "wraps": [
+        "plugins"
+      ]
+    },
+    {
+      "kind": "security-group",
+      "label": "信任边界 ③ 宿主机 · 子进程",
+      "wraps": [
+        "binaries"
+      ]
+    },
+    {
+      "kind": "security-group",
+      "label": "信任边界 ④ 宿主机 · 文件系统",
+      "wraps": [
+        "hostfs"
+      ]
+    },
+    {
+      "kind": "security-group",
+      "label": "信任边界 ⑤ 互联网出口",
+      "wraps": [
+        "internet"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "clients-to-entry",
+      "from": "clients",
+      "to": "entry",
+      "label": "HTTP · Bearer",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelDy": 44
+    },
+    {
+      "id": "entry-to-routes",
+      "from": "entry",
+      "to": "routes",
+      "label": "鉴权分发",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "routes-to-storage",
+      "from": "routes",
+      "to": "storage",
+      "label": "领域调用",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "storage-to-sqlite",
+      "from": "storage",
+      "to": "sqlite",
+      "label": "SQL 读写",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 24
+    },
+    {
+      "id": "routes-to-thumb",
+      "from": "routes",
+      "to": "thumb",
+      "label": "缩略图 / HLS",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "thumb-to-binaries",
+      "from": "thumb",
+      "to": "binaries",
+      "label": "派生子进程",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "thumb-to-ws",
+      "from": "thumb",
+      "to": "ws",
+      "label": "进度广播",
+      "variant": "dashed",
+      "fromSide": "left",
+      "toSide": "right"
+    },
+    {
+      "id": "routes-to-plugins",
+      "from": "routes",
+      "to": "plugins",
+      "label": "插件钩子",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "routes-to-media",
+      "from": "routes",
+      "to": "media",
+      "label": "导入 / 下载",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 24,
+      "labelDx": 30
+    },
+    {
+      "id": "media-to-internet",
+      "from": "media",
+      "to": "internet",
+      "label": "拉取下载源",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "watcher-to-sqlite",
+      "from": "watcher",
+      "to": "sqlite",
+      "label": "增量入库",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "watcher-to-hostfs",
+      "from": "watcher",
+      "to": "hostfs",
+      "label": "chokidar 监听",
+      "variant": "dashed",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelDy": 36
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "主数据路径",
+      "items": [
+        "客户端经 MiraClient SDK 携 Bearer Token 调用 REST API",
+        "权限中间件校验令牌与素材库级角色（RBAC）",
+        "路由经 LibraryStorage 读写进程内 SQLite 引擎"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "运行时子系统",
+      "items": [
+        "缩略图：并发队列(5)，ffmpeg / ImageMagick / Ghostscript，HLS 切片缓存",
+        "Watcher：chokidar 监听媒体目录，启动时全量扫描增量入库",
+        "导入与下载：Metadata 规则解析，DownloadExecutor 消费 Cookie 站点任务"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "信任边界",
+      "items": [
+        "① 网络入口：公开路由白名单 + 令牌 + 库级角色",
+        "② 进程内插件：第三方代码与服务器同进程全权限运行",
+        "③④ 宿主机：可派生转码子进程并直接读写媒体库与 data/",
+        "⑤ 互联网：下载执行器与插件可外呼外部站点"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "未入图的辅助部分",
+      "items": [
+        "SettingsManager / UserStorage：data/ 下配置与账户",
+        "DatabaseBackupService：定时备份数据库",
+        "静态托管 /web /dashboard 与 SSE 日志流 /logs/stream",
+        "CLI 与 MCP 为独立进程，复用同一 HTTP API + 令牌"
+      ]
+    }
+  ]
+}

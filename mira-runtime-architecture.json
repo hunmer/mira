@@ -1,0 +1,457 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Mira 高层运行时架构",
+    "locale": "zh-CN",
+    "output": "mira-runtime-architecture.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/hunmer/mira",
+      "revision": "34107cd6ce3977523e12acdd89989413b5c8f7a4"
+    },
+    "viewBox": [
+      1270,
+      468
+    ],
+    "views": [
+      {
+        "id": "main-path",
+        "label": "主请求路径",
+        "focus": [
+          "desktop",
+          "http",
+          "services",
+          "sqlite"
+        ],
+        "note": "浏览媒体库的一次元数据请求链路。"
+      },
+      {
+        "id": "realtime-plugins",
+        "label": "实时与扩展",
+        "focus": [
+          "ws",
+          "plugins",
+          "internet",
+          "mcp"
+        ],
+        "note": "推送、插件系统与外部集成。"
+      },
+      {
+        "id": "trust",
+        "label": "信任边界",
+        "focus": [
+          "auth",
+          "fs",
+          "ffmpeg",
+          "internet"
+        ],
+        "note": "三处边界：网络入口、宿主机、互联网出口。"
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "desktop",
+      "type": "frontend",
+      "label": "mira-client 桌面端",
+      "sublabel": "Electron · Vue 3",
+      "tag": "MiraClient SDK",
+      "pos": [
+        56,
+        158
+      ],
+      "size": [
+        150,
+        58
+      ],
+      "sources": [
+        {
+          "path": "packages/mira-client/src/main/main.ts"
+        }
+      ]
+    },
+    {
+      "id": "webmobile",
+      "type": "frontend",
+      "label": "Web / 移动客户端",
+      "sublabel": "dashboard · Flutter",
+      "pos": [
+        56,
+        292
+      ],
+      "size": [
+        150,
+        54
+      ],
+      "sources": [
+        {
+          "path": "packages/mira_mobile/lib/main.dart"
+        }
+      ]
+    },
+    {
+      "id": "ws",
+      "type": "messagebus",
+      "label": "WebSocket 推送",
+      "sublabel": "ws :8018",
+      "pos": [
+        300,
+        48
+      ],
+      "size": [
+        165,
+        52
+      ],
+      "sources": [
+        {
+          "path": "packages/mira-app-server/src/WebSocketServer.ts"
+        }
+      ]
+    },
+    {
+      "id": "http",
+      "type": "backend",
+      "label": "HTTP API 服务",
+      "sublabel": "Express :8081",
+      "pos": [
+        300,
+        158
+      ],
+      "size": [
+        175,
+        62
+      ],
+      "sources": [
+        {
+          "path": "packages/mira-app-server/src/HttpServer.ts"
+        }
+      ]
+    },
+    {
+      "id": "auth",
+      "type": "security",
+      "label": "认证与权限",
+      "sublabel": "Bearer / API Key",
+      "pos": [
+        300,
+        292
+      ],
+      "size": [
+        175,
+        54
+      ],
+      "sources": [
+        {
+          "path": "packages/mira-app-server/src/middleware/permission.ts"
+        }
+      ]
+    },
+    {
+      "id": "mcp",
+      "type": "backend",
+      "label": "MCP 服务",
+      "sublabel": "AI 代理接入",
+      "pos": [
+        615,
+        48
+      ],
+      "size": [
+        170,
+        52
+      ],
+      "sources": [
+        {
+          "path": "packages/mira-app-server/src/mcp/server.ts"
+        }
+      ]
+    },
+    {
+      "id": "services",
+      "type": "backend",
+      "label": "核心业务服务",
+      "sublabel": "缩略图 · 元数据 · 导入 · 下载",
+      "pos": [
+        615,
+        158
+      ],
+      "size": [
+        195,
+        66
+      ],
+      "sources": [
+        {
+          "path": "packages/mira-app-server/src/services/ThumbnailService.ts"
+        }
+      ]
+    },
+    {
+      "id": "plugins",
+      "type": "backend",
+      "label": "服务端插件",
+      "sublabel": "PluginManager + plugins/",
+      "pos": [
+        615,
+        292
+      ],
+      "size": [
+        195,
+        54
+      ],
+      "sources": [
+        {
+          "path": "packages/mira-app-server/src/ServerPluginManager.ts"
+        }
+      ]
+    },
+    {
+      "id": "ffmpeg",
+      "type": "external",
+      "label": "FFmpeg",
+      "sublabel": "转码 · 缩略图",
+      "pos": [
+        950,
+        48
+      ],
+      "size": [
+        170,
+        52
+      ],
+      "sources": [
+        {
+          "path": "packages/mira-app-server/package.json"
+        }
+      ]
+    },
+    {
+      "id": "fs",
+      "type": "database",
+      "label": "媒体库文件系统",
+      "sublabel": "LibraryStorage · chokidar",
+      "pos": [
+        950,
+        158
+      ],
+      "size": [
+        170,
+        58
+      ],
+      "sources": [
+        {
+          "path": "packages/mira-app-server/src/LibraryWatcher.ts"
+        }
+      ]
+    },
+    {
+      "id": "sqlite",
+      "type": "database",
+      "label": "SQLite 媒体库",
+      "sublabel": "LibraryServerDataSQLite",
+      "pos": [
+        950,
+        292
+      ],
+      "size": [
+        170,
+        54
+      ],
+      "sources": [
+        {
+          "path": "packages/mira-app-core/src/storage/sqlite/LibraryServerDataSQLite.ts"
+        }
+      ]
+    },
+    {
+      "id": "internet",
+      "type": "external",
+      "label": "外部服务",
+      "sublabel": "AI API · gallery-dl · 下载源",
+      "pos": [
+        950,
+        398
+      ],
+      "size": [
+        180,
+        50
+      ],
+      "sources": [
+        {
+          "path": "plugins/plugins/mira_ai_sdk/index.ts"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "mira-app-server · Node.js 进程",
+      "wraps": [
+        "ws",
+        "http",
+        "auth",
+        "mcp",
+        "services",
+        "plugins"
+      ]
+    },
+    {
+      "kind": "security-group",
+      "label": "信任边界 ① 网络入口（令牌校验）",
+      "wraps": [
+        "ws",
+        "http",
+        "auth"
+      ]
+    },
+    {
+      "kind": "security-group",
+      "label": "信任边界 ② 宿主机（文件 / 子进程）",
+      "wraps": [
+        "ffmpeg",
+        "fs",
+        "sqlite"
+      ]
+    },
+    {
+      "kind": "security-group",
+      "label": "信任边界 ③ 互联网出口",
+      "wraps": [
+        "internet"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "desktop-to-http",
+      "from": "desktop",
+      "to": "http",
+      "label": "HTTP · Bearer",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "webmobile-to-http",
+      "from": "webmobile",
+      "to": "http",
+      "label": "REST",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "auth-to-http",
+      "from": "auth",
+      "to": "http",
+      "label": "鉴权中间件",
+      "variant": "security",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "http-to-services",
+      "from": "http",
+      "to": "services",
+      "label": "业务调用",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "services-to-sqlite",
+      "from": "services",
+      "to": "sqlite",
+      "label": "元数据 SQL",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "services-to-fs",
+      "from": "services",
+      "to": "fs",
+      "label": "媒体文件读写",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "ws-to-desktop",
+      "from": "ws",
+      "to": "desktop",
+      "label": "库变更 / 进度推送",
+      "variant": "dashed",
+      "fromSide": "left",
+      "toSide": "top"
+    },
+    {
+      "id": "http-to-plugins",
+      "from": "http",
+      "to": "plugins",
+      "label": "插件路由 / 消息",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "mcp-to-services",
+      "from": "mcp",
+      "to": "services",
+      "label": "工具调用",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 24
+    },
+    {
+      "id": "services-to-ffmpeg",
+      "from": "services",
+      "to": "ffmpeg",
+      "label": "派生子进程",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "plugins-to-internet",
+      "from": "plugins",
+      "to": "internet",
+      "label": "AI API · 下载源",
+      "fromSide": "bottom",
+      "toSide": "top"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "主请求路径",
+      "items": [
+        "桌面端经 MiraClient SDK 发起请求（Bearer Token）",
+        "Express 路由 + 认证中间件进入核心业务服务",
+        "元数据落 SQLite，媒体与缩略图读写文件系统"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "端口与入口",
+      "items": [
+        "HTTP API — Express :8081",
+        "WebSocket 推送 — ws :8018（库变更 / 任务进度）",
+        "MCP 服务 — AI 代理工具入口"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "信任边界",
+      "items": [
+        "① 网络入口：客户端仅凭 Bearer / API Key 访问",
+        "② 宿主机：进程直接读写媒体库并派生 FFmpeg 子进程",
+        "③ 互联网出口：插件外呼 AI API / gallery-dl / 下载源"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "未入图的辅助部分",
+      "items": [
+        "浏览器扩展与 CEP 面板：复用同一 HTTP API",
+        "Web 端插件（online_client_plugins）在渲染进程加载",
+        "mira-app-server CLI：库管理与诊断"
+      ]
+    }
+  ]
+}
