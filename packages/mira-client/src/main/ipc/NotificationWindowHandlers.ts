@@ -96,11 +96,20 @@ export class NotificationWindowHandlers {
   private readonly MARGIN = 20
   /** 最大并存数量 */
   private readonly MAX_SLOTS = 5
+  /** 同屏最大展示数量（渲染层设置推送，默认 1；随 notification-content 下发） */
+  private maxVisibleNotifications = 1
 
   constructor() {
     ipcMain.handle('notification:window-show', this.handleShowNotification.bind(this))
     ipcMain.handle('notification:window-dismiss', this.handleDismiss.bind(this))
     ipcMain.handle('notification:window-hide', this.handleHideAll.bind(this))
+    ipcMain.on('notification:set-max-visible', (_event, value: number) => {
+      const n = Math.max(1, Math.min(10, Math.floor(Number(value) || 1)))
+      if (n === this.maxVisibleNotifications) return
+      this.maxVisibleNotifications = n
+      // 立即重发当前通知列表，使设置对已展示的通知即时生效
+      for (const slot of this.slots) this.sendSlotContent(slot)
+    })
   }
 
   /**
@@ -129,14 +138,7 @@ export class NotificationWindowHandlers {
         existing.remaining = existing.duration
         this.startAutoHide(existing)
       }
-      existing.handler.sendMessage({
-        type: 'notification-content',
-        payload: {
-          ...payload,
-          __items: existing.items,
-          __animDir: this.animDirOf(existing.position),
-        },
-      })
+      this.sendSlotContent(existing)
       return
     }
 
@@ -170,14 +172,7 @@ export class NotificationWindowHandlers {
 
     // 页面加载完成后下发通知内容。附带动画方向供渲染层选择 slide 方向。
     handler.getWindow()?.webContents.once('did-finish-load', () => {
-      handler.sendMessage({
-        type: 'notification-content',
-        payload: {
-          ...slot.payload,
-          __items: slot.items,
-          __animDir: this.animDirOf(position),
-        },
-      })
+      this.sendSlotContent(slot)
     })
 
     // 启动自动消失计时
@@ -247,6 +242,7 @@ export class NotificationWindowHandlers {
     ipcMain.removeHandler('notification:window-show')
     ipcMain.removeHandler('notification:window-dismiss')
     ipcMain.removeHandler('notification:window-hide')
+    ipcMain.removeAllListeners('notification:set-max-visible')
   }
 
   // ============ 内部 ============
@@ -435,14 +431,7 @@ export class NotificationWindowHandlers {
       return
     }
     slot.payload = slot.items[slot.items.length - 1]
-    slot.handler.sendMessage({
-      type: 'notification-content',
-      payload: {
-        ...slot.payload,
-        __items: slot.items,
-        __animDir: this.animDirOf(slot.position),
-      },
-    })
+    this.sendSlotContent(slot)
   }
 
   /**
@@ -464,10 +453,24 @@ export class NotificationWindowHandlers {
   }
 
   /**
+   * 组装并下发槽位当前通知列表（附带动画方向与同屏最大展示数量）。
+   */
+  private sendSlotContent(slot: NotificationSlot): void {
+    slot.handler.sendMessage({
+      type: 'notification-content',
+      payload: {
+        ...slot.payload,
+        __items: slot.items,
+        __animDir: this.animDirOf(slot.position),
+        __maxVisible: this.maxVisibleNotifications,
+      },
+    })
+  }
+
+  /**
    * 根据通知位置返回 slide 出现动画的方向。
    */
-  private animDirOf(position: FloatingWindowPosition): 'left' | 'right' | 'up' | 'down' {
-    if (typeof position === 'object') return 'right'
+  private animDirOf(position: FloatingWindowPosition): 'left' | 'right' | 'up' | 'down' {    if (typeof position === 'object') return 'right'
     switch (position) {
       case 'top-left':
       case 'bottom-left':

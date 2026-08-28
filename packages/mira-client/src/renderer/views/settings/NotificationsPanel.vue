@@ -39,6 +39,25 @@
           @update:model-value="handleSettingChange('enableImportNotifications', $event)"
         />
       </div>
+
+      <!-- 最大展示数量 -->
+      <div class="pt-1 transition-opacity" :class="notificationsEnabled ? '' : 'opacity-50 pointer-events-none'">
+        <div class="flex items-center justify-between gap-4 mb-2.5">
+          <div>
+            <p class="text-foreground dark:text-muted-foreground text-base font-normal leading-normal">{{ $t('views.notificationsPanel.maxVisibleTitle') }}</p>
+            <p class="text-muted-foreground dark:text-muted-foreground text-sm">{{ $t('views.notificationsPanel.maxVisibleDesc') }}</p>
+          </div>
+          <span class="text-sm font-medium text-foreground shrink-0 w-6 text-right tabular-nums">{{ settingsStore.settings.maxVisibleNotifications }}</span>
+        </div>
+        <Slider
+          :model-value="[settingsStore.settings.maxVisibleNotifications]"
+          :min="1"
+          :max="5"
+          :step="1"
+          :disabled="!notificationsEnabled"
+          @update:model-value="(v: number[] | undefined) => v && handleSettingChange('maxVisibleNotifications', v[0])"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -49,6 +68,7 @@ import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '../../stores/settings'
 import { useToast } from '@/renderer/composables/useToast'
 import { Switch } from '@/components/ui/switch'
+import { Slider } from '@/components/ui/slider'
 
 const settingsStore = useSettingsStore()
 const toast = useToast()

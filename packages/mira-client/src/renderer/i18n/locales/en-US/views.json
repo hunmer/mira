@@ -355,7 +355,9 @@
     "enableTitle": "Enable notifications",
     "enableDesc": "Receive notifications about app status and operation results",
     "importTitle": "Import notifications",
-    "importDesc": "Show a desktop notification when file import completes (batch imports are aggregated into one)"
+    "importDesc": "Show a desktop notification when file import completes (batch imports are aggregated into one)",
+    "maxVisibleTitle": "Max visible notifications",
+    "maxVisibleDesc": "Number of notifications shown on screen at once; the rest collapse into \"More\""
   },
   "overviewPanel": {
     "connectionStatus": "Connection status",

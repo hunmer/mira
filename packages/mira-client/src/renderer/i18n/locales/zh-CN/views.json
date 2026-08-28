@@ -355,7 +355,9 @@
     "enableTitle": "启用通知",
     "enableDesc": "接收应用状态和操作结果通知",
     "importTitle": "导入文件通知",
-    "importDesc": "文件导入完成时弹出桌面通知（批量导入会聚合为一条）"
+    "importDesc": "文件导入完成时弹出桌面通知（批量导入会聚合为一条）",
+    "maxVisibleTitle": "最大展示数量",
+    "maxVisibleDesc": "屏幕上同时展示的通知条数，超出部分折叠为「更多」"
   },
   "overviewPanel": {
     "connectionStatus": "连接状态",

@@ -24,7 +24,8 @@ type ToasterPosition =
 
 const isDark = ref(false)
 const toasterPosition = ref<ToasterPosition>('bottom-right')
-const MAX_VISIBLE_NOTIFICATIONS = 3
+/** 同屏最大展示数量（主进程随 notification-content 下发，默认 1） */
+let maxVisibleNotifications = 1
 const STACK_TOAST_ID = '__notification-stack__'
 let allItems: NotificationItem[] = []
 let pageStart = 0
@@ -82,9 +83,15 @@ function syncToasts(payload: NotificationPayload): void {
   const items: NotificationItem[] = Array.isArray((payload as any).__items)
     ? (payload as any).__items
     : [payload]
+  const maxVisible = Number((payload as any).__maxVisible)
+  if (Number.isFinite(maxVisible) && maxVisible >= 1) {
+    maxVisibleNotifications = Math.floor(maxVisible)
+  }
   allItems = items
+  // 数量收紧 / 通知被移除后，翻页起点可能越界，回到第一页
+  if (pageStart >= items.length) pageStart = 0
   toasterPosition.value = mapPosition(payload.position)
-  const nextVisible = items.slice(pageStart, pageStart + MAX_VISIBLE_NOTIFICATIONS)
+  const nextVisible = items.slice(pageStart, pageStart + maxVisibleNotifications)
   const visibleChanged =
     nextVisible.length !== displayedItems.length ||
     nextVisible.some((item, index) => item.__itemKey !== displayedItems[index]?.__itemKey)
@@ -97,9 +104,9 @@ function syncToasts(payload: NotificationPayload): void {
 }
 
 function showNextPage(): void {
-  if (pageStart + MAX_VISIBLE_NOTIFICATIONS >= allItems.length) return
-  pageStart += MAX_VISIBLE_NOTIFICATIONS
-  displayedItems = allItems.slice(pageStart, pageStart + MAX_VISIBLE_NOTIFICATIONS)
+  if (pageStart + maxVisibleNotifications >= allItems.length) return
+  pageStart += maxVisibleNotifications
+  displayedItems = allItems.slice(pageStart, pageStart + maxVisibleNotifications)
   renderStack(displayedItems, Math.max(allItems.length - pageStart - displayedItems.length, 0))
 }
 

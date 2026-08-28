@@ -106,6 +106,8 @@ export interface AppSettings {
   enableNotifications: boolean
   /** 导入文件通知开关（文件创建事件触发桌面通知） */
   enableImportNotifications: boolean
+  /** 通知窗口同屏最大展示数量（超出部分折叠为「更多」） */
+  maxVisibleNotifications: number
   autoBackup: boolean
   backupInterval: number
 
@@ -251,6 +253,7 @@ export const useSettingsStore = defineStore('settings', () => {
     debugMode: false,
     enableNotifications: true,
     enableImportNotifications: true,
+    maxVisibleNotifications: 1,
     autoBackup: true,
     backupInterval: 1440, // 24小时
 
@@ -500,6 +503,8 @@ export const useSettingsStore = defineStore('settings', () => {
       window.electronAPI?.send('tray:set-locale', settings.value.language)
       // 同步给插件窗口（主进程存快照并广播，见 PluginWindowHandlers.handleSetLocale）
       window.electronAPI?.send('plugin-window:set-locale', settings.value.language)
+      // 通知窗口同屏最大展示数量 → 主进程（随 notification-content 下发给通知窗口）
+      window.electronAPI?.send('notification:set-max-visible', settings.value.maxVisibleNotifications)
 
       // 把持久化的代理配置同步给主进程（启动后立即生效；主进程在更早的启动阶段
       // 已自行读盘应用，这里保证后续设置变更的回写也能即时反映）
@@ -518,6 +523,8 @@ export const useSettingsStore = defineStore('settings', () => {
       const settingsToSave = JSON.stringify(settings.value)
       await ConfigStorage.setItem('mira-settings', settingsToSave)
       window.electronAPI?.send('window:set-close-to-tray', settings.value.closeToTray)
+      // 设置变更即时同步通知窗口（主进程存快照并重发当前通知列表）
+      window.electronAPI?.send('notification:set-max-visible', settings.value.maxVisibleNotifications)
     } catch (err) {
       error.value = 'Failed to save settings to local storage'
     }
@@ -653,6 +660,7 @@ export const useSettingsStore = defineStore('settings', () => {
       debugMode: false,
       enableNotifications: true,
       enableImportNotifications: true,
+      maxVisibleNotifications: 1,
       autoBackup: true,
       backupInterval: 1440,
       pluginsDirectory: '',
