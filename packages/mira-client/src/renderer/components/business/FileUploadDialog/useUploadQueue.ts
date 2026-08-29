@@ -3,19 +3,22 @@ import { useI18n } from 'vue-i18n'
 import Queue from 'queue'
 import { useToast } from '@/renderer/composables/useToast'
 import { useMediaStore } from '@renderer/stores/media'
+import { useSettingsStore } from '@renderer/stores/settings'
 import type { PendingFile } from './types'
 import { FILE_LIMITS } from './types'
 
 export function useUploadQueue() {
   const toast = useToast()
   const mediaStore = useMediaStore()
+  const settingsStore = useSettingsStore()
   const { t } = useI18n()
 
   const uploadingFileIds = ref<Set<string>>(new Set())
   const uploadProgressMap = ref<Map<string, number>>(new Map())
 
   const uploadQueue = new Queue({
-    concurrency: FILE_LIMITS.MAX_CONCURRENT_UPLOADS,
+    // 并发数取设置-素材库的上传设置,非法值回退 FILE_LIMITS 默认
+    concurrency: Math.max(1, settingsStore.settings.uploadMaxConcurrentUploads || FILE_LIMITS.MAX_CONCURRENT_UPLOADS),
     timeout: 60000,
     autostart: true
   })

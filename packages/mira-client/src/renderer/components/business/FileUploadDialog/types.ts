@@ -48,8 +48,10 @@ export interface Emits {
   (e: 'update:visible', visible: boolean): void
 }
 
+/** 上传默认限制;实际生效值取「设置-素材库」的上传设置(settingsStore.upload*) */
 export const FILE_LIMITS = {
-  MAX_FILES_PER_BATCH: 500,
+  /** 单批最大文件数;0 = 不限制(超出裁断多余文件,不报错) */
+  MAX_FILES_PER_BATCH: 0,
   MAX_CONCURRENT_UPLOADS: 3,
   MAX_TOTAL_SIZE: 1024 * 1024 * 1024,
 }

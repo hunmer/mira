@@ -71,6 +71,14 @@ export interface AppSettings {
   thumbnailCacheLibraries: Record<string, boolean>
   maxConcurrentUploads: number
 
+  // 上传设置（对应 FileUploadDialog 的 FILE_LIMITS）
+  /** 单批上传最大文件数；0 = 不限制（超出时裁断多余文件，不报错） */
+  uploadMaxFilesPerBatch: number
+  /** 同时进行的上传任务数 */
+  uploadMaxConcurrentUploads: number
+  /** 单批上传最大总大小（字节）；0 = 不限制 */
+  uploadMaxTotalSize: number
+
   // 媒体预览设置
   videoPreviewMuted: boolean
 
@@ -229,6 +237,11 @@ export const useSettingsStore = defineStore('settings', () => {
     lazyLoading: true,
     thumbnailCacheLibraries: {},
     maxConcurrentUploads: 3,
+
+    // 上传设置
+    uploadMaxFilesPerBatch: 0, // 0 = 不限制
+    uploadMaxConcurrentUploads: 3,
+    uploadMaxTotalSize: 1024 * 1024 * 1024, // 1GB，0 = 不限制
 
     // 媒体预览设置
     videoPreviewMuted: true,
@@ -646,6 +659,9 @@ export const useSettingsStore = defineStore('settings', () => {
       lazyLoading: true,
       thumbnailCacheLibraries: {},
       maxConcurrentUploads: 3,
+      uploadMaxFilesPerBatch: 0,
+      uploadMaxConcurrentUploads: 3,
+      uploadMaxTotalSize: 1024 * 1024 * 1024,
       videoPreviewMuted: true,
       visibleItemFields: ['filename', 'format', 'size', 'folder', 'tags', 'videoPlayIcon'],
       compactWaterfall: false,

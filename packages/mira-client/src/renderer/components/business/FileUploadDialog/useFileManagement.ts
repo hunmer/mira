@@ -1,8 +1,8 @@
 import { markRaw, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useToast } from '@/renderer/composables/useToast'
+import { useSettingsStore } from '@/renderer/stores/settings'
 import type { PendingFile, LocalFsNode } from './types'
-import { FILE_LIMITS } from './types'
 
 type DroppedFileNode = LocalFsNode & {
   mimeType?: string
@@ -32,6 +32,7 @@ function guessMimeFromExt(ext?: string): string {
 export function useFileManagement() {
   const toast = useToast()
   const { t } = useI18n()
+  const settingsStore = useSettingsStore()
 
   const pendingFiles = ref<PendingFile[]>([])
   const selectedPendingIds = ref<string[]>([])
@@ -60,24 +61,23 @@ export function useFileManagement() {
   }
 
   function addFiles(files: File[], defaultFolderId?: string, defaultTagIds?: string[]) {
-    if (files.length + pendingFiles.value.length > FILE_LIMITS.MAX_FILES_PER_BATCH) {
-      toast.add({
-        severity: 'warn',
-        summary: t('business.fileManagement.tooManyFilesTitle'),
-        detail: t('business.fileManagement.tooManyFilesDetail', { count: FILE_LIMITS.MAX_FILES_PER_BATCH }),
-        life: 5000
-      })
-      return
+    // 超出单批数量上限时不报错,裁断保留剩余名额内的文件(0 = 不限制)
+    const maxFiles = settingsStore.settings.uploadMaxFilesPerBatch
+    if (maxFiles > 0) {
+      const remain = maxFiles - pendingFiles.value.length
+      if (remain <= 0) return
+      files = files.slice(0, remain)
     }
 
     const totalSize =
       files.reduce((sum, f) => sum + f.size, 0) +
       pendingFiles.value.reduce((sum, pf) => sum + (pf.localSize ?? pf.file.size), 0)
-    if (totalSize > FILE_LIMITS.MAX_TOTAL_SIZE) {
+    const maxTotalSize = settingsStore.settings.uploadMaxTotalSize
+    if (maxTotalSize > 0 && totalSize > maxTotalSize) {
       toast.add({
         severity: 'warn',
         summary: t('business.fileManagement.totalSizeTooLargeTitle'),
-        detail: t('business.fileManagement.totalSizeTooLargeDetail', { size: formatFileSize(FILE_LIMITS.MAX_TOTAL_SIZE) }),
+        detail: t('business.fileManagement.totalSizeTooLargeDetail', { size: formatFileSize(maxTotalSize) }),
         life: 5000
       })
       return
@@ -132,24 +132,23 @@ export function useFileManagement() {
     }
     walk(nodes, rootDir)
 
-    if (collected.length + pendingFiles.value.length > FILE_LIMITS.MAX_FILES_PER_BATCH) {
-      toast.add({
-        severity: 'warn',
-        summary: t('business.fileManagement.tooManyFilesTitle'),
-        detail: t('business.fileManagement.tooManyFilesDetail', { count: FILE_LIMITS.MAX_FILES_PER_BATCH }),
-        life: 5000
-      })
-      return
+    // 超出单批数量上限时不报错,裁断保留剩余名额内的文件(0 = 不限制)
+    const maxFiles = settingsStore.settings.uploadMaxFilesPerBatch
+    if (maxFiles > 0) {
+      const remain = maxFiles - pendingFiles.value.length
+      if (remain <= 0) return
+      if (collected.length > remain) collected.length = remain
     }
 
     const totalSize =
       collected.reduce((sum, c) => sum + (c.node.size || 0), 0) +
       pendingFiles.value.reduce((sum, pf) => sum + (pf.localSize ?? pf.file.size), 0)
-    if (totalSize > FILE_LIMITS.MAX_TOTAL_SIZE) {
+    const maxTotalSize = settingsStore.settings.uploadMaxTotalSize
+    if (maxTotalSize > 0 && totalSize > maxTotalSize) {
       toast.add({
         severity: 'warn',
         summary: t('business.fileManagement.totalSizeTooLargeTitle'),
-        detail: t('business.fileManagement.totalSizeTooLargeDetail', { size: formatFileSize(FILE_LIMITS.MAX_TOTAL_SIZE) }),
+        detail: t('business.fileManagement.totalSizeTooLargeDetail', { size: formatFileSize(maxTotalSize) }),
         life: 5000
       })
       return

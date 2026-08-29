@@ -254,7 +254,8 @@
                   >
                     <span class="material-icons text-5xl mb-2">cloud_upload</span>
                     <p>{{ $t('business.fileUploadDialog.emptyTitle') }}</p>
-                    <p class="text-xs mt-1">{{ $t('business.fileUploadDialog.emptyDesc', { count: FILE_LIMITS.MAX_FILES_PER_BATCH }) }}</p>
+                    <!-- 数量限制关闭(0)时不展示"最多 N 个" -->
+                    <p v-if="maxFilesPerBatch > 0" class="text-xs mt-1">{{ $t('business.fileUploadDialog.emptyDesc', { count: maxFilesPerBatch }) }}</p>
                   </div>
 
                   <!-- 文件网格：Masonry 按容器宽度响应式分列 -->
@@ -449,13 +450,17 @@ import FolderTreeComponent from './FolderTreeComponent/FolderTreeComponent.vue'
 import { useFileUploadDialog } from './FileUploadDialog/useFileUploadDialog'
 import { isImageFile, isVideoFile, isAudioFile, isDocumentFile, formatFileSize } from './FileUploadDialog/useFileManagement'
 import { useFileRatios } from './FileUploadDialog/useFileRatios'
-import { FILE_LIMITS } from './FileUploadDialog/types'
+import { useSettingsStore } from '@/renderer/stores/settings'
 import type { Props, Emits, PendingFile } from './FileUploadDialog/types'
 
 const props = withDefaults(defineProps<Props>(), {
   visible: false
 })
 const emit = defineEmits<Emits>()
+
+const settingsStore = useSettingsStore()
+/** 单批上传文件数上限(设置-素材库);0 = 不限制 */
+const maxFilesPerBatch = computed(() => settingsStore.settings.uploadMaxFilesPerBatch)
 
 const {
   isVisible,

@@ -84,6 +84,7 @@ import { useServerListStore } from '../stores/serverList'
 import { useMediaStore } from '../stores/media'
 import { useUploadHistoryStore } from '../stores/uploadHistory'
 import { useToast } from '@/renderer/composables/useToast'
+import { useSettingsStore } from '@/renderer/stores/settings'
 import Queue from 'queue'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { MultiTabFileUpload } from '../components/common'
@@ -104,10 +105,10 @@ const sortOrder = ref<'asc' | 'desc'>('desc')
 const selectedLibraryId = ref<string>('')
 
 // 文件数量和大小限制配置
+// 文件数量/总大小限制取设置-素材库的上传设置(0 = 不限制)
+const settingsStore = useSettingsStore()
 const FILE_LIMITS = {
-  MAX_FILES_PER_BATCH: 500,        // 单次最大文件数量
   MAX_CONCURRENT_UPLOADS: 3,      // 同时上传数量
-  MAX_TOTAL_SIZE: 1024 * 1024 * 1024, // 1GB 总大小限制
   PROGRESS_UPDATE_INTERVAL: 500   // 进度更新间隔（毫秒）
 }
 
@@ -180,24 +181,26 @@ const files = computed(() => {
 
 // 多标签页上传组件事件处理
 const handleFilesSelected = (files: File[]) => {
-  // 文件数量限制检查
-  if (files.length > FILE_LIMITS.MAX_FILES_PER_BATCH) {
+  // 文件数量限制检查(0 = 不限制)
+  const maxFiles = settingsStore.settings.uploadMaxFilesPerBatch
+  if (maxFiles > 0 && files.length > maxFiles) {
     toast.add({
       severity: 'warn',
       summary: t('views.fileUploadView.tooManyFiles'),
-      detail: t('views.fileUploadView.tooManyFilesDetail', { n: FILE_LIMITS.MAX_FILES_PER_BATCH }),
+      detail: t('views.fileUploadView.tooManyFilesDetail', { n: maxFiles }),
       life: 5000
     })
     return
   }
 
-  // 总大小限制检查
+  // 总大小限制检查(0 = 不限制)
   const totalSize = files.reduce((sum, file) => sum + file.size, 0)
-  if (totalSize > FILE_LIMITS.MAX_TOTAL_SIZE) {
+  const maxTotalSize = settingsStore.settings.uploadMaxTotalSize
+  if (maxTotalSize > 0 && totalSize > maxTotalSize) {
     toast.add({
       severity: 'warn',
       summary: t('views.fileUploadView.totalSizeTooLarge'),
-      detail: t('views.fileUploadView.totalSizeTooLargeDetail', { size: formatFileSize(FILE_LIMITS.MAX_TOTAL_SIZE) }),
+      detail: t('views.fileUploadView.totalSizeTooLargeDetail', { size: formatFileSize(maxTotalSize) }),
       life: 5000
     })
     return

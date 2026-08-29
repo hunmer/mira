@@ -142,6 +142,43 @@
       </div>
     </div>
 
+    <!-- 上传设置:单批文件数上限 / 单批总大小上限(MB) / 同时上传数;顶部对齐,desc 行数不同不影响 label/input 对齐 -->
+    <div>
+      <div class="flex flex-wrap items-start gap-4 py-3">
+        <div class="flex flex-col min-w-40 flex-1 gap-2">
+          <label class="text-foreground dark:text-muted-foreground text-base font-medium leading-normal">{{ t('settings.uploadMaxFiles') }}</label>
+          <Input
+            v-model="uploadMaxFiles"
+            type="number"
+            min="0"
+            @change="commitUploadMaxFiles"
+          />
+          <p class="text-muted-foreground dark:text-muted-foreground text-sm">{{ t('settings.uploadMaxFilesDesc') }}</p>
+        </div>
+        <div class="flex flex-col min-w-40 flex-1 gap-2">
+          <label class="text-foreground dark:text-muted-foreground text-base font-medium leading-normal">{{ t('settings.uploadMaxTotalSize') }}</label>
+          <Input
+            v-model="uploadMaxTotalSizeMB"
+            type="number"
+            min="0"
+            @change="commitUploadMaxTotalSize"
+          />
+          <p class="text-muted-foreground dark:text-muted-foreground text-sm">{{ t('settings.uploadMaxTotalSizeDesc') }}</p>
+        </div>
+        <div class="flex flex-col min-w-32 flex-1 gap-2">
+          <label class="text-foreground dark:text-muted-foreground text-base font-medium leading-normal">{{ t('settings.uploadConcurrency') }}</label>
+          <Input
+            v-model="uploadConcurrency"
+            type="number"
+            min="1"
+            max="16"
+            @change="commitUploadConcurrency"
+          />
+          <p class="text-muted-foreground dark:text-muted-foreground text-sm">{{ t('settings.uploadConcurrencyDesc') }}</p>
+        </div>
+      </div>
+    </div>
+
     <!-- 删除前确认 -->
     <div class="flex items-center justify-between gap-4 py-3">
       <div class="min-w-0">
@@ -178,6 +215,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { Switch } from '@/components/ui/switch'
 import { useLibraryStore } from '@/renderer/stores/library'
 import { useSettingsStore } from '@/renderer/stores/settings'
+import { Input } from '@/components/ui/input'
 import {
   loadLibraryPrefs,
   saveLibraryDefaultViewMode,
@@ -216,6 +254,33 @@ const pageSizeOptions = [100, 200, 500, 1000, 2000, 5000]
 const showDeleteConfirm = ref(!getLibraryPrefs().skipDeleteConfirm)
 // 导入（导入文件夹 / 悬浮球拖入文件）后是否自动打开上传对话框进行二次确认
 const confirmAfterImport = ref(getLibraryPrefs().confirmAfterImport)
+
+// 上传设置（全局设置，对应 FileUploadDialog 的 FILE_LIMITS；文件数/总大小 0 = 不限制）
+// Input v-model 为 string，change（失焦/回车）时转 number、clamp 后保存
+const uploadMaxFiles = ref(String(settingsStore.settings.uploadMaxFilesPerBatch))
+const uploadMaxTotalSizeMB = ref(String(Math.round(settingsStore.settings.uploadMaxTotalSize / 1024 / 1024)))
+const uploadConcurrency = ref(String(settingsStore.settings.uploadMaxConcurrentUploads))
+
+const commitUploadMaxFiles = async () => {
+  const value = Math.max(0, Math.floor(Number(uploadMaxFiles.value) || 0))
+  uploadMaxFiles.value = String(value)
+  await settingsStore.updateSetting('uploadMaxFilesPerBatch', value)
+  toast.add({ severity: 'success', summary: t('settings.settingSaved'), life: 2000 })
+}
+
+const commitUploadMaxTotalSize = async () => {
+  const mb = Math.max(0, Math.floor(Number(uploadMaxTotalSizeMB.value) || 0))
+  uploadMaxTotalSizeMB.value = String(mb)
+  await settingsStore.updateSetting('uploadMaxTotalSize', mb * 1024 * 1024)
+  toast.add({ severity: 'success', summary: t('settings.settingSaved'), life: 2000 })
+}
+
+const commitUploadConcurrency = async () => {
+  const value = Math.min(16, Math.max(1, Math.floor(Number(uploadConcurrency.value) || 1)))
+  uploadConcurrency.value = String(value)
+  await settingsStore.updateSetting('uploadMaxConcurrentUploads', value)
+  toast.add({ severity: 'success', summary: t('settings.settingSaved'), life: 2000 })
+}
 
 const handleMultiLibraryViewsChange = async (enabled: boolean) => {
   await settingsStore.updateSetting('multiLibraryViewsEnabled', enabled)
