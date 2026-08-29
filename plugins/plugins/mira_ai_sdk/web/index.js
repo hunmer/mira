@@ -66,7 +66,6 @@
         icon: 'auto_awesome',
         onSelect: (files) => this.open(files),
       }) || null
-      this.api.log.info('[ai-image] 已初始化')
     }
 
     async cleanup() {

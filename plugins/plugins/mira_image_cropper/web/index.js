@@ -72,7 +72,6 @@
         icon: 'crop',
         onSelect: (files) => this.open(files),
       }) || null
-      this.api.log.info('[image-cropper] 已初始化')
     }
 
     async cleanup() {

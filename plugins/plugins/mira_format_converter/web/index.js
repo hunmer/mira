@@ -75,7 +75,6 @@
         icon: 'swap_horiz',
         onSelect: (files) => this.open(files),
       }) || null
-      this.api.log.info('[format-converter] 已初始化')
     }
 
     async cleanup() {

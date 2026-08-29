@@ -1,14 +1,17 @@
-﻿$ErrorActionPreference = 'Stop'
+$ErrorActionPreference = 'Stop'
 Write-Host '[1/7] Checking Node.js ...'
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
-$InstallDir = Join-Path $env:LOCALAPPDATA 'Mira\mira-release'
+$MiraRoot = Join-Path $env:ProgramData 'Mira'
+$InstallDir = Join-Path $MiraRoot 'mira-release'
+$NodeInstallDir = Join-Path $env:ProgramData 'NodeJS'
+$NpmGlobalDir = Join-Path $env:ProgramData 'npm-global'
 $NodeVersion = '22.14.0'
-New-Item -ItemType Directory -Force -Path $InstallDir | Out-Null
+New-Item -ItemType Directory -Force -Path $InstallDir, $NodeInstallDir, $NpmGlobalDir | Out-Null
 
 $node = (Get-Command node -ErrorAction SilentlyContinue).Source
 if (-not $node -or [int]((node -p 'process.versions.node').Split('.')[0]) -lt 18) {
   Write-Host "  Node.js not found or outdated, downloading v$NodeVersion ..."
-  $nodeDir = Join-Path $InstallDir 'node'
+  $nodeDir = $NodeInstallDir
   $zip = Join-Path $env:TEMP "node-$NodeVersion.zip"
   Invoke-WebRequest "https://nodejs.org/dist/v$NodeVersion/node-v$NodeVersion-win-x64.zip" -OutFile $zip
   $tmp = Join-Path $env:TEMP "mira-node-$([guid]::NewGuid())"
@@ -23,6 +26,13 @@ if (-not $node -or [int]((node -p 'process.versions.node').Split('.')[0]) -lt 18
 } else {
   Write-Host "  Node.js found: $node"
 }
+
+# Keep npm global packages outside the working directory and in the shared system data tree.
+$npm = Join-Path (Split-Path $node) 'npm.cmd'
+if (Test-Path $npm) {
+  & $npm config set prefix $NpmGlobalDir --location=global | Out-Null
+}
+[Environment]::SetEnvironmentVariable('NPM_CONFIG_PREFIX', $NpmGlobalDir, 'User')
 
 Write-Host '[2/7] Stopping existing Mira processes ...'
 Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -and $_.CommandLine.Contains($InstallDir) } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
@@ -44,7 +54,7 @@ if (-not $ffmpeg -or -not $ffprobe -or -not $magick -or -not $exiftool) { throw 
 
 Write-Host '[4/7] Setting environment variables ...'
 foreach ($item in @(@('FFMPEG_PATH',$ffmpeg),@('FFPROBE_PATH',$ffprobe),@('IMAGEMAGICK_PATH',$magick),@('EXIFTOOL_PATH',$exiftool))) { [Environment]::SetEnvironmentVariable($item[0],$item[1],'User') }
-$runtimeBins = @((Split-Path $ffmpeg), (Split-Path $magick), (Split-Path $exiftool), (Join-Path $InstallDir 'bin'))
+$runtimeBins = @((Split-Path $ffmpeg), (Split-Path $magick), (Split-Path $exiftool), (Join-Path $InstallDir 'bin'), (Join-Path $NpmGlobalDir 'bin'))
 $userPath = [Environment]::GetEnvironmentVariable('Path','User')
 foreach ($runtimeBin in $runtimeBins) { if ($userPath -notlike "*$runtimeBin*") { $userPath = "$runtimeBin;$userPath" } }
 [Environment]::SetEnvironmentVariable('Path', $userPath, 'User')
@@ -54,13 +64,39 @@ $launcher = Join-Path $InstallDir 'mira-server.cmd'
 $command = '"' + $node + '" "' + (Join-Path $InstallDir 'server\mira-app-server\dist\cli.js') + '" start --http-port 8081 --ws-port 8018 --data-path "' + (Join-Path $env:USERPROFILE '.mira-data') + '"'
 @('@echo off', "set FFMPEG_PATH=$ffmpeg", "set FFPROBE_PATH=$ffprobe", "set IMAGEMAGICK_PATH=$magick", "set EXIFTOOL_PATH=$exiftool", $command) | Set-Content $launcher -Encoding ASCII
 
+# wscript runs the command without allocating a console window at logon.
+$silentLauncher = Join-Path $InstallDir 'mira-server-hidden.vbs'
+$vbsCommand = $command.Replace('"', '""')
+if ($false) {
+@(
+  'Set shell = CreateObject("WScript.Shell")',
+  "shell.Environment(`"Process`")(`"FFMPEG_PATH`") = `"$ffmpeg`"",
+  "shell.Environment(`"Process`")(`"FFPROBE_PATH`") = `"$ffprobe`"",
+  "shell.Environment(`"Process`")(`"IMAGEMAGICK_PATH`") = `"$magick`"",
+  "shell.Environment(`"Process`")(`"EXIFTOOL_PATH`") = `"$exiftool`"",
+  "shell.Run `"$vbsCommand`", 0, False"
+) | Set-Content $silentLauncher -Encoding ASCII
+}
+# Rewrite with plain VBScript quoting; this also keeps paths containing spaces valid.
+$vbs = @'
+Set shell = CreateObject("WScript.Shell")
+shell.Environment("Process")("FFMPEG_PATH") = "__FFMPEG__"
+shell.Environment("Process")("FFPROBE_PATH") = "__FFPROBE__"
+shell.Environment("Process")("IMAGEMAGICK_PATH") = "__MAGICK__"
+shell.Environment("Process")("EXIFTOOL_PATH") = "__EXIFTOOL__"
+shell.Run "__COMMAND__", 0, False
+'@
+$vbs = $vbs.Replace('__FFMPEG__', $ffmpeg).Replace('__FFPROBE__', $ffprobe).Replace('__MAGICK__', $magick).Replace('__EXIFTOOL__', $exiftool).Replace('__COMMAND__', $command.Replace('"', '""'))
+$vbs | Set-Content $silentLauncher -Encoding ASCII
+
 $binDir = Join-Path $InstallDir 'bin'
 New-Item -ItemType Directory -Force -Path $binDir | Out-Null
 $cliJsPath = Join-Path $InstallDir 'server\mira-app-server\dist\cli.js'
 $cliCommand = '"' + $node + '" "' + $cliJsPath + '" %*'
 @('@echo off', "set FFMPEG_PATH=$ffmpeg", "set FFPROBE_PATH=$ffprobe", "set IMAGEMAGICK_PATH=$magick", "set EXIFTOOL_PATH=$exiftool", $cliCommand) | Set-Content (Join-Path $binDir 'mira-app-server.cmd') -Encoding ASCII
 $ErrorActionPreference = 'Continue'
-schtasks /Create /TN MiraAppServer /TR "`"$launcher`"" /SC ONLOGON /RL LIMITED /F 2>$null | Out-Null
+$taskCommand = "wscript.exe //B //Nologo `"$silentLauncher`""
+schtasks /Create /TN MiraAppServer /TR "$taskCommand" /SC ONLOGON /RL LIMITED /F 2>$null | Out-Null
 $schedOk = ($LASTEXITCODE -eq 0)
 $ErrorActionPreference = 'Stop'
 if ($schedOk) {
@@ -68,8 +104,8 @@ if ($schedOk) {
   schtasks /Run /TN MiraAppServer | Out-Null
 } else {
   Write-Host '  Task Scheduler unavailable (no admin), using registry Run key ...'
-  New-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name 'MiraAppServer' -Value "`"$launcher`"" -PropertyType String -Force | Out-Null
-  Start-Process $launcher -WindowStyle Hidden
+  New-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name 'MiraAppServer' -Value $taskCommand -PropertyType String -Force | Out-Null
+  Start-Process 'wscript.exe' -ArgumentList "//B //Nologo `"$silentLauncher`"" -WindowStyle Hidden
 }
 
 Write-Host '[6/7] Installing desktop client ...'

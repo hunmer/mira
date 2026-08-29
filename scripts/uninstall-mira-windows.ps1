@@ -1,6 +1,9 @@
 ﻿Write-Host '[1/5] Stopping Mira service ...'
 $ErrorActionPreference = 'SilentlyContinue'
-$InstallDir = Join-Path $env:LOCALAPPDATA 'Mira\mira-release'
+$MiraRoot = Join-Path $env:ProgramData 'Mira'
+$NodeInstallDir = Join-Path $env:ProgramData 'NodeJS'
+$NpmGlobalDir = Join-Path $env:ProgramData 'npm-global'
+$InstallDir = Join-Path $MiraRoot 'mira-release'
 schtasks /End /TN MiraAppServer 2>$null | Out-Null
 schtasks /Delete /TN MiraAppServer /F 2>$null | Out-Null
 Remove-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name 'MiraAppServer'
@@ -13,11 +16,12 @@ if ($uninstaller) { Start-Process $uninstaller.FullName -ArgumentList '/S' -Wait
 
 Write-Host '[3/5] Cleaning environment variables ...'
 foreach ($name in 'FFMPEG_PATH','FFPROBE_PATH','IMAGEMAGICK_PATH','EXIFTOOL_PATH') { [Environment]::SetEnvironmentVariable($name,$null,'User') }
+$userNpmPrefix = [Environment]::GetEnvironmentVariable('NPM_CONFIG_PREFIX','User')
+if ($userNpmPrefix -and $userNpmPrefix -like "$NpmGlobalDir*") { [Environment]::SetEnvironmentVariable('NPM_CONFIG_PREFIX',$null,'User') }
 $userPath = [Environment]::GetEnvironmentVariable('Path','User')
-if ($userPath) { [Environment]::SetEnvironmentVariable('Path', (($userPath -split ';' | Where-Object { $_ -notmatch 'Mira\\mira-release' }) -join ';'), 'User') }
+if ($userPath) { [Environment]::SetEnvironmentVariable('Path', (($userPath -split ';' | Where-Object { $_ -notmatch 'Mira\\mira-release' -and $_ -notmatch 'npm-global' }) -join ';'), 'User') }
 
 Write-Host '[4/5] Removing install directory (this may take a while) ...'
-$miraRoot = Join-Path $env:LOCALAPPDATA 'Mira'
 $empty = Join-Path $env:TEMP "mira-uninstall-$([guid]::NewGuid())"
 New-Item -ItemType Directory -Force -Path $empty | Out-Null
 robocopy $empty $miraRoot /MIR /R:1 /W:1 /NFL /NDL /NJH /NJS /NP | Out-Null

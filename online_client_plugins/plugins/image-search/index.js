@@ -67,7 +67,6 @@
         icon: 'image_search',
         onSelect: (files) => this.open(files),
       }) || null
-      this.api.log.info('[image-search] 已初始化')
     }
 
     async cleanup() {

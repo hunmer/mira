@@ -3,6 +3,9 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 INSTALL_DIR="${HOME}/.mira/mira-release"
+# Keep the bundled Node.js and npm global packages outside Mira's application tree.
+NODE_INSTALL_DIR="/usr/local/lib/mira-node"
+NPM_GLOBAL_DIR="/usr/local/lib/npm-global"
 NODE_VERSION="22.14.0"
 mkdir -p "$INSTALL_DIR"
 
@@ -14,17 +17,21 @@ ensure_node() {
   url="https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-darwin-${node_arch}.tar.gz"
   tmp="$(mktemp -d)"
   curl -fL "$url" -o "$tmp/node.tgz"
-  mkdir -p "$INSTALL_DIR/node"
-  tar -xzf "$tmp/node.tgz" --strip-components=1 -C "$INSTALL_DIR/node"
+  sudo mkdir -p "$NODE_INSTALL_DIR"
+  sudo tar -xzf "$tmp/node.tgz" --strip-components=1 -C "$NODE_INSTALL_DIR"
+  sudo mkdir -p "$NPM_GLOBAL_DIR"
   rm -rf "$tmp"
-  export PATH="$INSTALL_DIR/node/bin:$PATH"
+  export PATH="$NODE_INSTALL_DIR/bin:$PATH"
   touch "$HOME/.zprofile"
-  grep -qF "$INSTALL_DIR/node/bin" "$HOME/.zprofile" || printf '\nexport PATH="%s:$PATH"\n' "$INSTALL_DIR/node/bin" >> "$HOME/.zprofile"
+  grep -qF "$NODE_INSTALL_DIR/bin" "$HOME/.zprofile" || printf '\nexport PATH="%s:$PATH"\n' "$NODE_INSTALL_DIR/bin" >> "$HOME/.zprofile"
 }
 
 ensure_node
 NODE_BIN="$(command -v node)"
-export PATH="$INSTALL_DIR/node/bin:$ROOT/runtime-deps/ffmpeg/bin:$ROOT/runtime-deps/imagemagick/bin:$ROOT/runtime-deps/exiftool/bin:$PATH"
+export PATH="$NODE_INSTALL_DIR/bin:$NPM_GLOBAL_DIR/bin:$ROOT/runtime-deps/ffmpeg/bin:$ROOT/runtime-deps/imagemagick/bin:$ROOT/runtime-deps/exiftool/bin:$PATH"
+if [[ -x "$NODE_INSTALL_DIR/bin/npm" ]]; then
+  sudo "$NODE_INSTALL_DIR/bin/npm" config set prefix "$NPM_GLOBAL_DIR" --location=global
+fi
 export FFMPEG_PATH="$ROOT/runtime-deps/ffmpeg/bin/ffmpeg"
 export FFPROBE_PATH="$ROOT/runtime-deps/ffmpeg/bin/ffprobe"
 export IMAGEMAGICK_PATH="$ROOT/runtime-deps/imagemagick/bin/magick"
@@ -36,7 +43,7 @@ if ! grep -qF '# Mira bundled runtime' "$HOME/.zprofile"; then
   cat >> "$HOME/.zprofile" <<EOF
 
 # Mira bundled runtime
-export PATH="$INSTALL_DIR/node/bin:$INSTALL_DIR/runtime-deps/ffmpeg/bin:$INSTALL_DIR/runtime-deps/imagemagick/bin:$INSTALL_DIR/runtime-deps/exiftool/bin:\$PATH"
+export PATH="$NODE_INSTALL_DIR/bin:$NPM_GLOBAL_DIR/bin:$INSTALL_DIR/runtime-deps/ffmpeg/bin:$INSTALL_DIR/runtime-deps/imagemagick/bin:$INSTALL_DIR/runtime-deps/exiftool/bin:\$PATH"
 export FFMPEG_PATH="$INSTALL_DIR/runtime-deps/ffmpeg/bin/ffmpeg"
 export FFPROBE_PATH="$INSTALL_DIR/runtime-deps/ffmpeg/bin/ffprobe"
 export IMAGEMAGICK_PATH="$INSTALL_DIR/runtime-deps/imagemagick/bin/magick"
@@ -83,7 +90,7 @@ cat > "$PLIST" <<EOF
 <plist version="1.0"><dict>
 <key>Label</key><string>com.mira.app-server</string>
 <key>ProgramArguments</key><array><string>$NODE_BIN</string><string>$INSTALL_DIR/server/mira-app-server/dist/cli.js</string><string>start</string><string>--http-port</string><string>8081</string><string>--ws-port</string><string>8018</string><string>--data-path</string><string>$HOME/.mira-data</string></array>
-<key>EnvironmentVariables</key><dict><key>PATH</key><string>$INSTALL_DIR/node/bin:$INSTALL_DIR/runtime-deps/ffmpeg/bin:$INSTALL_DIR/runtime-deps/imagemagick/bin:$INSTALL_DIR/runtime-deps/exiftool/bin:/usr/bin:/bin</string><key>FFMPEG_PATH</key><string>$INSTALL_DIR/runtime-deps/ffmpeg/bin/ffmpeg</string><key>FFPROBE_PATH</key><string>$INSTALL_DIR/runtime-deps/ffmpeg/bin/ffprobe</string><key>IMAGEMAGICK_PATH</key><string>$INSTALL_DIR/runtime-deps/imagemagick/bin/magick</string><key>EXIFTOOL_PATH</key><string>$INSTALL_DIR/runtime-deps/exiftool/bin/exiftool</string><key>DYLD_LIBRARY_PATH</key><string>$INSTALL_DIR/runtime-deps/ffmpeg/lib:$INSTALL_DIR/runtime-deps/imagemagick/lib:$INSTALL_DIR/runtime-deps/exiftool/lib</string></dict>
+<key>EnvironmentVariables</key><dict><key>PATH</key><string>$NODE_INSTALL_DIR/bin:$NPM_GLOBAL_DIR/bin:$INSTALL_DIR/runtime-deps/ffmpeg/bin:$INSTALL_DIR/runtime-deps/imagemagick/bin:$INSTALL_DIR/runtime-deps/exiftool/bin:/usr/bin:/bin</string><key>FFMPEG_PATH</key><string>$INSTALL_DIR/runtime-deps/ffmpeg/bin/ffmpeg</string><key>FFPROBE_PATH</key><string>$INSTALL_DIR/runtime-deps/ffmpeg/bin/ffprobe</string><key>IMAGEMAGICK_PATH</key><string>$INSTALL_DIR/runtime-deps/imagemagick/bin/magick</string><key>EXIFTOOL_PATH</key><string>$INSTALL_DIR/runtime-deps/exiftool/bin/exiftool</string><key>DYLD_LIBRARY_PATH</key><string>$INSTALL_DIR/runtime-deps/ffmpeg/lib:$INSTALL_DIR/runtime-deps/imagemagick/lib:$INSTALL_DIR/runtime-deps/exiftool/lib</string></dict>
 <key>RunAtLoad</key><true/><key>KeepAlive</key><true/><key>StandardOutPath</key><string>$HOME/.mira/mira-server.out.log</string><key>StandardErrorPath</key><string>$HOME/.mira/mira-server.err.log</string>
 </dict></plist>
 EOF

@@ -85,7 +85,6 @@
         icon: 'movie',
         onSelect: (files) => this.open(files),
       }) || null
-      this.api.log.info('[mira-video-editor] 已初始化')
     }
 
     async cleanup() {
