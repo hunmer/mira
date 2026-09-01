@@ -154,6 +154,8 @@ export function useHomeEventHandlers(
       accept: async () => {
         try {
           await miraSDKService.emptyTrash(libraryId)
+          // 清空操作成功后立即刷新侧边栏快捷分类统计，不依赖 WebSocket 回推。
+          miraEventBus.emit('library-file-changed', { libraryId, eventType: 'trash-emptied' })
           clearTabCache()
           setAllTabsNeedUpdate(true)
           const currentTab = getCurrentTab()

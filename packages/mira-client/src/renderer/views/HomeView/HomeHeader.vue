@@ -194,7 +194,7 @@ const openUiTestPanel = async () => {
       @click="emit('uploadQueue')">
       <span class="material-icons" style="font-size: 18px;">cloud_upload</span>
       <span class="absolute -right-0.5 -bottom-0.5 min-w-3.5 h-3.5 px-0.5 rounded-full bg-primary text-primary-foreground text-[9px] leading-none flex items-center justify-center">
-        {{ activeUploadCount > 99 ? '99+' : activeUploadCount }}
+        {{ activeUploadCount }}
       </span>
     </button>
 

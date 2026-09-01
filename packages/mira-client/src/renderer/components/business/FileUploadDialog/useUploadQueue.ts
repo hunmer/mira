@@ -13,6 +13,12 @@ import { FILE_LIMITS } from './types'
 
 /** 当前应用内所有待处理上传任务数量，供 HomeHeader 展示入口状态。 */
 export const activeUploadCount = ref(0)
+export const uploadBatchProgress = ref(new Map<string, {
+  total: number
+  completed: number
+  failed: number
+  startedAt: Date
+}>())
 
 /** 判断绝对路径是否位于素材库根目录内（跨平台处理分隔符和大小写）。 */
 function isPathInsideLibrary(filePath: string | undefined, libraryPath: string | undefined): boolean {
@@ -59,6 +65,18 @@ export function useUploadQueue() {
     completed: 0,
     failed: 0
   })
+
+  function markBatchComplete(batchId: string, failed = false) {
+    const current = uploadBatchProgress.value.get(batchId)
+    if (!current) return
+    const next = new Map(uploadBatchProgress.value)
+    next.set(batchId, {
+      ...current,
+      completed: current.completed + 1,
+      failed: current.failed + (failed ? 1 : 0),
+    })
+    uploadBatchProgress.value = next
+  }
 
   uploadQueue.addEventListener('start', updateQueueStats)
   uploadQueue.addEventListener('success', () => {
@@ -126,6 +144,7 @@ export function useUploadQueue() {
           uploadingFileIds.value.delete(pendingFile.id)
           activeUploadCount.value = Math.max(0, activeUploadCount.value - 1)
           addHistory('success', undefined, (result.data as any)?.id ? String((result.data as any).id) : undefined)
+          markBatchComplete(batchId)
           callback?.(undefined, result)
           return
         }
@@ -162,6 +181,7 @@ export function useUploadQueue() {
           uploadingFileIds.value.delete(pendingFile.id)
           activeUploadCount.value = Math.max(0, activeUploadCount.value - 1)
           addHistory('success', undefined, (result.data as any)?.id ? String((result.data as any).id) : undefined)
+          markBatchComplete(batchId)
           callback?.(undefined, result)
         } else {
           throw new Error(result.error || t('business.uploadQueue.uploadFailed'))
@@ -172,6 +192,7 @@ export function useUploadQueue() {
         activeUploadCount.value = Math.max(0, activeUploadCount.value - 1)
         console.error('Upload error:', error)
         addHistory('failed', (error as Error).message)
+        markBatchComplete(batchId, true)
         callback?.(error as Error)
         toast.add({
           severity: 'error',
@@ -190,6 +211,9 @@ export function useUploadQueue() {
     options?: { skipSameName?: boolean; enableHash?: boolean }
   ) {
     const batchId = `upload-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    const batches = new Map(uploadBatchProgress.value)
+    batches.set(batchId, { total: files.length, completed: 0, failed: 0, startedAt: new Date() })
+    uploadBatchProgress.value = batches
     files.forEach((pendingFile) => {
       uploadingFileIds.value.add(pendingFile.id)
       activeUploadCount.value++

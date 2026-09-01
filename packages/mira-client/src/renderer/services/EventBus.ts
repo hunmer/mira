@@ -8,7 +8,7 @@ export interface ActiveTabRefreshDetail {
 
 export interface LibraryFileChangedDetail {
   libraryId?: string
-  eventType: 'created' | 'updated' | 'deleted' | 'recovered'
+  eventType: 'created' | 'updated' | 'deleted' | 'recovered' | 'trash-emptied'
 }
 
 export interface RefreshDetail {

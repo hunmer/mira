@@ -14,6 +14,7 @@ import { useUploadHistoryStore } from '@renderer/stores/uploadHistory'
 import { useLibraryStore } from '@renderer/stores/library'
 import { useMediaStore } from '@renderer/stores/media'
 import { environment } from '@renderer/utils'
+import { uploadBatchProgress } from './FileUploadDialog/useUploadQueue'
 
 const open = defineModel<boolean>('open', { required: true })
 const history = useUploadHistoryStore()
@@ -28,9 +29,15 @@ const groups = computed(() => {
     if (!map.has(key)) map.set(key, { title: formatDate(record.uploadedAt), records: [] })
     map.get(key)!.records.push(record)
   }
+  for (const [key, batch] of uploadBatchProgress.value) {
+    if (!map.has(key)) map.set(key, { title: formatDate(batch.startedAt), records: [] })
+  }
   const result = [...map.entries()].map(([key, value]) => ({
     key,
     ...value,
+    total: uploadBatchProgress.value.get(key)?.total ?? value.records.length,
+    completed: uploadBatchProgress.value.get(key)?.completed ?? value.records.length,
+    pending: Math.max(0, (uploadBatchProgress.value.get(key)?.total ?? value.records.length) - (uploadBatchProgress.value.get(key)?.completed ?? value.records.length)),
     success: value.records.filter(record => record.status === 'success').length,
     failed: value.records.filter(record => record.status === 'failed').length,
   }))
@@ -128,7 +135,8 @@ watch([groups, expandedGroups, groupPages], () => {
             <button class="flex w-full items-center gap-2 border-b border-border pb-2 text-left" @click="toggleGroup(group.key)">
               <span class="material-icons text-base">{{ expandedGroups.has(group.key) ? 'expand_more' : 'chevron_right' }}</span>
               <span class="flex-1 text-xs font-medium text-muted-foreground">{{ group.title }}</span>
-              <span class="text-xs text-muted-foreground">{{ group.records.length }} 个</span>
+              <span class="text-xs text-muted-foreground">已上传 {{ group.completed }} / 待上传 {{ group.pending }}</span>
+              <span class="text-xs text-muted-foreground">共 {{ group.total }} 个</span>
               <span v-if="group.success" class="text-xs text-green-600">{{ group.success }} 成功</span>
               <span v-if="group.failed" class="text-xs text-destructive">{{ group.failed }} 失败</span>
             </button>

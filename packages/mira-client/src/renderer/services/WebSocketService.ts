@@ -912,8 +912,6 @@ function setupEventListeners(libraryStore: any): void {
   // 监听缩略图生成事件
   webSocketService.addEventListener('thumbnail::generated', (data) => {
     console.log('Thumbnail generated:', data)
-    // 外部导入可能在缩略图阶段才完成最终文件处理，确保 Tree 读取最新数量。
-    scheduleTreeRefresh(data?.libraryId)
     const thumbUrl = appendThumbToken(toFileUrl(data.thumb))
     if (thumbUrl) {
       miraEventBus.emit('thumbnail-updated', { fileId: String(data.id), thumbPath: thumbUrl })
@@ -963,8 +961,8 @@ const refreshTimers = new Map<string, ReturnType<typeof setTimeout>>()
 const uploadBatchRefreshes = new Map<string, Map<string, { eventType: 'created', data: any }>>()
 const uploadBatchRefreshTimers = new Map<string, ReturnType<typeof setTimeout>>()
 const treeRefreshTimers = new Map<string, ReturnType<typeof setTimeout>>()
-const TREE_REFRESH_DELAY = 300
-const TREE_REFRESH_RETRY_DELAY = 1500
+// 批量上传期间持续重置定时器，静默 5 秒后只刷新一次目录/标签统计。
+const TREE_REFRESH_DELAY = 5000
 const UPLOAD_BATCH_REFRESH_FALLBACK_DELAY = 2000
 
 function dispatchActiveTabRefresh(tabId: string, eventType: 'created' | 'updated' | 'deleted' | 'recovered', data: any): void {
@@ -1013,17 +1011,7 @@ function scheduleTreeRefresh(libraryId?: string): void {
     void Promise.all([
       import('../stores/folder').then(({ useFolderStore }) => useFolderStore().refreshFolders(targetLibraryId)),
       import('../stores/tag').then(({ useTagStore }) => useTagStore().refreshTags(targetLibraryId)),
-    ]).finally(() => {
-      // 文件监听/扩展导入可能在广播后才完成统计相关写入，再读一次最终值。
-      const retryTimer = setTimeout(() => {
-        treeRefreshTimers.delete(targetLibraryId)
-        void Promise.all([
-          import('../stores/folder').then(({ useFolderStore }) => useFolderStore().refreshFolders(targetLibraryId)),
-          import('../stores/tag').then(({ useTagStore }) => useTagStore().refreshTags(targetLibraryId)),
-        ])
-      }, TREE_REFRESH_RETRY_DELAY)
-      treeRefreshTimers.set(targetLibraryId, retryTimer)
-    })
+    ])
   }, TREE_REFRESH_DELAY))
 }
 
