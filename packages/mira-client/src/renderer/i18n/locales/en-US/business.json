@@ -124,7 +124,10 @@
     "notMatched": "Does not match",
     "libraryLabel": "Library:",
     "libraryPlaceholder": "Select library",
-    "startUpload": "Start Upload ({count})"
+    "startUpload": "Start Upload ({count})",
+    "uploadSettings": "Upload settings",
+    "skipSameName": "Skip files with duplicate names",
+    "hashDuplicateCheck": "Verify duplicate files by hash"
   },
   "filterBar": {
     "clear": "Clear",

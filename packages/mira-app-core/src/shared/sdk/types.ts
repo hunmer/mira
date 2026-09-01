@@ -159,6 +159,7 @@ export interface CreateAdminRequest {
 // 素材库类型
 export interface LibraryCustomFields {
     enableHash?: boolean;
+    skipSameName?: boolean;
     enableAutoSync?: boolean;
     enableThumbScan?: boolean;
     enableAutoBackup?: boolean;

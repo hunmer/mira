@@ -430,12 +430,8 @@ const uploadInitialTagIds = computed<string[]>(() => {
   return Number.isFinite(num) ? [String(num)] : []
 })
 
-// 从侧边栏导入本地文件夹：二次确认开启时记录本地树并打开上传对话框，关闭时直接导入
+// 从侧边栏导入本地文件夹：统一先打开上传对话框，由用户确认后再上传
 function handleImportFolder(payload: ImportFolderPayload) {
-  if (!getLibraryPrefs().confirmAfterImport) {
-    void importLocalTreeDirectly(payload.tree, payload)
-    return
-  }
   uploadInitialTree.value = payload
   sidebarUploadTarget.value = payload as any
   showFileUploadDialog.value = true

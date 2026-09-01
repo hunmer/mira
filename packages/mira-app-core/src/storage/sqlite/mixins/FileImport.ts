@@ -35,14 +35,22 @@ export const FileImport = {
     this: CoreAccessible,
     filePath: string,
     fileMeta: Record<string, any>,
-    options?: { importType?: 'copy' | 'move' | 'link' }
+    options?: { importType?: 'copy' | 'move' | 'link'; enableHash?: boolean; skipSameName?: boolean }
   ): Promise<Record<string, any>> {
     if (!fs.existsSync(filePath)) {
       throw new Error(`File does not exist: ${filePath}`);
     }
 
     const stat = fs.statSync(filePath);
-    const hash = this.enableHash ? this.calculateFileHashSync(filePath) : '';
+    const hash = (options?.enableHash ?? this.enableHash) ? this.calculateFileHashSync(filePath) : '';
+
+    if (options?.skipSameName ?? (this as any).skipSameName) {
+      const existing = await this.getSql(
+        'SELECT * FROM files WHERE name = ? AND folder_id IS ? AND recycled = 0 LIMIT 1',
+        [path.basename(filePath), fileMeta.folder_id ?? null]
+      );
+      if (existing.length > 0) return { ...this.rowToMap(existing[0]), duplicate: true };
+    }
 
     // hash 校验：若库中已存在相同 hash 的文件，则跳过导入（去重）
     if (hash) {

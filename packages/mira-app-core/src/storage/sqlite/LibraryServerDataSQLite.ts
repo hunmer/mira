@@ -44,6 +44,10 @@ export class LibraryServerDataSQLite {
     return this.config.customFields?.enableHash ?? false;
   }
 
+  get skipSameName(): boolean {
+    return this.config.customFields?.skipSameName ?? false;
+  }
+
   get customFields(): Record<string, any> {
     return this.config.customFields || {};
   }

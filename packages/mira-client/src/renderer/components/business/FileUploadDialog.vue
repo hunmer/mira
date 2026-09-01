@@ -423,10 +423,23 @@
             </SelectContent>
           </Select>
         </div>
+        <Popover v-model:open="uploadSettingsOpen">
+          <PopoverTrigger as-child>
+            <button type="button" class="h-10 w-10 rounded-lg border border-border text-muted-foreground hover:text-foreground" :title="$t('business.fileUploadDialog.uploadSettings')">
+              <span class="material-icons text-sm">settings</span>
+            </button>
+          </PopoverTrigger>
+          <PopoverContent class="w-64 p-3" align="end">
+            <div class="space-y-3">
+              <label class="flex items-center gap-2 text-sm"><input v-model="skipSameName" type="checkbox" class="size-4" />{{ $t('business.fileUploadDialog.skipSameName') }}</label>
+              <label class="flex items-center gap-2 text-sm"><input v-model="enableHash" type="checkbox" class="size-4" />{{ $t('business.fileUploadDialog.hashDuplicateCheck') }}</label>
+            </div>
+          </PopoverContent>
+        </Popover>
         <button
           class="px-6 py-2 bg-primary dark:bg-primary text-white rounded-lg font-medium hover:bg-primary dark:hover:bg-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           :disabled="pendingFiles.length === 0 || !selectedLibraryId || uploadingFileIds.size > 0"
-          @click="startUpload"
+          @click="startUpload({ skipSameName, enableHash })"
         >
           <span class="flex items-center gap-2">
             <span class="material-icons text-sm">upload</span>
@@ -459,12 +472,16 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<Emits>()
 
 const settingsStore = useSettingsStore()
+const uploadSettingsOpen = ref(false)
+const skipSameName = ref(false)
+const enableHash = ref(false)
 /** 单批上传文件数上限(设置-素材库);0 = 不限制 */
 const maxFilesPerBatch = computed(() => settingsStore.settings.uploadMaxFilesPerBatch)
 
 const {
   isVisible,
   selectedLibraryId,
+  currentLibrary,
   libraryOptions,
   fileManagement,
   uploadQueue,
@@ -484,6 +501,11 @@ const {
   isImportingStructure,
   startUpload
 } = useFileUploadDialog(props, emit)
+
+watch(currentLibrary, (lib: any) => {
+  skipSameName.value = !!lib?.customFields?.skipSameName
+  enableHash.value = !!lib?.customFields?.enableHash
+}, { immediate: true })
 
 // 文件过滤器
 const {

@@ -84,7 +84,8 @@ export function useUploadQueue() {
     pendingFile: PendingFile,
     libraryId: string,
     onFileRemoved: (id: string) => void,
-    batchId: string
+    batchId: string,
+    options?: { skipSameName?: boolean; enableHash?: boolean }
   ) {
     const addHistory = (status: 'success' | 'failed', error?: string, serverId?: string) => {
       const library = libraryStore.libraries.find((item) => item.id === libraryId)
@@ -114,7 +115,7 @@ export function useUploadQueue() {
       try {
         // 文件已经位于目标本地素材库目录时，服务端可直接访问该路径，完全跳过字节传输。
         const library = useLibraryStore().libraries.find((item) => item.id === libraryId)
-        const canImportByPath = isLocalServer() && Boolean(pendingFile.localPath) && (
+        const canImportByPath = !options && isLocalServer() && Boolean(pendingFile.localPath) && (
           isPathInsideLibrary(pendingFile.localPath, library?.path) || Boolean(library?.path)
         )
         if (canImportByPath) {
@@ -150,8 +151,8 @@ export function useUploadQueue() {
         const result = await mediaStore.uploadFile(
           uploadFile,
           libraryId,
-          Object.keys(metadata).length > 0 || pendingFile.localPath
-            ? { ...metadata, ...(pendingFile.localPath ? { sourcePath: pendingFile.localPath } : {}) }
+          Object.keys(metadata).length > 0 || pendingFile.localPath || options
+            ? { ...metadata, ...(pendingFile.localPath ? { sourcePath: pendingFile.localPath } : {}), ...options }
             : undefined
         )
         clearInterval(progressInterval)
@@ -185,14 +186,15 @@ export function useUploadQueue() {
   function enqueueFiles(
     files: PendingFile[],
     libraryId: string,
-    onFileRemoved: (id: string) => void
+    onFileRemoved: (id: string) => void,
+    options?: { skipSameName?: boolean; enableHash?: boolean }
   ) {
     const batchId = `upload-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
     files.forEach((pendingFile) => {
       uploadingFileIds.value.add(pendingFile.id)
       activeUploadCount.value++
       uploadProgressMap.value.set(pendingFile.id, 0)
-      uploadQueue.push(createUploadJob(pendingFile, libraryId, onFileRemoved, batchId))
+      uploadQueue.push(createUploadJob(pendingFile, libraryId, onFileRemoved, batchId, options))
     })
   }
 

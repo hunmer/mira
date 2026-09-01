@@ -321,7 +321,7 @@ export function useFileUploadDialog(props: Props, emit: Emits) {
     })
   }
 
-  function startUpload() {
+  function startUpload(options?: { skipSameName?: boolean; enableHash?: boolean }) {
     if (!currentLibrary.value) {
       toast.add({ severity: 'error', summary: t('business.uploadDialog.errorTitle'), detail: t('business.uploadDialog.selectLibraryFirst'), life: 3000 })
       return
@@ -334,7 +334,7 @@ export function useFileUploadDialog(props: Props, emit: Emits) {
     const filesToUpload = [...fileManagement.pendingFiles.value]
     uploadQueue.enqueueFiles(filesToUpload, currentLibrary.value.id, (id) =>
       fileManagement.removePendingFile(id)
-    )
+    , options)
 
     const stopWatch = watch(
       () => uploadQueue.uploadingFileIds.value.size,

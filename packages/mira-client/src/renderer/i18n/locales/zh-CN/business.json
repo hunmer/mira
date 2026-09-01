@@ -124,7 +124,10 @@
     "notMatched": "不符合条件",
     "libraryLabel": "素材库:",
     "libraryPlaceholder": "选择素材库",
-    "startUpload": "开始上传 ({count})"
+    "startUpload": "开始上传 ({count})",
+    "uploadSettings": "上传设置",
+    "skipSameName": "跳过同名文件",
+    "hashDuplicateCheck": "哈希验证重复文件"
   },
   "filterBar": {
     "clear": "清除",

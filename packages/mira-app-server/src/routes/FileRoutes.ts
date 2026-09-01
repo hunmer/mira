@@ -332,7 +332,11 @@ export class FileRoutes {
                                 );
                                 obj.watcher.ignorePath(anticipatedPath);
                             }
-                            result = await obj.libraryService.createFileFromPath(sourceFilePath, fileData, { importType });
+                            result = await obj.libraryService.createFileFromPath(sourceFilePath, fileData, {
+                                importType,
+                                ...(typeof req.body.enableHash === 'boolean' ? { enableHash: req.body.enableHash } : {}),
+                                ...(typeof req.body.skipSameName === 'boolean' ? { skipSameName: req.body.skipSameName } : {}),
+                            });
                             if (obj.watcher) {
                                 const actualPath = await obj.libraryService.getItemFilePath(result, { isUrlFile: false });
                                 obj.watcher.ignorePath(actualPath);

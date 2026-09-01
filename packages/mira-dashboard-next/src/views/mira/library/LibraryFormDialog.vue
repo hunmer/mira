@@ -20,6 +20,7 @@ export interface LibraryFormData {
   description: string
   icon: string
   enableHash: boolean
+  skipSameName: boolean
   enableAutoSync: boolean
   enableThumbScan: boolean
   enableAutoBackup: boolean
@@ -93,6 +94,10 @@ const toggleRole = (role: string) => {
         <div class="flex items-center gap-2">
           <input id="enableHash" v-model="form.enableHash" type="checkbox" class="size-4 rounded border-input" />
           <Label for="enableHash">{{ t('library.enableHash') }}</Label>
+        </div>
+        <div class="flex items-center gap-2">
+          <input id="skipSameName" v-model="form.skipSameName" type="checkbox" class="size-4 rounded border-input" />
+          <Label for="skipSameName">跳过同名文件</Label>
         </div>
         <div class="flex items-center gap-2">
           <input id="enableAutoSync" v-model="form.enableAutoSync" type="checkbox" class="size-4 rounded border-input" />
