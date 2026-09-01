@@ -6,6 +6,7 @@
   },
   "homeHeader": {
     "openDashboard": "打开 Dashboard",
+    "uploadQueue": "上传队列",
     "plugins": "插件管理",
     "shortcuts": "快捷键设置",
     "settings": "应用设置",

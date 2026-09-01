@@ -61,12 +61,14 @@
           :uploaded-files-list="files"
           :is-loading="isLoading"
           :show-uploaded-files="true"
+          :allow-retry="environment.isElectron"
           @files-selected="handleFilesSelected"
           @upload-start="handleUploadStart"
           @upload-progress="handleUploadProgress"
           @upload-complete="handleUploadComplete"
           @upload-error="handleUploadError"
           @delete-file="deleteFile"
+          @retry-file="retryFile"
           @clear-all-files="clearAllFiles"
           @refresh-files="refreshFiles"
           @sort-change="handleSortChange"
@@ -88,6 +90,7 @@ import { useSettingsStore } from '@/renderer/stores/settings'
 import Queue from 'queue'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { MultiTabFileUpload } from '../components/common'
+import { environment } from '../utils'
 
 // 路由和状态管理
 const serverListStore = useServerListStore()
@@ -274,6 +277,7 @@ const handleUploadError = (item: any, error: string) => {
       libraryName: currentLibrary.value.name,
       status: 'failed',
       error
+      ,localPath: environment.isElectron ? window.electronAPI?.getPathForFile?.(item.file) : undefined
     })
   }
 
@@ -283,6 +287,22 @@ const handleUploadError = (item: any, error: string) => {
     detail: t('views.fileUploadView.uploadFailedDetail', { name: item.file.name, error }),
     life: 5000
   })
+}
+
+const retryFile = async (record: any) => {
+  if (!environment.isElectron || !record.localPath || !selectedLibraryId.value) return
+  try {
+    const bytes = await window.electronAPI.fs.readFileBytes(record.localPath)
+    if (!bytes.success || !bytes.data) throw new Error(bytes.message || '读取本地文件失败')
+    const file = new File([bytes.data], record.name, { type: record.mimeType || 'application/octet-stream' })
+    const result = await mediaStore.uploadFile(file, selectedLibraryId.value)
+    if (!result.success) throw new Error(result.error || '上传失败')
+    uploadHistoryStore.deleteUploadRecord(record.id)
+    uploadHistoryStore.addUploadRecord({ ...record, status: 'success', serverId: (result.data as any)?.id, error: undefined })
+    toast.add({ severity: 'success', summary: '重试成功', detail: record.name, life: 3000 })
+  } catch (error) {
+    toast.add({ severity: 'error', summary: '重试失败', detail: error instanceof Error ? error.message : String(error), life: 5000 })
+  }
 }
 
 // 创建上传任务（兼容原有队列系统）

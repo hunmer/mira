@@ -356,6 +356,14 @@
                       <TableCell>
                         <div class="flex items-center space-x-2">
                           <button
+                            v-if="props.allowRetry && data.status === 'failed'"
+                            @click="emit('retry-file', data)"
+                            class="text-primary hover:text-primary/80 transition-colors"
+                            title="Retry upload"
+                          >
+                            <span class="material-icons">refresh</span>
+                          </button>
+                          <button
                             @click="handleDeleteFile(data)"
                             class="text-destructive hover:text-destructive/80 transition-colors"
                             :title="$t('commonUi.multiTabFileUpload.delete')"
@@ -497,6 +505,7 @@ interface Props {
   uploadedFilesList?: UploadedFileItem[]
   isLoading?: boolean
   showUploadedFiles?: boolean
+  allowRetry?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -505,7 +514,8 @@ const props = withDefaults(defineProps<Props>(), {
   autoUpload: false,
   uploadedFilesList: () => [],
   isLoading: false,
-  showUploadedFiles: true
+  showUploadedFiles: true,
+  allowRetry: false
 })
 
 interface Emits {
@@ -517,6 +527,7 @@ interface Emits {
   (e: 'files-uploaded', items: UploadItem[]): void
   // 已上传文件列表相关事件
   (e: 'delete-file', file: UploadedFileItem): void
+  (e: 'retry-file', file: UploadedFileItem): void
   (e: 'clear-all-files'): void
   (e: 'refresh-files'): void
   (e: 'sort-change', sortField: string, sortOrder: string): void

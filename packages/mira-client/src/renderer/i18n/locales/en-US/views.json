@@ -6,6 +6,7 @@
   },
   "homeHeader": {
     "openDashboard": "Dashboard",
+    "uploadQueue": "Upload queue",
     "plugins": "Plugins",
     "shortcuts": "Shortcuts",
     "settings": "Settings",

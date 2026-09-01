@@ -20,3 +20,23 @@ describe('FileModule.batchImport', () => {
         }));
     });
 });
+
+describe('FileModule.importFilePath', () => {
+    it('posts an absolute path request without multipart file data', async () => {
+        const http = { post: vi.fn().mockResolvedValue({ id: 1989, path: null, name: 'image.png' }) };
+        const files = new FileModule(http as any);
+
+        const result = await files.importFilePath('library-1', 'I:/素材库/image.png', {
+            folderId: '12',
+            tags: ['参考'],
+        });
+
+        expect(result).toEqual({ id: 1989, path: null, name: 'image.png' });
+        expect(http.post).toHaveBeenCalledWith('/api/files/import-path', {
+            libraryId: 'library-1',
+            path: 'I:/素材库/image.png',
+            folderId: '12',
+            tags: ['参考'],
+        });
+    });
+});

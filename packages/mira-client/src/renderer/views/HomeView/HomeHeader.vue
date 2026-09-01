@@ -228,6 +228,10 @@ const openUiTestPanel = async () => {
             {{ activeTransferCount }}
           </span>
         </DropdownMenuItem>
+        <DropdownMenuItem @select="router.push({ name: 'FileUpload' })">
+          <span class="material-icons text-base">cloud_upload</span>
+          <span>{{ $t('views.homeHeader.uploadQueue') }}</span>
+        </DropdownMenuItem>
         <DropdownMenuItem @select="emit('settings')">
           <span class="material-icons text-base">settings</span>
           <span>{{ $t('views.homeHeader.settings') }}</span>
