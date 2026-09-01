@@ -256,7 +256,7 @@
                   <Masonry
                     v-else
                     ref="masonryRef"
-                    :data="displayFiles"
+                    :data="pagedDisplayFiles"
                     :get-key="(file: any) => file.id"
                     :columns="columnsByWidth"
                     :gap="12"
@@ -374,6 +374,13 @@
                     </template>
                   </Masonry>
                 </SelectionBox>
+                <Pagination v-if="displayFiles.length > pageSize" class="mt-3" :page="currentPage" :items-per-page="pageSize" :total="displayFiles.length" :sibling-count="1" @update:page="currentPage = $event">
+                  <PaginationContent v-slot="{ items }">
+                    <PaginationPrevious><ChevronLeftIcon class="size-4" /></PaginationPrevious>
+                    <template v-for="(item, index) in items" :key="index"><PaginationItem v-if="item.type === 'page'" :value="item.value" :is-active="item.value === currentPage">{{ item.value }}</PaginationItem></template>
+                    <PaginationNext><ChevronRightIcon class="size-4" /></PaginationNext>
+                  </PaginationContent>
+                </Pagination>
               </div>
             </div>
 
@@ -455,6 +462,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Slider } from '@/components/ui/slider'
 import { Checkbox } from '@/components/ui/checkbox'
 import SidebarImportToolbar from '@/renderer/views/HomeView/SidebarImportToolbar.vue'
+import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from '@/components/ui/pagination'
+import { ChevronLeftIcon, ChevronRightIcon } from '@lucide/vue'
 import { useUrlImportStore } from '@renderer/stores/urlImport'
 import { SelectionBox } from '@hunmer/vue-selection-box'
 import { Masonry, type MasonryColumns, type MasonryItemMeta } from '@hunmer/vue-masonry'
@@ -599,6 +608,13 @@ const displayFiles = computed(() => {
   if (!hideNonMatching.value) return filteredPendingFiles.value
   return filteredPendingFiles.value.filter((f) => matchesFilters(f))
 })
+const pageSize = 30
+const currentPage = ref(1)
+const pageCount = computed(() => Math.max(1, Math.ceil(displayFiles.value.length / pageSize)))
+const pagedDisplayFiles = computed(() => displayFiles.value.slice((currentPage.value - 1) * pageSize, currentPage.value * pageSize))
+watch(displayFiles, () => {
+  if (currentPage.value > pageCount.value) currentPage.value = pageCount.value
+}, { deep: true })
 
 // 当前匹配过滤条件的文件数（用于计数提示）
 const matchedCount = computed(
@@ -634,15 +650,23 @@ const { ratios, getRatio } = useFileRatios(pendingFiles, approxColumns.value)
 
 // Electron 下优先使用系统 nativeImage 缩略图，避免读取完整文件字节；失败时保留原有预览回退。
 const nativeThumbnailRequests = new Set<string>()
-watch(pendingFiles, (files) => {
+watch(pagedDisplayFiles, (files) => {
   if (!window.electronAPI?.fs?.getThumbnail) return
-  for (const pending of files) {
-    if (!pending.localPath || pending.preview || nativeThumbnailRequests.has(pending.id)) continue
-    nativeThumbnailRequests.add(pending.id)
-    void window.electronAPI.fs.getThumbnail(pending.localPath, { width: 256, height: 256 }).then((result) => {
-      if (result.success && result.data && !pending.preview) pending.preview = result.data
-    }).catch(() => undefined).finally(() => nativeThumbnailRequests.delete(pending.id))
+  const pendingTasks = files.filter((pending) => pending.localPath && !pending.preview && !nativeThumbnailRequests.has(pending.id))
+  let cursor = 0
+  const worker = async () => {
+    while (cursor < pendingTasks.length) {
+      const pending = pendingTasks[cursor++]
+      if (!pending.localPath) continue
+      nativeThumbnailRequests.add(pending.id)
+      try {
+        const result = await window.electronAPI.fs.getThumbnail(pending.localPath, { width: 256, height: 256 })
+        if (result.success && result.data && !pending.preview) pending.preview = result.data
+      } catch { /* native 缩略图不可用时保留默认占位 */ }
+      finally { nativeThumbnailRequests.delete(pending.id) }
+    }
   }
+  void Promise.all(Array.from({ length: Math.min(4, pendingTasks.length) }, worker))
 }, { deep: true, immediate: true })
 
 // 卡片信息块（文件名/大小/标签）固定高度估值，叠加到预览高度上

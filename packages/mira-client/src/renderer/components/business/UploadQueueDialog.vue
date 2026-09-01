@@ -1,6 +1,15 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination'
+import { ChevronLeftIcon, ChevronRightIcon } from '@lucide/vue'
 import { useUploadHistoryStore } from '@renderer/stores/uploadHistory'
 import { useLibraryStore } from '@renderer/stores/library'
 import { useMediaStore } from '@renderer/stores/media'
@@ -36,6 +45,17 @@ const toggleGroup = (key: string) => {
   expandedGroups.value = next
 }
 
+// 组内分页：每页最多 200 个文件，页码超出总页数时钳制到最后一页
+const PAGE_SIZE = 200
+const groupPages = ref<Record<string, number>>({})
+const pageCount = (group: { records: any[] }) => Math.max(1, Math.ceil(group.records.length / PAGE_SIZE))
+const currentPage = (group: { key: string; records: any[] }) =>
+  Math.min(groupPages.value[group.key] || 1, pageCount(group))
+const pagedRecords = (group: { key: string; records: any[] }) => {
+  const start = (currentPage(group) - 1) * PAGE_SIZE
+  return group.records.slice(start, start + PAGE_SIZE)
+}
+
 onMounted(() => history.restoreFromStorage())
 
 const retry = async (record: any) => {
@@ -56,13 +76,52 @@ const retry = async (record: any) => {
 
 const formatDate = (date: Date) => new Date(date).toLocaleString()
 const libraryName = (id: string) => libraries.libraries.find(item => item.id === id)?.name || ''
+
+const clearAll = () => {
+  if (window.confirm('确定清空所有上传记录吗？')) history.clearAllRecords()
+}
+
+// 展开组内带本地路径的媒体记录，通过主进程 nativeImage 缩略图 IPC 展示
+const thumbnails = ref<Record<string, string>>({})
+const thumbnailRequests = new Set<string>()
+const canThumbnail = (record: any) =>
+  environment.isElectron &&
+  !!window.electronAPI?.fs?.getThumbnail &&
+  record.localPath &&
+  (record.mimeType?.startsWith('image/') || record.mimeType?.startsWith('video/'))
+
+watch([groups, expandedGroups, groupPages], () => {
+  for (const group of groups.value) {
+    if (!expandedGroups.value.has(group.key)) continue
+    for (const record of group.records) {
+      if (thumbnails.value[record.id] || thumbnailRequests.has(record.id) || !canThumbnail(record)) continue
+      thumbnailRequests.add(record.id)
+      void window.electronAPI!.fs!.getThumbnail!(record.localPath, { width: 96, height: 96 })
+        .then((result) => {
+          if (result.success && result.data) thumbnails.value = { ...thumbnails.value, [record.id]: result.data }
+        })
+        .catch(() => undefined)
+        .finally(() => thumbnailRequests.delete(record.id))
+    }
+  }
+}, { immediate: true })
 </script>
 
 <template>
   <Dialog v-model:open="open">
-    <DialogContent class="w-[min(720px,calc(100vw-2rem))] max-w-none">
-      <DialogHeader><DialogTitle>上传队列</DialogTitle></DialogHeader>
-      <div class="max-h-[60vh] overflow-auto">
+    <DialogContent class="flex h-[80vh] w-[80vw] max-w-[80vw] flex-col sm:max-w-[80vw]">
+      <DialogHeader class="flex-row items-center gap-2">
+        <DialogTitle class="flex-1">上传队列</DialogTitle>
+        <button
+          v-if="groups.length > 0"
+          class="mr-8 rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+          title="清空记录"
+          @click="clearAll"
+        >
+          <span class="material-icons text-lg">delete_sweep</span>
+        </button>
+      </DialogHeader>
+      <div class="min-h-0 flex-1 overflow-auto">
         <div v-if="groups.length === 0" class="py-12 text-center text-muted-foreground">暂无上传记录</div>
         <div v-else>
           <section v-for="group in groups" :key="group.key" class="mb-5 last:mb-0">
@@ -73,20 +132,49 @@ const libraryName = (id: string) => libraries.libraries.find(item => item.id ===
               <span v-if="group.success" class="text-xs text-green-600">{{ group.success }} 成功</span>
               <span v-if="group.failed" class="text-xs text-destructive">{{ group.failed }} 失败</span>
             </button>
-            <div v-if="expandedGroups.has(group.key)" class="divide-y divide-border">
-          <div v-for="record in group.records" :key="record.id" class="flex items-center gap-3 py-3">
-            <span class="material-icons text-muted-foreground">insert_drive_file</span>
+            <div v-if="expandedGroups.has(group.key)">
+              <div class="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-2 pt-2">
+          <div v-for="record in pagedRecords(group)" :key="record.id" class="flex items-start gap-1.5 rounded-lg border border-border/60 p-2 transition-colors hover:bg-muted/50" :class="record.status === 'failed' ? 'border-destructive/40' : ''">
+            <img v-if="thumbnails[record.id]" :src="thumbnails[record.id]" class="size-10 shrink-0 rounded object-cover" alt="">
+            <span v-else class="material-icons mt-0.5 text-base text-muted-foreground">insert_drive_file</span>
             <div class="min-w-0 flex-1">
-              <div class="truncate font-medium">{{ record.name }}</div>
-              <div class="truncate text-xs text-muted-foreground">{{ libraryName(record.libraryId) || record.libraryName }} · {{ formatDate(record.uploadedAt) }}</div>
-              <div v-if="record.error" class="truncate text-xs text-destructive">{{ record.error }}</div>
+              <div class="truncate text-xs font-medium" :title="record.name">{{ record.name }}</div>
+              <div class="truncate text-[11px] text-muted-foreground" :title="`${libraryName(record.libraryId) || record.libraryName} · ${formatDate(record.uploadedAt)}`">{{ libraryName(record.libraryId) || record.libraryName }}</div>
+              <div v-if="record.error" class="truncate text-[11px] text-destructive" :title="record.error">{{ record.error }}</div>
             </div>
-            <span v-if="record.status === 'success'" class="material-icons text-green-600" title="成功">check</span>
-            <span v-else class="text-xs text-destructive">失败</span>
-            <button v-if="environment.isElectron && record.status === 'failed' && record.localPath" class="text-primary" :disabled="retrying === record.id" title="重试上传" @click="retry(record)">
-              <span class="material-icons">refresh</span>
+            <span v-if="record.status === 'success'" class="material-icons text-sm text-green-600" title="成功">check</span>
+            <button v-else-if="environment.isElectron && record.localPath" class="rounded p-0.5 text-primary hover:bg-primary/10" :disabled="retrying === record.id" title="重试上传" @click="retry(record)">
+              <span class="material-icons text-sm" :class="retrying === record.id ? 'animate-spin' : ''">refresh</span>
             </button>
+            <span v-else class="text-[11px] text-destructive" title="失败">失败</span>
           </div>
+              </div>
+              <div v-if="pageCount(group) > 1" class="flex justify-center pt-3">
+                <Pagination
+                  :page="currentPage(group)"
+                  :items-per-page="PAGE_SIZE"
+                  :total="group.records.length"
+                  :sibling-count="1"
+                  @update:page="(value: number) => groupPages[group.key] = value"
+                >
+                  <PaginationContent v-slot="{ items }">
+                    <PaginationPrevious>
+                      <ChevronLeftIcon class="size-4" />
+                      <span class="sr-only">上一页</span>
+                    </PaginationPrevious>
+                    <template v-for="(item, index) in items" :key="index">
+                      <PaginationItem v-if="item.type === 'page'" :value="item.value" :is-active="item.value === currentPage(group)">
+                        {{ item.value }}
+                      </PaginationItem>
+                      <PaginationEllipsis v-else />
+                    </template>
+                    <PaginationNext>
+                      <span class="sr-only">下一页</span>
+                      <ChevronRightIcon class="size-4" />
+                    </PaginationNext>
+                  </PaginationContent>
+                </Pagination>
+              </div>
             </div>
           </section>
         </div>
