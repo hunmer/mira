@@ -35,6 +35,7 @@ const emit = defineEmits<{
   windowMinimize: []
   windowMaximize: []
   windowClose: []
+  uploadQueue: []
 }>()
 
 const authStore = useAuthStore()
@@ -228,7 +229,7 @@ const openUiTestPanel = async () => {
             {{ activeTransferCount }}
           </span>
         </DropdownMenuItem>
-        <DropdownMenuItem @select="router.push({ name: 'FileUpload' })">
+        <DropdownMenuItem @select="emit('uploadQueue')">
           <span class="material-icons text-base">cloud_upload</span>
           <span>{{ $t('views.homeHeader.uploadQueue') }}</span>
         </DropdownMenuItem>

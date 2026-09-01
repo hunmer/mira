@@ -10,6 +10,7 @@ import TagManageDialog from '@renderer/components/business/TagManageDialog.vue'
 import AboutDialog from '@renderer/components/business/AboutDialog.vue'
 import DeviceShareDialog from '@renderer/components/business/DeviceShareDialog/DeviceShareDialog.vue'
 import IncomingShareDialog from '@renderer/components/business/DeviceShareDialog/IncomingShareDialog.vue'
+import UploadQueueDialog from '@renderer/components/business/UploadQueueDialog.vue'
 import {
   AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
   AlertDialogDescription, AlertDialogFooter, AlertDialogAction
@@ -30,6 +31,7 @@ const showAccessDeniedDialog = defineModel<boolean>('showAccessDeniedDialog', { 
 const showFolderManageDialog = defineModel<boolean>('showFolderManageDialog', { required: true })
 const showTagManageDialog = defineModel<boolean>('showTagManageDialog', { required: true })
 const showAboutDialog = defineModel<boolean>('showAboutDialog', { required: true })
+const showUploadQueueDialog = defineModel<boolean>('showUploadQueueDialog', { required: true })
 
 defineProps<{
   editingServer: ServerConfig | null
@@ -107,6 +109,7 @@ const emit = defineEmits<{
     :initial-local-tree="uploadInitialTree"
     :initial-files="screenshotFile ? [screenshotFile] : undefined"
   />
+  <UploadQueueDialog v-model:open="showUploadQueueDialog" />
 
   <!-- 插件管理对话框 -->
   <PluginsDialog

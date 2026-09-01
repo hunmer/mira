@@ -61,9 +61,6 @@ export function useWindowAndNavigation() {
   /**
    * 导航到文件上传
    */
-  const navigateToFileUpload = () => {
-    router.push({ name: 'FileUpload' })
-  }
 
   /**
    * 导航到插件市场
@@ -93,7 +90,6 @@ export function useWindowAndNavigation() {
     handleWindowToggleSize,
     
     // 导航方法
-    navigateToFileUpload,
     navigateToPluginMarketplace,
     navigateToSettings
   }

@@ -154,12 +154,6 @@ export class MenuService {
           action: 'showPluginsDialog'
         },
         {
-          id: 'nav-upload',
-          label: this.t('services.menu.navUpload'),
-          accelerator: 'CmdOrCtrl+5',
-          route: 'FileUpload'
-        },
-        {
           id: 'nav-settings',
           label: this.t('services.menu.navSettings'),
           accelerator: 'CmdOrCtrl+6',

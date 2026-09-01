@@ -264,6 +264,7 @@ const showAccessDeniedDialog = ref(false)
 const showFolderManageDialog = ref(false)
 const showTagManageDialog = ref(false)
 const showAboutDialog = ref(false)
+const showUploadQueueDialog = ref(false)
 
 // ============================================
 // Tab管理
@@ -685,6 +686,7 @@ onUnmounted(() => {
       @plugins="showPluginsDialog = true"
       @shortcuts="showShortcutDialog = true"
       @settings="showSettingsDialog = true"
+      @upload-queue="showUploadQueueDialog = true"
       @logout="handleLogout"
       @window-minimize="handleWindowMinimize"
       @window-maximize="handleWindowMaximize"
@@ -850,6 +852,7 @@ onUnmounted(() => {
       v-model:show-folder-manage-dialog="showFolderManageDialog"
       v-model:show-tag-manage-dialog="showTagManageDialog"
       v-model:show-about-dialog="showAboutDialog"
+      v-model:show-upload-queue-dialog="showUploadQueueDialog"
       :editing-server="editingServer"
       :upload-initial-folder-id="uploadInitialFolderId"
       :upload-initial-tag-ids="uploadInitialTagIds"

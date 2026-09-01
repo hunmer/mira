@@ -20,7 +20,6 @@
 | `HomeView/` | - | 首页完整模块（详见 HomeView/CLAUDE.md） |
 | `LoginView/` | - | 登录页面完整模块（详见 LoginView/CLAUDE.md） |
 | `SettingsView.vue` | 168 | 设置页面 |
-| `FileUploadView.vue` | 492 | 文件上传 |
 | `FilePreviewView.vue` | 243 | 文件预览 |
 | `PlaygroundView.vue` | 41 | UI Playground 入口（/playground，v2.x 替代原 UITestView） |
 | `NotFoundView.vue` | 41 | 404 页面 |

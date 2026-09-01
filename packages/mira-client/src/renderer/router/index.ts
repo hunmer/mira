@@ -70,17 +70,6 @@ const routes: Array<RouteRecordRaw> = [
     }
   },
   {
-    path: '/upload',
-    name: 'FileUpload',
-    component: () => import('../views/FileUploadView.vue'),
-    meta: {
-      title: '文件上传',
-      requiresAuth: true,
-      requiresConnection: true,
-      icon: 'upload_file'
-    }
-  },
-  {
     path: '/settings',
     name: 'Settings',
     component: () => import('../views/SettingsView.vue'),
@@ -325,7 +314,6 @@ export const navigateToHome = () => router.push({ name: 'Home' })
 export const navigateToSettings = () => router.push({ name: 'Settings' })
 export const navigateToPlayground = () => router.push({ name: 'Playground' })
 export const navigateToPlugins = () => router.push({ name: 'PluginMarketplace' })
-export const navigateToFileUpload = () => router.push({ name: 'FileUpload' })
 export const navigateToImagePreview = (id?: string) =>
   router.push({ name: 'ImagePreview', params: { id } })
 export const navigateToVideoPreview = (id?: string) =>

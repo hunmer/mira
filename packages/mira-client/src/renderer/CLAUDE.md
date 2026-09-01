@@ -43,7 +43,6 @@ Vue 3 前端应用模块，负责用户界面和全部业务逻辑。包含 Tab 
 | `/` | HomeView (Tab 系统) | 需要认证 + 连接 |
 | `/login` | LoginView | 无 |
 | `/settings` | SettingsView | 无 |
-| `/upload` | FileUploadView | 需要认证 + 连接 |
 | `/file-preview` | FilePreviewView | 无 |
 | `/image-preview/:id` / `/video-preview/:id` | 图片/视频预览 | 无 |
 | `/playground` | PlaygroundView | 无 |
