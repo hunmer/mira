@@ -21,8 +21,10 @@ const emit = defineEmits<{
 const cellRef = ref<HTMLElement | null>(null)
 const inView = ref(false)
 const active = computed(() => !props.lazy || inView.value)
+// 在 cell 内部维护就绪状态，避免每个 item 就绪时更新 Masonry 父组件的响应式集合。
+const ready = ref(false)
+const revealed = computed(() => props.revealed || ready.value)
 let ob: IntersectionObserver | null = null
-let visibilityOb: IntersectionObserver | null = null
 let reportedVisible = false
 let loadVersion = 0
 
@@ -80,7 +82,10 @@ async function activate(): Promise<void> {
   await nextTick()
   const images = Array.from(cellRef.value?.querySelectorAll("img") ?? [])
   await Promise.all(images.map(waitForImage))
-  if (version === loadVersion) emit("ready")
+  if (version === loadVersion) {
+    ready.value = true
+    emit("ready")
+  }
 }
 
 onMounted(() => {
@@ -106,26 +111,13 @@ onMounted(() => {
     { root: scrollRoot, rootMargin }
   )
   ob.observe(el)
-
-  visibilityOb = new IntersectionObserver(
-    ([entry]) => {
-      if (!entry.isIntersecting) return
-      inView.value = true
-      void activate()
-      visibilityOb?.disconnect()
-    },
-    { root: scrollRoot }
-  )
-  visibilityOb.observe(el)
 })
 
 onBeforeUnmount(() => {
   loadVersion++
   if (reportedVisible) emit("hidden")
   ob?.disconnect()
-  visibilityOb?.disconnect()
   ob = null
-  visibilityOb = null
 })
 </script>
 
@@ -133,11 +125,11 @@ onBeforeUnmount(() => {
   <div
     ref="cellRef"
     class="lazy-cell"
-    :class="{ 'lazy-cell--pending': active && !props.revealed }"
-    :aria-busy="active && !props.revealed"
+    :class="{ 'lazy-cell--pending': active && !revealed }"
+    :aria-busy="active && !revealed"
   >
     <div
-      v-if="active && !props.revealed"
+      v-if="active && !revealed"
       class="lazy-cell__placeholder"
       aria-hidden="true"
     >
@@ -150,7 +142,7 @@ onBeforeUnmount(() => {
     <div
       v-if="active"
       class="lazy-cell__content"
-      :class="props.revealed ? 'lazy-cell__content--visible' : 'lazy-cell__content--hidden'"
+      :class="revealed ? 'lazy-cell__content--visible' : 'lazy-cell__content--hidden'"
     >
       <slot :preload="active" />
     </div>

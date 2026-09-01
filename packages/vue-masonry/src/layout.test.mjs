@@ -55,3 +55,19 @@ test("fill 布局会用后续跨列素材回填连续洞区", () => {
 
   assert.deepEqual({ left: filler?.left, top: filler?.top }, { left: 220, top: 0 })
 })
+
+test("fill 布局会拉伸短列素材以补齐跨列素材前的额外空隙", () => {
+  const items = [
+    { id: "tall", colSpan: 1, aspect: "100:100" },
+    { id: "neighbor", colSpan: 1, aspect: "100:200" },
+    { id: "short", colSpan: 1, aspect: "100:50" },
+    { id: "wide", colSpan: 2, aspect: "210:100" }
+  ]
+  const getAspectMeta = (item) => ({ colSpan: item.colSpan, aspect: item.aspect })
+  const placed = layoutFill(items, 2, 100, 10, 80, getAspectMeta, getKey).items
+  const short = placed.find((item) => item.item.id === "short")
+  const wide = placed.find((item) => item.item.id === "wide")
+
+  assert.deepEqual({ top: short?.top, height: short?.height }, { top: 110, height: 90 })
+  assert.equal(wide?.top, 210)
+})

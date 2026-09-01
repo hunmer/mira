@@ -394,20 +394,6 @@ const waterfallItems = computed(() => {
   }))
 })
 
-watch(
-  () => waterfallItems.value.length,
-  () => {
-    scheduleLayoutRefresh()
-  },
-  { flush: 'post' }
-)
-
-watch(
-  () => waterfallItems.value.map(item => `${item.id}:${item.ratio}`),
-  () => scheduleLayoutRefresh(),
-  { flush: 'post' }
-)
-
 // 与网格视图保持一致：相同的列数设置应得到接近的卡片宽度。
 const columns = computed<MasonryColumns>(() => {
   const count = Math.max(props.columnsPerRow, 2)

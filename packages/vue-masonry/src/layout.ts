@@ -17,12 +17,15 @@ interface ParsedItem<T> {
   colSpan: number
   height: number
   lazy: boolean
+  /** 由 aspect / rowSpan 推导的高度可以在后处理中填补列间空隙。 */
+  growable: boolean
 }
 
 interface GapSlot {
   column: number
   top: number
   maxBottom: number
+  order: number
 }
 
 /** 宽高比字符串 -> height/width 比例 */
@@ -112,7 +115,15 @@ export function layoutFill<T>(
   if (columns <= 0 || colWidth <= 0) return { items, totalHeight: 0 }
 
   const bottoms = new Array(columns).fill(0)
-  const gapSlots: GapSlot[] = []
+  // 按列索引洞区，避免每次跨列查找都对全部洞区 filter/sort。
+  const gapSlotsByColumn = Array.from({ length: columns }, () => [] as GapSlot[])
+  let nextGapSlotOrder = 0
+
+  const removeGapSlot = (slot: GapSlot) => {
+    const columnSlots = gapSlotsByColumn[slot.column]
+    const columnIndex = columnSlots.indexOf(slot)
+    if (columnIndex >= 0) columnSlots.splice(columnIndex, 1)
+  }
 
   const parsed: ParsedItem<T>[] = data.map((item, index) => {
     const meta = getMeta?.(item, index) ?? {}
@@ -124,9 +135,17 @@ export function layoutFill<T>(
       : ratio != null
         ? width * ratio
         : (meta.rowSpan ?? 1) * rowHeight
-    return { item, index, colSpan, height, lazy: !!meta.lazy }
+    return {
+      item,
+      index,
+      colSpan,
+      height,
+      lazy: !!meta.lazy,
+      growable: typeof meta.height !== "number"
+    }
   })
 
+  const placements: Array<{ startCol: number; colSpan: number; growable: boolean }> = []
   const pushPlacedItem = (p: ParsedItem<T>, startCol: number, top: number) => {
     const width = p.colSpan * colWidth + (p.colSpan - 1) * gap
     items.push({
@@ -139,6 +158,7 @@ export function layoutFill<T>(
       height: p.height,
       lazy: p.lazy
     })
+    placements.push({ startCol, colSpan: p.colSpan, growable: p.growable })
   }
 
   const placeAtBottom = (p: ParsedItem<T>, startCol: number, top: number) => {
@@ -157,17 +177,21 @@ export function layoutFill<T>(
       let valid = true
 
       for (let column = startCol; column < startCol + p.colSpan; column++) {
-        const candidates = gapSlots.filter(
-          (slot) => slot.column === column && slot.maxBottom - slot.top >= p.height
-        )
-        if (candidates.length === 0) {
+        const candidates = gapSlotsByColumn[column]
+        let bestSlot: GapSlot | undefined
+        let bestRemainderForColumn = Infinity
+        for (const slot of candidates) {
+          const remainder = slot.maxBottom - slot.top - p.height
+          if (remainder >= 0 && remainder < bestRemainderForColumn) {
+            bestSlot = slot
+            bestRemainderForColumn = remainder
+          }
+        }
+        if (!bestSlot) {
           valid = false
           break
         }
-        candidates.sort((a, b) =>
-          (a.maxBottom - a.top - p.height) - (b.maxBottom - b.top - p.height)
-        )
-        slots.push(candidates[0])
+        slots.push(bestSlot)
       }
 
       if (!valid) continue
@@ -187,21 +211,25 @@ export function layoutFill<T>(
 
   for (const p of parsed) {
     if (p.colSpan === 1) {
-      let bestSlot: (typeof gapSlots)[number] | undefined
+      let bestSlot: GapSlot | undefined
       let bestRemainder = Infinity
 
-      for (const slot of gapSlots) {
-        const remainder = slot.maxBottom - slot.top - p.height
-        if (remainder < 0) continue
-        if (remainder < bestRemainder) {
-          bestSlot = slot
-          bestRemainder = remainder
+      for (const columnSlots of gapSlotsByColumn) {
+        for (const slot of columnSlots) {
+          const remainder = slot.maxBottom - slot.top - p.height
+          if (remainder < 0) continue
+          // 保持原 gapSlots 全局扫描的 tie-break:按创建顺序取第一个。
+          if (remainder < bestRemainder || (remainder === bestRemainder && bestSlot && slot.order < bestSlot.order)) {
+            bestSlot = slot
+            bestRemainder = remainder
+          }
         }
       }
 
       if (bestSlot) {
         pushPlacedItem(p, bestSlot.column, bestSlot.top)
         bestSlot.top += p.height + gap
+        if (bestSlot.top >= bestSlot.maxBottom) removeGapSlot(bestSlot)
         continue
       }
 
@@ -223,6 +251,7 @@ export function layoutFill<T>(
       const nextTop = gapRange.top + p.height + gap
       for (const slot of gapRange.slots) {
         slot.top = Math.max(slot.top, nextTop)
+        if (slot.top >= slot.maxBottom) removeGapSlot(slot)
       }
       continue
     }
@@ -243,12 +272,52 @@ export function layoutFill<T>(
     for (let column = bestStart; column < bestStart + p.colSpan; column++) {
       const maxBottom = minTop - gap
       if (bottoms[column] < maxBottom) {
-        gapSlots.push({ column, top: bottoms[column], maxBottom })
+        gapSlotsByColumn[column].push({
+          column,
+          top: bottoms[column],
+          maxBottom,
+          order: nextGapSlotOrder++
+        })
       }
     }
     placeAtBottom(p, bestStart, minTop)
   }
 
-  const totalHeight = Math.max(0, Math.max(...bottoms, 0) - gap)
+  // 跨列定位会以占用列中的最高 bottom 为准，较短列因此可能留下超过 gap 的空隙。
+  // 在不改变 item 位置且不覆盖下一项的前提下，将可推导高度的 item 拉伸到下一项前。
+  const columnItems = Array.from({ length: columns }, () => [] as number[])
+  for (let index = 0; index < placements.length; index++) {
+    const placement = placements[index]
+    for (let column = placement.startCol; column < placement.startCol + placement.colSpan; column++) {
+      columnItems[column].push(index)
+    }
+  }
+  for (const indices of columnItems) {
+    indices.sort((a, b) => items[a].top - items[b].top || a - b)
+  }
+
+  for (let index = 0; index < items.length; index++) {
+    if (!placements[index].growable) continue
+    const item = items[index]
+    const currentBottom = item.top + item.height
+    let nextTop = Infinity
+    const { startCol, colSpan } = placements[index]
+    for (let column = startCol; column < startCol + colSpan; column++) {
+      for (const candidateIndex of columnItems[column]) {
+        if (candidateIndex === index) continue
+        const candidateTop = items[candidateIndex].top
+        if (candidateTop > currentBottom && candidateTop < nextTop) nextTop = candidateTop
+      }
+    }
+    if (!Number.isFinite(nextTop)) continue
+    const adjustedHeight = nextTop - gap - item.top
+    if (adjustedHeight > item.height) item.height = adjustedHeight
+  }
+
+  const totalHeight = Math.max(
+    0,
+    Math.max(...items.map(item => item.top + item.height), 0),
+    Math.max(...bottoms, 0) - gap
+  )
   return { items, totalHeight }
 }

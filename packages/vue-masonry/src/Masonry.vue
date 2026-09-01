@@ -46,13 +46,6 @@ const props = withDefaults(defineProps<MasonryProps<VT>>(), {
 
 const emit = defineEmits<MasonryEmits<VT>>()
 
-const revealedKeys = ref<Set<string | number>>(new Set())
-
-function handleCellReady(key: string | number): void {
-  if (revealedKeys.value.has(key)) return
-  revealedKeys.value = new Set([...revealedKeys.value, key])
-}
-
 /* --------------------------------------------------------------- helpers */
 
 const TAILWIND_BP = { sm: 640, md: 768, lg: 1024, xl: 1280 } as const
@@ -224,8 +217,7 @@ watch(
           overflow: 'hidden',
           contain: 'layout paint'
         }">
-        <LazyCell :lazy="p.lazy" :root-margin="props.lazyRootMargin" :revealed="revealedKeys.has(p.key)"
-          @ready="handleCellReady(p.key)">
+        <LazyCell :lazy="p.lazy" :root-margin="props.lazyRootMargin">
           <template #placeholder>
             <slot name="placeholder" :item="p.item" :index="p.index" :width="p.width" :height="p.height" />
           </template>
