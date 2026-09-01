@@ -7,8 +7,12 @@ import { useSettingsStore } from '@renderer/stores/settings'
 import { useLibraryStore } from '@renderer/stores/library'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { environment } from '@renderer/utils'
+import { useUploadHistoryStore } from '@renderer/stores/uploadHistory'
 import type { PendingFile } from './types'
 import { FILE_LIMITS } from './types'
+
+/** 当前应用内所有待处理上传任务数量，供 HomeHeader 展示入口状态。 */
+export const activeUploadCount = ref(0)
 
 /** 判断绝对路径是否位于素材库根目录内（跨平台处理分隔符和大小写）。 */
 function isPathInsideLibrary(filePath: string | undefined, libraryPath: string | undefined): boolean {
@@ -35,6 +39,8 @@ export function useUploadQueue() {
   const toast = useToast()
   const mediaStore = useMediaStore()
   const settingsStore = useSettingsStore()
+  const libraryStore = useLibraryStore()
+  const uploadHistoryStore = useUploadHistoryStore()
   const { t } = useI18n()
 
   const uploadingFileIds = ref<Set<string>>(new Set())
@@ -77,8 +83,24 @@ export function useUploadQueue() {
   function createUploadJob(
     pendingFile: PendingFile,
     libraryId: string,
-    onFileRemoved: (id: string) => void
+    onFileRemoved: (id: string) => void,
+    batchId: string
   ) {
+    const addHistory = (status: 'success' | 'failed', error?: string, serverId?: string) => {
+      const library = libraryStore.libraries.find((item) => item.id === libraryId)
+      uploadHistoryStore.addUploadRecord({
+        name: pendingFile.file.name,
+        size: pendingFile.localSize ?? pendingFile.file.size,
+        mimeType: pendingFile.file.type || 'application/octet-stream',
+        libraryId,
+        libraryName: library?.name || libraryId,
+        status,
+        localPath: pendingFile.localPath,
+        serverId,
+        error,
+        batchId,
+      })
+    }
     return async (callback?: (error?: Error, result?: any) => void) => {
       const metadata: Record<string, any> = {}
       if (pendingFile.folderId) metadata.folderId = pendingFile.folderId
@@ -101,6 +123,8 @@ export function useUploadQueue() {
           uploadProgressMap.value.set(pendingFile.id, 100)
           onFileRemoved(pendingFile.id)
           uploadingFileIds.value.delete(pendingFile.id)
+          activeUploadCount.value = Math.max(0, activeUploadCount.value - 1)
+          addHistory('success', undefined, (result.data as any)?.id ? String((result.data as any).id) : undefined)
           callback?.(undefined, result)
           return
         }
@@ -135,6 +159,8 @@ export function useUploadQueue() {
         if (result.success) {
           onFileRemoved(pendingFile.id)
           uploadingFileIds.value.delete(pendingFile.id)
+          activeUploadCount.value = Math.max(0, activeUploadCount.value - 1)
+          addHistory('success', undefined, (result.data as any)?.id ? String((result.data as any).id) : undefined)
           callback?.(undefined, result)
         } else {
           throw new Error(result.error || t('business.uploadQueue.uploadFailed'))
@@ -142,7 +168,9 @@ export function useUploadQueue() {
       } catch (error) {
         clearInterval(progressInterval)
         uploadingFileIds.value.delete(pendingFile.id)
+        activeUploadCount.value = Math.max(0, activeUploadCount.value - 1)
         console.error('Upload error:', error)
+        addHistory('failed', (error as Error).message)
         callback?.(error as Error)
         toast.add({
           severity: 'error',
@@ -159,10 +187,12 @@ export function useUploadQueue() {
     libraryId: string,
     onFileRemoved: (id: string) => void
   ) {
+    const batchId = `upload-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
     files.forEach((pendingFile) => {
       uploadingFileIds.value.add(pendingFile.id)
+      activeUploadCount.value++
       uploadProgressMap.value.set(pendingFile.id, 0)
-      uploadQueue.push(createUploadJob(pendingFile, libraryId, onFileRemoved))
+      uploadQueue.push(createUploadJob(pendingFile, libraryId, onFileRemoved, batchId))
     })
   }
 

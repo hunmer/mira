@@ -15,6 +15,7 @@ export interface UploadRecord {
   localPath?: string
   serverId?: string
   error?: string
+  batchId?: string
 }
 
 export const useUploadHistoryStore = defineStore('uploadHistory', () => {

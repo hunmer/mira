@@ -20,6 +20,7 @@ import { environment } from '@renderer/utils'
 import { shortcutService } from '@renderer/services/ShortcutService'
 import { shareDialogOpen } from '@/renderer/composables/useDeviceShare'
 import { deviceTransfers, shareDialogTab } from '@/renderer/components/business/DeviceShareDialog/useDeviceTransfers'
+import { activeUploadCount } from '@renderer/components/business/FileUploadDialog/useUploadQueue'
 
 defineOptions({ name: 'HomeHeader' })
 
@@ -185,6 +186,18 @@ const openUiTestPanel = async () => {
   <!-- 紧凑右侧悬浮栏：用户头像菜单 + 窗口控制 -->
   <header
     class="flex items-center justify-end gap-1 px-2 py-1.5 rounded-2xl border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur-xl shadow-[0_12px_40px_rgba(99,102,241,0.10)] w-fit ml-auto">
+    <!-- 上传队列状态 -->
+    <button
+      v-if="activeUploadCount > 0"
+      class="relative h-8 w-8 flex items-center justify-center rounded-lg text-primary hover:bg-primary/10 transition-colors"
+      title="上传队列"
+      @click="emit('uploadQueue')">
+      <span class="material-icons" style="font-size: 18px;">cloud_upload</span>
+      <span class="absolute -right-0.5 -bottom-0.5 min-w-3.5 h-3.5 px-0.5 rounded-full bg-primary text-primary-foreground text-[9px] leading-none flex items-center justify-center">
+        {{ activeUploadCount > 99 ? '99+' : activeUploadCount }}
+      </span>
+    </button>
+
     <!-- 切换亮色/暗色主题 -->
     <button
       class="h-8 w-8 flex items-center justify-center rounded-lg transition-[color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-95 cursor-pointer text-muted-foreground hover:bg-primary/10 hover:text-primary"
