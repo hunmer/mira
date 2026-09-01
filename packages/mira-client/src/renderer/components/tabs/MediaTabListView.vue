@@ -27,7 +27,7 @@
     <div class="flex-1 flex overflow-hidden relative">
       <div class="flex-1 flex flex-col min-w-0 min-h-0">
         <!-- 媒体内容 - files 和 trash 都使用统一的视图 -->
-        <div class="flex-1 min-h-0 overflow-y-auto w-full min-w-0" @wheel="handleCtrlWheel">
+        <div ref="scrollContainerRef" class="flex-1 min-h-0 overflow-y-auto w-full min-w-0" @wheel="handleCtrlWheel">
           <OrderedSectionList :items="enabledSections" headerless>
             <template #default="{ item: section }">
               <!-- 顶部的子文件夹 -->
@@ -230,6 +230,8 @@ const {
 // 根元素引用（供分组导航 / 删除键处理使用）
 const mediaTabListViewRef = ref<HTMLElement | null>(null)
 const mediaSectionRef = ref<InstanceType<typeof MediaTabMediaSection> | null>(null)
+// 媒体内容滚动容器（切换视图时重置滚动位置）
+const scrollContainerRef = ref<HTMLElement | null>(null)
 
 // 使用 tab 独立的 viewMode（从 MediaTabData 获取）
 const viewMode = computed(() => mediaTabData.viewMode.value)
@@ -448,6 +450,10 @@ const handleCtrlWheel = (event: WheelEvent) => {
 const handleViewModeChange = async (mode: 'grid' | 'list' | 'waterfall') => {
   await mediaTabData.setViewMode(mode)
   await nextTick()
+
+  if (scrollContainerRef.value) {
+    scrollContainerRef.value.scrollTop = 0
+  }
 
   if (mode === 'waterfall') {
     await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))

@@ -88,7 +88,14 @@ export function getPreviewImageSource(image: FileInfo | undefined): string | und
 }
 
 export function getMediaFileUrl(file: FileInfo | undefined): string {
-  return toFileUrl(getPreviewImageSource(file)) || ''
+  if (!file) return ''
+  // Chromium 的媒体元素会对 file:// 地址发起 Range 请求，而本地文件协议
+  // 不提供可用的 Content-Range 响应，导致音频/视频出现 ERR_REQUEST_RANGE_NOT_SATISFIABLE。
+  // 媒体统一走服务端 HTTP 地址（服务端支持 Range）；图片仍可使用本地缓存。
+  const extension = getFileExtension(file.name || '')
+  const isMedia = file.mimeType?.startsWith('audio/') || file.mimeType?.startsWith('video/')
+    || VIDEO_EXTENSIONS.includes(extension) || AUDIO_EXTENSIONS.includes(extension)
+  return toFileUrl(isMedia ? (file.path || file.url) : getPreviewImageSource(file)) || ''
 }
 
 export function getMediaPreviewSource(file: FileInfo | undefined): string {
@@ -99,8 +106,8 @@ export function getMediaPreviewSource(file: FileInfo | undefined): string {
     const previewUrl = url.replace('/api/files/file/', '/api/files/preview/')
     if (previewUrl !== url) return `${previewUrl}/index.m3u8${query ? `?${query}` : ''}`
   }
-  if (!environment.isElectron) return remoteSource || ''
-  return toFileUrl(file?.localFile || remoteSource) || ''
+  // 音频/视频必须使用 HTTP 源，避免 Chromium 对 file:// 发起无效 Range 请求。
+  return toFileUrl(remoteSource) || ''
 }
 
 export function getCacheBustedPreviewImageSource(

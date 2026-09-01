@@ -116,7 +116,7 @@
               <MediaPreviewHoverCard
                 :item="item"
                 button-class="absolute top-0.5 right-0.5 z-10 w-5 h-5 rounded-full bg-black/55 text-white"
-                icon-class="text-[12px]"
+                icon-class="text-[12px]!"
                 side="right"
                 align="center"
               />
