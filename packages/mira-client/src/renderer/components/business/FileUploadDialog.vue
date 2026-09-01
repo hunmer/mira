@@ -84,13 +84,7 @@
                   >
                     <span class="material-icons leading-none" style="font-size: 18px">content_paste</span>
                   </button>
-                  <button
-                    class="flex items-center gap-1 text-xs text-primary dark:text-primary font-medium hover:opacity-80"
-                    @click="triggerFileSelect(fileInputRef)"
-                  >
-                    <span class="material-icons text-sm">add</span>
-                    {{ $t('business.fileUploadDialog.addFiles') }}
-                  </button>
+                  <SidebarImportToolbar compact :on-upload="() => triggerFileSelect(fileInputRef)" :on-import-folder="importFolderIntoDialog" :on-import-url="importUrlIntoDialog" />
                   <button
                     v-if="selectedPendingIds.length > 0"
                     class="text-xs text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-muted-foreground"
@@ -423,29 +417,31 @@
             </SelectContent>
           </Select>
         </div>
-        <Popover v-model:open="uploadSettingsOpen">
-          <PopoverTrigger as-child>
-            <button type="button" class="h-10 w-10 rounded-lg border border-border text-muted-foreground hover:text-foreground" :title="$t('business.fileUploadDialog.uploadSettings')">
-              <span class="material-icons text-sm">settings</span>
-            </button>
-          </PopoverTrigger>
-          <PopoverContent class="w-64 p-3" align="end">
-            <div class="space-y-3">
-              <label class="flex items-center gap-2 text-sm"><input v-model="skipSameName" type="checkbox" class="size-4" />{{ $t('business.fileUploadDialog.skipSameName') }}</label>
-              <label class="flex items-center gap-2 text-sm"><input v-model="enableHash" type="checkbox" class="size-4" />{{ $t('business.fileUploadDialog.hashDuplicateCheck') }}</label>
-            </div>
-          </PopoverContent>
-        </Popover>
-        <button
-          class="px-6 py-2 bg-primary dark:bg-primary text-white rounded-lg font-medium hover:bg-primary dark:hover:bg-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          :disabled="pendingFiles.length === 0 || !selectedLibraryId || uploadingFileIds.size > 0"
-          @click="startUpload({ skipSameName, enableHash })"
-        >
-          <span class="flex items-center gap-2">
-            <span class="material-icons text-sm">upload</span>
-            {{ $t('business.fileUploadDialog.startUpload', { count: pendingFiles.length }) }}
-          </span>
-        </button>
+        <div class="flex items-center gap-2">
+          <Popover v-model:open="uploadSettingsOpen">
+            <PopoverTrigger as-child>
+              <button type="button" class="h-10 w-10 rounded-lg border border-border text-muted-foreground hover:text-foreground" :title="$t('business.fileUploadDialog.uploadSettings')">
+                <span class="material-icons text-sm">settings</span>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent class="w-64 p-3" align="end">
+              <div class="space-y-3">
+                <label class="flex items-center gap-2 text-sm"><Checkbox v-model="skipSameName" />{{ $t('business.fileUploadDialog.skipSameName') }}</label>
+                <label class="flex items-center gap-2 text-sm"><Checkbox v-model="enableHash" />{{ $t('business.fileUploadDialog.hashDuplicateCheck') }}</label>
+              </div>
+            </PopoverContent>
+          </Popover>
+          <button
+            class="px-6 py-2 bg-primary dark:bg-primary text-white rounded-lg font-medium hover:bg-primary dark:hover:bg-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="pendingFiles.length === 0 || !selectedLibraryId || uploadingFileIds.size > 0"
+            @click="startUpload({ skipSameName, enableHash })"
+          >
+            <span class="flex items-center gap-2">
+              <span class="material-icons text-sm">upload</span>
+              {{ $t('business.fileUploadDialog.startUpload', { count: pendingFiles.length }) }}
+            </span>
+          </button>
+        </div>
       </DialogFooter>
     </DialogContent>
   </Dialog>
@@ -457,6 +453,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Slider } from '@/components/ui/slider'
+import { Checkbox } from '@/components/ui/checkbox'
+import SidebarImportToolbar from '@/renderer/views/HomeView/SidebarImportToolbar.vue'
+import { useUrlImportStore } from '@renderer/stores/urlImport'
 import { SelectionBox } from '@hunmer/vue-selection-box'
 import { Masonry, type MasonryColumns, type MasonryItemMeta } from '@hunmer/vue-masonry'
 import FolderTreeComponent from './FolderTreeComponent/FolderTreeComponent.vue'
@@ -472,6 +471,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<Emits>()
 
 const settingsStore = useSettingsStore()
+const urlImportStore = useUrlImportStore()
 const uploadSettingsOpen = ref(false)
 const skipSameName = ref(false)
 const enableHash = ref(false)
@@ -501,6 +501,24 @@ const {
   isImportingStructure,
   startUpload
 } = useFileUploadDialog(props, emit)
+
+async function importFolderIntoDialog() {
+  const title = '选择要导入的文件夹'
+  const dirRes = await window.electronAPI.fs.selectDirectory(title)
+  if (!dirRes.success || !dirRes.path) return
+  const treeRes = await window.electronAPI.fs.readDirTree(dirRes.path)
+  if (!treeRes.success || !treeRes.data) return
+  localTree.setLocalTree(dirRes.path, treeRes.data)
+  fileManagement.addLocalFiles(treeRes.data, undefined, folderTagPanel.selectedTargetFolderId.value, folderTagPanel.selectedTargetTagIds.value)
+}
+
+function importUrlIntoDialog() {
+  const folderId = Number(folderTagPanel.selectedTargetFolderId.value)
+  urlImportStore.open({
+    folderId: Number.isFinite(folderId) ? folderId : null,
+    tagIds: folderTagPanel.selectedTargetTagIds.value,
+  })
+}
 
 watch(currentLibrary, (lib: any) => {
   skipSameName.value = !!lib?.customFields?.skipSameName
@@ -613,6 +631,19 @@ const approxColumns = computed(() => {
 
 // 复用 WaterfallComponent 的真实比例预加载能力（等 preview 就绪后读取 naturalWidth/Height）
 const { ratios, getRatio } = useFileRatios(pendingFiles, approxColumns.value)
+
+// Electron 下优先使用系统 nativeImage 缩略图，避免读取完整文件字节；失败时保留原有预览回退。
+const nativeThumbnailRequests = new Set<string>()
+watch(pendingFiles, (files) => {
+  if (!window.electronAPI?.fs?.getThumbnail) return
+  for (const pending of files) {
+    if (!pending.localPath || pending.preview || nativeThumbnailRequests.has(pending.id)) continue
+    nativeThumbnailRequests.add(pending.id)
+    void window.electronAPI.fs.getThumbnail(pending.localPath, { width: 256, height: 256 }).then((result) => {
+      if (result.success && result.data && !pending.preview) pending.preview = result.data
+    }).catch(() => undefined).finally(() => nativeThumbnailRequests.delete(pending.id))
+  }
+}, { deep: true, immediate: true })
 
 // 卡片信息块（文件名/大小/标签）固定高度估值，叠加到预览高度上
 const CARD_INFO_HEIGHT = 76

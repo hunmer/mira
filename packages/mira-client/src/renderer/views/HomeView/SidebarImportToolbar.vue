@@ -16,6 +16,7 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 defineOptions({ name: 'SidebarImportToolbar' })
 
 const props = defineProps<{
+  compact?: boolean
   /** 上传文件 */
   onUpload: () => void
   /** 导入文件夹（异步，进行中禁用按钮） */
@@ -45,7 +46,7 @@ async function handleImportFolder() {
 </script>
 
 <template>
-  <OrderedSectionList
+  <OrderedSectionList v-if="!props.compact"
     :title="t('views.sidebarLayoutDialog.title')"
     :customize-label="''"
     @customize="emit('customize')"
@@ -84,4 +85,16 @@ async function handleImportFolder() {
       </DropdownMenu>
     </template>
   </OrderedSectionList>
+  <DropdownMenu v-else>
+    <DropdownMenuTrigger as-child>
+      <button type="button" class="flex items-center gap-1 text-xs text-primary font-medium hover:opacity-80" :title="t('views.sidebarToolbar.moreActions')">
+        <span class="material-icons text-sm">add</span>{{ t('business.fileUploadDialog.addFiles') }}
+      </button>
+    </DropdownMenuTrigger>
+    <DropdownMenuContent align="end" class="w-44">
+      <DropdownMenuItem @click="props.onUpload"><span class="material-icons text-base mr-2">upload_file</span>{{ t('views.sidebarToolbar.uploadFile') }}</DropdownMenuItem>
+      <DropdownMenuItem @click="handleImportFolder"><span class="material-icons text-base mr-2">folder_open</span>{{ t('views.sidebarToolbar.importFolder') }}</DropdownMenuItem>
+      <DropdownMenuItem @click="props.onImportUrl"><span class="material-icons text-base mr-2">cloud_download</span>{{ t('business.homeHeader.importFromUrl') }}</DropdownMenuItem>
+    </DropdownMenuContent>
+  </DropdownMenu>
 </template>

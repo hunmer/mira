@@ -189,6 +189,8 @@ export function useFileManagement() {
       while (cursor < files.length) {
         const i = cursor++
         const pf = files[i]
+        // Electron nativeImage 已负责本地路径缩略图，避免再次读取完整文件；失败时仍可由后续回退逻辑处理。
+        if (pf.localPath && window.electronAPI?.fs) continue
         if (!pf.file.type || (!pf.file.type.startsWith('image/') && !pf.file.type.startsWith('video/'))) {
           continue
         }
@@ -204,7 +206,7 @@ export function useFileManagement() {
             continue
           }
           const preview = await createPreviewUrl(realFile)
-          if (preview) schedulePreviewUpdate(pf, preview)
+          if (preview && !pf.preview) schedulePreviewUpdate(pf, preview)
         } catch (error) {
           console.warn(`生成本地文件 ${pf.file.name} 预览失败:`, error)
         }
