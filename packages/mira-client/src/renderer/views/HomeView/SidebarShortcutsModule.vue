@@ -39,6 +39,7 @@ const { t } = useI18n()
 const shortcutCountState = ref({ all: 0, uncategorized: 0, untagged: 0, trash: 0 })
 const shortcutCounts = computed(() => shortcutCountState.value)
 let shortcutCountRequestId = 0
+let shortcutCountTimer: ReturnType<typeof setTimeout> | undefined
 
 /** 从服务端按当前素材库统计快捷分类，避免受当前激活 tab 和本地分页数据影响。 */
 async function loadShortcutCounts(libraryId: string) {
@@ -67,15 +68,26 @@ watch([
   () => props.folderTree,
   () => props.tags,
 ], ([libraryId]) => {
-  if (libraryId) loadShortcutCounts(libraryId)
+  if (libraryId) scheduleShortcutCounts(libraryId)
   else shortcutCountState.value = { all: 0, uncategorized: 0, untagged: 0, trash: 0 }
 }, { immediate: true, deep: true })
 
 const onLibraryFileChanged = ({ libraryId }: { libraryId?: string }) => {
-  if (libraryId && libraryId === props.libraryId) loadShortcutCounts(libraryId)
+  if (libraryId && libraryId === props.libraryId) scheduleShortcutCounts(libraryId)
 }
 miraEventBus.on('library-file-changed', onLibraryFileChanged)
-onBeforeUnmount(() => miraEventBus.off('library-file-changed', onLibraryFileChanged))
+onBeforeUnmount(() => {
+  miraEventBus.off('library-file-changed', onLibraryFileChanged)
+  if (shortcutCountTimer) clearTimeout(shortcutCountTimer)
+})
+
+function scheduleShortcutCounts(libraryId: string) {
+  if (shortcutCountTimer) clearTimeout(shortcutCountTimer)
+  shortcutCountTimer = setTimeout(() => {
+    shortcutCountTimer = undefined
+    void loadShortcutCounts(libraryId)
+  }, 500)
+}
 
 const baseCategories = computed(() => [
   { id: 'all', label: t('views.sidebarModuleList.all'), icon: 'folder_open', iconColor: 'text-muted-foreground', count: shortcutCounts.value.all },

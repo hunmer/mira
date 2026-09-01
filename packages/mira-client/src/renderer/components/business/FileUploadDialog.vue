@@ -223,7 +223,7 @@
               </div>
 
               <!-- 文件网格内容 -->
-              <div ref="fileGridContainerRef" class="flex-1 min-h-0">
+              <div ref="fileGridContainerRef" class="flex-1 min-h-0 flex flex-col">
                 <SelectionBox
                   ref="selectionBoxRef"
                   v-model="selectedPendingIds"
@@ -234,7 +234,7 @@
                   :enable-select-all-shortcut="true"
                   :enable-clear-selection-shortcut="true"
                   :enable-delete-selection-shortcut="true"
-                  class="h-full overflow-auto p-4 [scrollbar-gutter:stable]"
+                  class="flex-1 min-h-0 overflow-auto p-4 [scrollbar-gutter:stable]"
                   tabindex="0"
                   @selection-update="handleSelectionUpdate"
                   @clear-selection="clearSelection"
@@ -374,13 +374,6 @@
                     </template>
                   </Masonry>
                 </SelectionBox>
-                <Pagination v-if="displayFiles.length > pageSize" class="mt-3" :page="currentPage" :items-per-page="pageSize" :total="displayFiles.length" :sibling-count="1" @update:page="currentPage = $event">
-                  <PaginationContent v-slot="{ items }">
-                    <PaginationPrevious><ChevronLeftIcon class="size-4" /></PaginationPrevious>
-                    <template v-for="(item, index) in items" :key="index"><PaginationItem v-if="item.type === 'page'" :value="item.value" :is-active="item.value === currentPage">{{ item.value }}</PaginationItem></template>
-                    <PaginationNext><ChevronRightIcon class="size-4" /></PaginationNext>
-                  </PaginationContent>
-                </Pagination>
               </div>
             </div>
 
@@ -424,6 +417,13 @@
             </SelectContent>
           </Select>
         </div>
+        <Pagination v-if="displayFiles.length > pageSize" :page="currentPage" :items-per-page="pageSize" :total="displayFiles.length" :sibling-count="1" @update:page="currentPage = $event">
+          <PaginationContent v-slot="{ items }">
+            <PaginationPrevious><ChevronLeftIcon class="size-4" /></PaginationPrevious>
+            <template v-for="(item, index) in items" :key="index"><PaginationItem v-if="item.type === 'page'" :value="item.value" :is-active="item.value === currentPage">{{ item.value }}</PaginationItem></template>
+            <PaginationNext><ChevronRightIcon class="size-4" /></PaginationNext>
+          </PaginationContent>
+        </Pagination>
         <div class="flex items-center gap-2">
           <Popover v-model:open="uploadSettingsOpen">
             <PopoverTrigger as-child>
@@ -608,7 +608,7 @@ const displayFiles = computed(() => {
   if (!hideNonMatching.value) return filteredPendingFiles.value
   return filteredPendingFiles.value.filter((f) => matchesFilters(f))
 })
-const pageSize = 30
+const pageSize = 200
 const currentPage = ref(1)
 const pageCount = computed(() => Math.max(1, Math.ceil(displayFiles.value.length / pageSize)))
 const pagedDisplayFiles = computed(() => displayFiles.value.slice((currentPage.value - 1) * pageSize, currentPage.value * pageSize))
