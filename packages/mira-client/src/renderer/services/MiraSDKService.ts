@@ -755,6 +755,20 @@ export class MiraSDKService {
     }
   }
 
+  /**
+   * 本地素材库内文件直接按绝对路径导入，避免把文件字节再次传到本机服务端。
+   */
+  async importLocalFilePath(libraryId: string, filePath: string): Promise<BaseResponse> {
+    if (!this.client) throw new Error('Not connected to Mira server')
+    const result = await (this.client.files() as any).importFilePath(libraryId, filePath)
+    const file = result?.data
+    if (!result?.success) {
+      throw new Error(result?.error || result?.message || 'Local file import failed')
+    }
+    // 文件可能已被 watcher 并发入库，此时服务端返回空数组，仍视为导入完成。
+    return { success: true, message: 'Local file imported successfully', data: file || { path: filePath } }
+  }
+
   async downloadFile(libraryId: string, fileId: string): Promise<Blob> {
     if (!this.client) throw new Error('Not connected to Mira server')
 

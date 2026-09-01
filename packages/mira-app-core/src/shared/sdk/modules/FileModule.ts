@@ -333,6 +333,20 @@ export class FileModule {
         return await this.upload(uploadRequest);
     }
 
+    /** 在服务端直接读取本机绝对路径导入文件，不经过 multipart。 */
+    async importFilePath(
+        libraryId: string,
+        filePath: string,
+        options?: { folderId?: string; tags?: string[] }
+    ): Promise<any> {
+        return await this.httpClient.post('/api/files/import-path', {
+            libraryId,
+            path: filePath,
+            folderId: options?.folderId,
+            tags: options?.tags,
+        });
+    }
+
     /** 直接上传已获取的二进制文件并批量导入，服务端不会再次下载 URL。 */
     async batchImport(
         items: BatchImportItem[],

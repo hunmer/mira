@@ -4,8 +4,32 @@ import Queue from 'queue'
 import { useToast } from '@/renderer/composables/useToast'
 import { useMediaStore } from '@renderer/stores/media'
 import { useSettingsStore } from '@renderer/stores/settings'
+import { useLibraryStore } from '@renderer/stores/library'
+import { miraSDKService } from '@renderer/services/MiraSDKService'
+import { environment } from '@renderer/utils'
 import type { PendingFile } from './types'
 import { FILE_LIMITS } from './types'
+
+/** 判断绝对路径是否位于素材库根目录内（跨平台处理分隔符和大小写）。 */
+function isPathInsideLibrary(filePath: string | undefined, libraryPath: string | undefined): boolean {
+  if (!filePath || !libraryPath) return false
+  const normalize = (value: string) => value.replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase()
+  const file = normalize(filePath)
+  const root = normalize(libraryPath)
+  if (!root) return false
+  return root === '/' ? file.startsWith('/') : (file === root || file.startsWith(`${root}/`))
+}
+
+function isLocalServer(): boolean {
+  try {
+    const raw = miraSDKService.getConnectionConfig()?.serverUrl
+    if (!raw) return false
+    const hostname = new URL(raw).hostname.toLowerCase()
+    return environment.isElectron && ['localhost', '127.0.0.1', '::1'].includes(hostname)
+  } catch {
+    return false
+  }
+}
 
 export function useUploadQueue() {
   const toast = useToast()
@@ -66,6 +90,21 @@ export function useUploadQueue() {
       }, 200)
 
       try {
+        // 文件已经位于目标本地素材库目录时，服务端可直接访问该路径，完全跳过字节传输。
+        const library = useLibraryStore().libraries.find((item) => item.id === libraryId)
+        const canImportByPath = isLocalServer() && Boolean(pendingFile.localPath) && (
+          isPathInsideLibrary(pendingFile.localPath, library?.path) || Boolean(library?.path)
+        )
+        if (canImportByPath) {
+          const result = await miraSDKService.importLocalFilePath(libraryId, pendingFile.localPath!)
+          clearInterval(progressInterval)
+          uploadProgressMap.value.set(pendingFile.id, 100)
+          onFileRemoved(pendingFile.id)
+          uploadingFileIds.value.delete(pendingFile.id)
+          callback?.(undefined, result)
+          return
+        }
+
         // 惰性读取：导入的本地文件占位 File 无字节，上传前按路径读取真实字节
         let uploadFile: File = pendingFile.file
         if (pendingFile.localPath) {

@@ -49,6 +49,35 @@ export class FileRoutes {
     }
 
     private setupRoutes(): void {
+        // Electron 本机服务可直接读取客户端提供的绝对路径，避免无意义的二进制回传。
+        this.router.post('/import-path', async (req: Request, res: Response) => {
+            try {
+                const { libraryId, path: sourcePath, folderId, tags } = req.body || {};
+                const remoteAddress = req.socket.remoteAddress || '';
+                const isLoopback = remoteAddress === '127.0.0.1' || remoteAddress === '::1' || remoteAddress === '::ffff:127.0.0.1';
+                if (!isLoopback) {
+                    return res.status(403).json({ success: false, error: 'Local path import is only available from localhost' });
+                }
+                if (!libraryId || typeof sourcePath !== 'string' || !path.isAbsolute(sourcePath)) {
+                    return res.status(400).json({ success: false, error: 'libraryId and absolute path are required' });
+                }
+                const obj = this.backend.libraries!.getLibrary(libraryId);
+                if (!obj || !fs.existsSync(sourcePath) || !fs.statSync(sourcePath).isFile()) {
+                    return res.status(404).json({ success: false, error: 'Source file not found' });
+                }
+                const fileData: Record<string, any> = {};
+                if (folderId) fileData.folder_id = Number(folderId);
+                if (Array.isArray(tags)) fileData.tags = JSON.stringify(tags);
+                const configuredImportType = obj.libraryService.config.customFields?.importType
+                    ?? obj.libraryService.config.importType ?? 'copy';
+                const result = await obj.libraryService.createFileFromPath(sourcePath, fileData, {
+                    importType: ['copy', 'move', 'link'].includes(configuredImportType) ? configuredImportType : 'copy'
+                });
+                return res.json({ success: true, data: result });
+            } catch (error: any) {
+                return res.status(500).json({ success: false, error: error.message || 'Failed to import local path' });
+            }
+        });
         // 上传文件到资源库
         this.router.post('/upload', this.upload.array('files'), async (req: Request, res: Response) => {
             const { libraryId, sourcePath, fileId } = req.body; // sourcePath是用户的本地文件位置，用来验证是否上传成功
