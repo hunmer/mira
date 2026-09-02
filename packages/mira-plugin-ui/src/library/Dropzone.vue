@@ -19,6 +19,7 @@ export type DropzoneItem = File | { name: string; size: number; type?: string; p
 import { computed, onBeforeUnmount, ref } from 'vue';
 import { CheckIcon, FileImage, FileText, FileWarningIcon, Film, Music, X } from '@lucide/vue';
 import { canAcceptDrop } from './drag-data';
+import { useI18n } from '../i18n';
 import { Spinner } from '../components/ui/spinner';
 import {
   Attachment,
@@ -47,13 +48,15 @@ const props = withDefaults(
     /** 是否显示移除按钮(发送进行中等场景置 false),默认 true */
     removable?: boolean;
   }>(),
-  { hint: '拖放文件到此处,或点击选择', mediaVariant: 'image', orientation: 'horizontal', removable: true },
+  { hint: undefined, mediaVariant: 'image', orientation: 'horizontal', removable: true },
 );
 const emit = defineEmits<{
   drop: [files: File[]];
   /** 移除一个已暂存的条目 */
   remove: [file: DropzoneItem];
 }>();
+
+const { t } = useI18n();
 
 const fileInput = ref<HTMLInputElement | null>(null);
 const hovering = ref(false);
@@ -189,7 +192,7 @@ function onPick(e: Event) {
       @drop.prevent="onDrop"
     >
       <input ref="fileInput" type="file" multiple class="hidden" @change="onPick">
-      <span>{{ hint }}</span>
+      <span>{{ hint ?? t('upload.dropHint') }}</span>
     </div>
 
     <!-- 已暂存条目:Attachment 卡片(外部 fileState 反馈发送状态;removable=false 隐藏移除) -->
@@ -222,13 +225,14 @@ function onPick(e: Event) {
         <AttachmentAction
           v-if="removable && orientation === 'vertical'"
           class="absolute top-1 right-1 z-20 rounded-full bg-black/50 text-white hover:bg-black/70 hover:text-white"
-          :aria-label="`移除 ${file.name}`"
+          :aria-label="t('common.remove', { name: file.name })"
+          :title="t('common.remove', { name: file.name })"
           @click="removeFile(file)"
         >
           <X />
         </AttachmentAction>
         <AttachmentActions v-else-if="removable">
-          <AttachmentAction :aria-label="`移除 ${file.name}`" @click="removeFile(file)">
+          <AttachmentAction :aria-label="t('common.remove', { name: file.name })" @click="removeFile(file)">
             <X />
           </AttachmentAction>
         </AttachmentActions>

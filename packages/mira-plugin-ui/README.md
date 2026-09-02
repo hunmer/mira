@@ -55,6 +55,24 @@ import 'mira-plugin-ui/mira-plugin-ui.css'
 
 只有 `vue` 是 external，reka-ui 等已全部打进 bundle；CSS 含组件样式与 oklch tokens（跟随宿主 `.dark` 类切换暗色）。
 
+## i18n 多语言
+
+组件内置 zh / en 双语文案（`src/i18n.ts`，扁平 key + `{n}` 插值），不依赖 vue-i18n。初始语言自动探测：宿主 `window.mira.app.locale` → `navigator.language` → 中文。
+
+```ts
+import { setLocale, useI18n } from 'mira-plugin-ui'        // 或 'mira-plugin-ui/library'
+
+setLocale('en')                                            // 切换语言，全部组件即时生效
+const { locale, t } = useI18n()                            // 读取当前 locale / 包级 t
+```
+
+宿主接管文案的两种方式（优先级高于内置词典）：
+
+- library 系列组件（`LibraryTreeView` / `MediaBrowser` / `FilterBar` 等）：传 `t` prop（vue-i18n 的 `t` 等，签名 `(key, params) => string`），缺 key 时组件自动回退内置词典
+- 业务组件（`BatchUploadDialog` / `SaveLocationDialog` / `MediaPickerDialog` 等）：传 `title` / `submitText` 等文案 props 覆盖对应位置
+
+主窗口切换语言时，监听 `window.mira.onLocaleChanged` 调一次 `setLocale` 即可全局生效。
+
 ## 新增组件
 
 ```bash

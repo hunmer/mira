@@ -113,17 +113,17 @@ const selectedColorHex = computed(() => {
   return color && color > 0 ? `#${color.toString(16).padStart(6, '0')}` : ''
 })
 
-/** 与 FolderEditDialog colorOptions 一致的固定色板(无色 + 8 色) */
+/** 与 FolderEditDialog colorOptions 一致的固定色板(无色 + 8 色);label 为 i18n key */
 const CREATE_COLORS: { value: number | null; class: string; label: string }[] = [
-  { value: null, class: 'bg-accent border-2 border-dashed border-border', label: '无色' },
-  { value: 0x3B82F6, class: 'bg-blue-500', label: '蓝色' },
-  { value: 0x10B981, class: 'bg-green-500', label: '绿色' },
-  { value: 0xF59E0B, class: 'bg-yellow-500', label: '黄色' },
-  { value: 0xEF4444, class: 'bg-destructive', label: '红色' },
-  { value: 0x8B5CF6, class: 'bg-purple-500', label: '紫色' },
-  { value: 0xEC4899, class: 'bg-pink-500', label: '粉色' },
-  { value: 0x6366F1, class: 'bg-indigo-500', label: '靛蓝' },
-  { value: 0x6B7280, class: 'bg-muted', label: '灰色' },
+  { value: null, class: 'bg-accent border-2 border-dashed border-border', label: 'color.none' },
+  { value: 0x3B82F6, class: 'bg-blue-500', label: 'color.blue' },
+  { value: 0x10B981, class: 'bg-green-500', label: 'color.green' },
+  { value: 0xF59E0B, class: 'bg-yellow-500', label: 'color.yellow' },
+  { value: 0xEF4444, class: 'bg-destructive', label: 'color.red' },
+  { value: 0x8B5CF6, class: 'bg-purple-500', label: 'color.purple' },
+  { value: 0xEC4899, class: 'bg-pink-500', label: 'color.pink' },
+  { value: 0x6366F1, class: 'bg-indigo-500', label: 'color.indigo' },
+  { value: 0x6B7280, class: 'bg-muted', label: 'color.gray' },
 ]
 
 async function submit() {
@@ -187,7 +187,7 @@ async function submit() {
               v-for="color in CREATE_COLORS"
               :key="String(color.value)"
               type="button"
-              :title="color.label"
+              :title="tt(color.label)"
               class="flex size-7 items-center justify-center rounded-full transition-transform hover:scale-110"
               :class="[color.class, form.color === color.value ? 'ring-primary ring-2 ring-offset-2' : '']"
               @click="form.color = color.value"

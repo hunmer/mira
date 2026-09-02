@@ -40,6 +40,7 @@ import {
 } from './components/ui/attachment'
 import { LibraryTreeView } from './library'
 import type { LibraryFlatItem, LibraryTreeNode, LibraryTreeServices } from './library'
+import { useI18n } from './i18n'
 import FileInfoForm from './FileInfoForm.vue'
 import type { BatchUploadFileService, BatchUploadPayload } from './types'
 
@@ -96,9 +97,12 @@ const props = withDefaults(defineProps<{
   maxFiles: 200,
   initialFiles: () => [],
   accept: '*',
-  submitText: '开始上传',
-  cancelText: '取消',
+  // 文案缺省走内置 i18n,宿主传 prop 覆盖
+  submitText: undefined,
+  cancelText: undefined,
 })
+
+const { t } = useI18n()
 
 const emit = defineEmits<{
   (event: 'upload', value: BatchUploadPayload): void
@@ -259,14 +263,14 @@ function categoryOf (file: File): FileCategory {
   return 'other'
 }
 
-const categoryOptions: { value: FileCategory | 'all'; label: string }[] = [
-  { value: 'all', label: '全部格式' },
-  { value: 'image', label: '图片' },
-  { value: 'video', label: '视频' },
-  { value: 'audio', label: '音频' },
-  { value: 'document', label: '文档' },
-  { value: 'other', label: '其他' },
-]
+const categoryOptions = computed<{ value: FileCategory | 'all'; label: string }[]>(() => [
+  { value: 'all', label: t('batch.formatAll') },
+  { value: 'image', label: t('media.categoryImage') },
+  { value: 'video', label: t('media.categoryVideo') },
+  { value: 'audio', label: t('media.categoryAudio') },
+  { value: 'document', label: t('batch.formatDocument') },
+  { value: 'other', label: t('batch.formatOther') },
+])
 
 // ---- 树数据:扁平项归一化成 LibraryFlatItem(组装/搜索/展开由 LibraryTreeView 自理) ----
 function normalize (items: TreeItem[]): LibraryFlatItem[] {
@@ -495,40 +499,40 @@ async function startUpload () {
         <!-- 列表头部:标题/统计 + 视图切换 + 添加/清空 -->
         <div class="flex items-center justify-between gap-2 border-b px-4 py-2.5">
           <div class="flex items-center gap-2">
-            <span class="text-sm font-medium text-foreground">待上传文件</span>
+            <span class="text-sm font-medium text-foreground">{{ t('batch.pendingFiles') }}</span>
             <span v-if="stats.total" class="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">{{ stats.total }}</span>
           </div>
           <div class="flex items-center gap-1">
             <Button variant="ghost" size="sm" @click="fileInputRef?.click()">
               <Upload class="size-4" />
-              添加文件
+              {{ t('batch.addFiles') }}
             </Button>
             <Button v-if="stats.total" variant="ghost" size="sm" class="text-destructive hover:text-destructive" :disabled="isUploading" @click="clearAll">
-              清空
+              {{ t('batch.clear') }}
             </Button>
           </div>
         </div>
 
         <!-- 队列统计 -->
         <div v-if="stats.total" class="flex flex-wrap items-center gap-x-4 gap-y-1 border-b px-4 py-1.5 text-xs">
-          <span class="text-muted-foreground">待上传 {{ stats.pending }}</span>
-          <span class="text-orange-600 dark:text-orange-400">上传中 {{ stats.uploading }}</span>
-          <span class="text-green-600 dark:text-green-400">已完成 {{ stats.done }}</span>
-          <span v-if="stats.failed" class="text-destructive">失败 {{ stats.failed }}</span>
+          <span class="text-muted-foreground">{{ t('batch.statPending', { n: stats.pending }) }}</span>
+          <span class="text-orange-600 dark:text-orange-400">{{ t('batch.statUploading', { n: stats.uploading }) }}</span>
+          <span class="text-green-600 dark:text-green-400">{{ t('batch.statDone', { n: stats.done }) }}</span>
+          <span v-if="stats.failed" class="text-destructive">{{ t('batch.statFailed', { n: stats.failed }) }}</span>
         </div>
 
         <!-- 过滤:格式 + 文件名(仅影响查看,上传始终提交全部) -->
         <div v-if="stats.total" class="flex items-center gap-2 border-b px-4 py-2">
           <Select v-model="formatFilter">
             <SelectTrigger class="h-8 w-28 text-xs">
-              <SelectValue placeholder="格式" />
+              <SelectValue :placeholder="t('batch.format')" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem v-for="option in categoryOptions" :key="option.value" :value="option.value">{{ option.label }}</SelectItem>
             </SelectContent>
           </Select>
-          <Input v-model="nameFilter" placeholder="搜索文件名…" class="h-8 flex-1 text-xs" />
-          <span v-if="hasFilter" class="whitespace-nowrap text-xs text-muted-foreground">匹配 {{ filteredItems.length }} / {{ stats.total }}</span>
+          <Input v-model="nameFilter" :placeholder="t('batch.searchName')" class="h-8 flex-1 text-xs" />
+          <span v-if="hasFilter" class="whitespace-nowrap text-xs text-muted-foreground">{{ t('batch.matchCount', { n: filteredItems.length, total: stats.total }) }}</span>
         </div>
 
         <!-- 文件列表 / 空状态:SelectionBox 多选(点击/Ctrl/Shift/框选),
@@ -539,8 +543,8 @@ async function startUpload () {
             @click="fileInputRef?.click()"
           >
             <Upload class="size-8" />
-            <p class="text-sm">点击或拖拽文件到此处添加</p>
-            <p class="text-xs">最多 {{ maxFiles }} 个文件</p>
+            <p class="text-sm">{{ t('batch.dropHint') }}</p>
+            <p class="text-xs">{{ t('batch.maxFiles', { n: maxFiles }) }}</p>
           </div>
         </div>
         <template v-else>
@@ -601,14 +605,14 @@ async function startUpload () {
                     </span>
                   </div>
                   <Progress v-if="item.status === 'uploading'" :model-value="item.progress" class="mt-1 h-1.5" />
-                  <p v-else-if="item.status === 'error'" class="text-xs text-destructive">上传失败</p>
-                  <p v-else-if="item.status === 'done'" class="text-xs text-green-600 dark:text-green-400">已上传</p>
+                  <p v-else-if="item.status === 'error'" class="text-xs text-destructive">{{ t('batch.uploadFailed') }}</p>
+                  <p v-else-if="item.status === 'done'" class="text-xs text-green-600 dark:text-green-400">{{ t('batch.uploaded') }}</p>
                 </AttachmentContent>
                 <!-- 竖排:删除按钮悬浮在媒体右上角 -->
                 <AttachmentAction
                   v-if="item.status !== 'uploading'"
                   class="absolute top-1 right-1 z-20 rounded-full bg-black/50 text-white hover:bg-black/70 hover:text-white"
-                  :aria-label="`移除 ${item.file.name}`"
+                  :aria-label="t('common.remove', { name: item.file.name })"
                   @click.stop="removeItem(item.id)"
                 >
                   <X />
@@ -617,7 +621,7 @@ async function startUpload () {
             </AttachmentGroup>
           </SelectionBox>
           <p class="px-4 pb-2 text-[11px] text-muted-foreground">
-            点击选择 · Ctrl 加选 · Shift 连选 · 空白拖拽框选 · Delete 删除选中；选中后在右侧「文件夹 / 标签」中设置，未选中时应用到全部
+            {{ t('batch.selectHint') }}
           </p>
         </template>
       </div>
@@ -625,9 +629,9 @@ async function startUpload () {
       <!-- 右侧:文件信息(绑定选中文件) / 文件夹 / 标签 tabs -->
       <Tabs v-model="tab" :unmount-on-hide="false" class="flex h-full min-h-0 flex-col gap-2">
         <TabsList class="w-full">
-          <TabsTrigger value="info">文件信息</TabsTrigger>
-          <TabsTrigger value="folder">文件夹</TabsTrigger>
-          <TabsTrigger value="tag">标签</TabsTrigger>
+          <TabsTrigger value="info">{{ t('batch.tabInfo') }}</TabsTrigger>
+          <TabsTrigger value="folder">{{ t('common.folder') }}</TabsTrigger>
+          <TabsTrigger value="tag">{{ t('common.tag') }}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="info" class="flex min-h-0 flex-1 flex-col data-[state=inactive]:hidden">
@@ -637,7 +641,7 @@ async function startUpload () {
               v-model:url="selectedUrl"
               v-model:note="selectedNote"
               :disabled="!selectedItem"
-              :placeholder="selectedItem ? undefined : '点击左侧文件后可编辑其信息'"
+              :placeholder="selectedItem ? undefined : t('batch.infoPlaceholder')"
             />
           </div>
         </TabsContent>
@@ -667,11 +671,11 @@ async function startUpload () {
     <!-- 底部:素材库选择 + 开始上传同一行 -->
     <div class="flex items-center gap-3">
       <div class="min-w-0 flex-1 sm:max-w-56">
-        <Label class="sr-only" for="batch-upload-library">素材库</Label>
+        <Label class="sr-only" for="batch-upload-library">{{ t('batch.libraryLabel') }}</Label>
         <!-- v-model 与显式 update 监听同用会覆盖绑定,改单向 + 手动赋值 -->
         <Select :model-value="libraryId" :disabled="isUploading" @update:model-value="onLibraryChange">
           <SelectTrigger id="batch-upload-library">
-            <SelectValue placeholder="选择素材库" />
+            <SelectValue :placeholder="t('library.selectPlaceholder')" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem v-for="library in libraries" :key="library.id" :value="String(library.id)">
@@ -682,7 +686,7 @@ async function startUpload () {
       </div>
       <Button class="ml-auto shrink-0" :disabled="!canUpload" @click="startUpload">
         <Upload class="size-4" />
-        {{ submitText }}{{ toUploadCount > 0 ? ` (${toUploadCount})` : '' }}
+        {{ (submitText ?? t('batch.submit')) + (toUploadCount > 0 ? ` (${toUploadCount})` : '') }}
       </Button>
     </div>
   </div>

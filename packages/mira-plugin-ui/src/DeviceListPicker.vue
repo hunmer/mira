@@ -7,7 +7,10 @@
  */
 import { onBeforeUnmount, ref, watch } from 'vue'
 import { MonitorSmartphone, WifiOff } from '@lucide/vue'
+import { useI18n } from './i18n'
 import type { DeviceListItem, DeviceListPickerServices } from './types'
+
+const { t } = useI18n()
 
 const props = withDefaults(defineProps<{
   /** 数据服务:宿主实现(如 client.devices().getByLibrary) */
@@ -67,8 +70,8 @@ watch(() => props.pollInterval, setupTimer, { immediate: true })
 /** userAgent → 平台描述 + IP(与 mira-client describeDevice 一致) */
 function describeDevice (device: Pick<DeviceListItem, 'userAgent' | 'ipAddress'>) {
   const ua = device.userAgent || ''
-  let platform = '浏览器'
-  if (/Electron/i.test(ua)) platform = 'Mira 桌面端'
+  let platform = t('device.browser')
+  if (/Electron/i.test(ua)) platform = t('device.desktop')
   else if (/Android/i.test(ua)) platform = 'Android'
   else if (/iPhone|iPad/i.test(ua)) platform = 'iOS'
   else if (/Windows/i.test(ua)) platform = 'Windows'
@@ -81,8 +84,8 @@ function lastActivityText (device: DeviceListItem) {
   const ts = new Date(device.lastActivity || '').getTime()
   if (Number.isNaN(ts)) return ''
   const elapsed = Math.max(0, Date.now() - ts)
-  if (elapsed < 60000) return '刚刚活跃'
-  return `${Math.floor(elapsed / 60000)} 分钟前活跃`
+  if (elapsed < 60000) return t('device.activeNow')
+  return t('device.activeMinutesAgo', { n: Math.floor(elapsed / 60000) })
 }
 
 defineExpose({ refresh: fetchDevices })
@@ -91,7 +94,7 @@ defineExpose({ refresh: fetchDevices })
 <template>
   <div class="flex min-h-[200px] flex-col gap-2">
     <div v-if="loading && devices.length === 0" class="text-muted-foreground flex items-center justify-center py-10 text-sm">
-      加载中…
+      {{ t('common.loading') }}
     </div>
 
     <div v-else-if="error" class="text-destructive flex flex-col items-center px-4 py-10 text-center text-sm">
@@ -101,8 +104,8 @@ defineExpose({ refresh: fetchDevices })
 
     <div v-else-if="devices.length === 0" class="flex flex-col items-center px-4 py-10 text-center">
       <MonitorSmartphone class="text-muted-foreground mb-3 size-8" />
-      <p class="text-muted-foreground mb-1 text-sm">暂无已连接设备</p>
-      <p class="text-muted-foreground text-xs">其他设备打开本素材库后会出现在这里</p>
+      <p class="text-muted-foreground mb-1 text-sm">{{ t('device.emptyTitle') }}</p>
+      <p class="text-muted-foreground text-xs">{{ t('device.emptyHint') }}</p>
     </div>
 
     <button

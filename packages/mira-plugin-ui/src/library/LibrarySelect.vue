@@ -9,6 +9,7 @@
 import { computed } from 'vue'
 import type { AcceptableValue } from 'reka-ui'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '../components/ui/select'
+import { useI18n } from '../i18n'
 import type { LibrarySelectOption, LibrarySelectServer } from './types'
 
 const props = withDefaults(defineProps<{
@@ -18,9 +19,11 @@ const props = withDefaults(defineProps<{
   disabled?: boolean
 }>(), {
   modelValue: '',
-  placeholder: '选择素材库',
+  placeholder: undefined,
   disabled: false,
 })
+
+const { t } = useI18n()
 
 const emit = defineEmits<{
   (event: 'update:model-value', libraryId: string): void
@@ -51,7 +54,7 @@ function onChange (value: AcceptableValue) {
 <template>
   <Select :model-value="modelValue" :disabled="disabled || !total" @update:model-value="onChange">
     <SelectTrigger class="w-full">
-      <SelectValue :placeholder="placeholder" />
+      <SelectValue :placeholder="placeholder ?? t('library.selectPlaceholder')" />
     </SelectTrigger>
     <SelectContent>
       <template v-if="total">
@@ -62,7 +65,7 @@ function onChange (value: AcceptableValue) {
           </SelectItem>
         </SelectGroup>
       </template>
-      <p v-else class="text-muted-foreground px-2 py-4 text-center text-xs">暂无素材库</p>
+      <p v-else class="text-muted-foreground px-2 py-4 text-center text-xs">{{ t('library.noLibrary') }}</p>
     </SelectContent>
   </Select>
 </template>

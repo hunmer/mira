@@ -7,7 +7,10 @@
 import { computed, nextTick, ref, watch } from 'vue'
 // 相对路径:本组件经 library/ 子入口被宿主以源码消费,宿主的 @ 别名指向其自身 src
 import { Popover, PopoverContent, PopoverTrigger } from '../popover'
+import { useI18n } from '../../../i18n'
 import { iconNames } from './icon-names'
+
+const { t } = useI18n()
 
 const props = withDefaults(defineProps<{
   /** 当前选中的图标名;空字符串表示使用默认 */
@@ -73,7 +76,7 @@ function selectIcon (name: string) {
       <button
         type="button"
         class="flex size-12 cursor-pointer items-center justify-center rounded-full border border-border bg-muted/50 text-foreground transition-[background-color,border-color,transform] duration-150 hover:border-primary/50 hover:bg-accent active:scale-90"
-        :title="modelValue || defaultIcon || '选择图标'"
+        :title="modelValue || defaultIcon || t('iconPicker.select')"
       >
         <span class="material-icons text-2xl" :style="iconStyle">{{ modelValue || defaultIcon || 'extension' }}</span>
       </button>
@@ -89,20 +92,20 @@ function selectIcon (name: string) {
               ref="searchInputRef"
               v-model="search"
               type="text"
-              placeholder="搜索图标…"
+              :placeholder="t('iconPicker.search')"
               class="focus:border-primary focus:ring-primary/30 w-full rounded-full border border-border bg-background/70 py-1.5 pr-3 pl-8 text-sm outline-none focus:ring-1"
               @keydown.esc="open = false"
             >
           </div>
           <div class="mt-1.5 flex items-center justify-between px-1">
-            <span class="text-muted-foreground text-[11px]">{{ filtered.length }} 个图标</span>
+            <span class="text-muted-foreground text-[11px]">{{ t('iconPicker.count', { n: filtered.length }) }}</span>
             <button
               v-if="modelValue"
               type="button"
               class="text-primary text-[11px] hover:underline"
               @click="selectIcon('')"
             >
-              使用默认
+              {{ t('iconPicker.useDefault') }}
             </button>
           </div>
         </div>
@@ -124,7 +127,7 @@ function selectIcon (name: string) {
           </div>
           <div v-else class="text-muted-foreground flex flex-col items-center justify-center py-8">
             <span class="material-icons mb-2" style="font-size: 30px">search_off</span>
-            <p class="text-xs">无匹配图标</p>
+            <p class="text-xs">{{ t('iconPicker.noMatch') }}</p>
           </div>
         </div>
 

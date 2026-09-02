@@ -47,6 +47,7 @@ import {
 } from './components/ui/attachment'
 import { LibraryTreeView } from './library'
 import type { LibraryFlatItem, LibraryTreeNode, LibraryTreeServices } from './library'
+import { useI18n } from './i18n'
 import FileInfoForm from './FileInfoForm.vue'
 import type { SaveLocation } from './types'
 
@@ -83,9 +84,12 @@ const props = withDefaults(defineProps<{
   initialFileName: 'document.tiptap',
   initialUrl: '',
   initialNote: '',
-  submitText: '保存',
-  cancelText: '取消',
+  // 文案缺省走内置 i18n,宿主传 prop 覆盖
+  submitText: undefined,
+  cancelText: undefined,
 })
+
+const { t, locale } = useI18n()
 
 const emit = defineEmits<{
   (event: 'save', value: SaveLocation): void
@@ -164,7 +168,7 @@ const { contains } = useFilter({ sensitivity: 'base' })
 /** 标签候选:全部标签标题去重排序 */
 const tagOptions = computed(() => {
   const titles = new Set(tagItems.value.map(item => item.title))
-  return [...titles].sort((a, b) => a.localeCompare(b, 'zh'))
+  return [...titles].sort((a, b) => a.localeCompare(b, locale.value))
 })
 const filteredTagOptions = computed(() =>
   tagSearchTerm.value
@@ -272,7 +276,7 @@ function confirm () {
           <AttachmentDescription>{{ extOf(file) }} · {{ formatSize(file.size) }}</AttachmentDescription>
         </AttachmentContent>
         <AttachmentActions>
-          <AttachmentAction :aria-label="`移除 ${file.name}`" @click="emit('remove-file', file)">
+          <AttachmentAction :aria-label="t('common.remove', { name: file.name })" @click="emit('remove-file', file)">
             <X />
           </AttachmentAction>
         </AttachmentActions>
@@ -281,11 +285,11 @@ function confirm () {
 
     <!-- 素材库:占满宽度,位于 tabs 上方 -->
     <div>
-      <Label class="sr-only" for="save-library">素材库</Label>
+      <Label class="sr-only" for="save-library">{{ t('batch.libraryLabel') }}</Label>
       <!-- v-model 与显式 update 监听同用会覆盖绑定,改单向 + 手动赋值 -->
       <Select :model-value="libraryId" @update:model-value="onLibraryChange">
         <SelectTrigger id="save-library" class="w-full">
-          <SelectValue placeholder="选择素材库" />
+          <SelectValue :placeholder="t('library.selectPlaceholder')" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem v-for="library in libraries" :key="library.id" :value="String(library.id)">
@@ -299,8 +303,8 @@ function confirm () {
     <div class="grid min-h-0 flex-1 gap-4 sm:grid-cols-[minmax(200px,240px)_1fr]">
       <Tabs v-model="tab" class="flex h-full min-h-0 flex-col gap-2">
         <TabsList class="w-full">
-          <TabsTrigger value="folder">文件夹</TabsTrigger>
-          <TabsTrigger value="tag">标签</TabsTrigger>
+          <TabsTrigger value="folder">{{ t('common.folder') }}</TabsTrigger>
+          <TabsTrigger value="tag">{{ t('common.tag') }}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="folder" class="flex min-h-0 flex-col">
@@ -335,7 +339,7 @@ function confirm () {
         />
         <!-- 已选标签:Tags with Listbox(候选=全部标签,多选/× 删除),与树上勾选双向同步 -->
         <div v-if="tagItems.length" class="grid gap-2">
-          <Label>标签</Label>
+          <Label>{{ t('common.tag') }}</Label>
           <Popover v-model:open="tagSelectOpen">
             <ListboxRoot v-model="selectedTagTitlesModel" highlight-on-hover multiple>
               <PopoverAnchor class="inline-flex w-full">
@@ -346,7 +350,7 @@ function confirm () {
                   </TagsInputItem>
 
                   <ListboxFilter v-model="tagSearchTerm" as-child>
-                    <TagsInputInput placeholder="选择标签…" @keydown.enter.prevent @keydown.down="tagSelectOpen = true" />
+                    <TagsInputInput :placeholder="t('save.selectTags')" @keydown.enter.prevent @keydown.down="tagSelectOpen = true" />
                   </ListboxFilter>
 
                   <PopoverTrigger as-child>
@@ -379,8 +383,8 @@ function confirm () {
 
     <!-- 底部:右下角操作 -->
     <div class="flex justify-end gap-2">
-      <Button variant="outline" @click="emit('cancel')">{{ cancelText }}</Button>
-      <Button :disabled="!canSave" @click="confirm">{{ submitText }}</Button>
+      <Button variant="outline" @click="emit('cancel')">{{ cancelText ?? t('common.cancel') }}</Button>
+      <Button :disabled="!canSave" @click="confirm">{{ submitText ?? t('common.save') }}</Button>
     </div>
   </div>
 </template>

@@ -11,7 +11,7 @@
  * 需要自定义时:resolveUrls 覆盖直链拼接;title/confirmText 等覆盖文案。
  * 样式走 shadcn token;组件经 'mira-plugin-ui/library' 源码消费。
  */
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { MiraClient } from 'mira-app-core/shared/sdk'
 // 注意:library 子入口以源码供宿主直接消费,这里必须用相对路径(宿主的 @ 别名指向其自身 src)
 import { Button } from '../components/ui/button'
@@ -24,6 +24,7 @@ import {
 } from '../components/ui/dialog'
 import MediaBrowser from './MediaBrowser.vue'
 import { toApiFilters } from './filterBar'
+import { useI18n } from '../i18n'
 import { resolveMiraServerConfig } from './serverAuth'
 import type { MediaBrowserItem, MediaBrowserServices, MediaPickerFile, MediaPickerUrls } from './types'
 
@@ -60,15 +61,24 @@ const props = withDefaults(defineProps<{
   token: '',
   initialLibraryId: '',
   storageKey: 'mira-plugin-ui:picker-library',
-  title: '从素材库添加',
-  confirmText: '添加',
-  cancelText: '取消',
-  selectedCountText: '已选 {n} 项（可框选/按住 Ctrl 多选）',
-  missingAuthText: '缺少服务器连接信息（server/token）',
-  loadFailedText: '素材库加载失败：{error}',
-  loadingText: '正在加载素材库…',
-  noLibraryText: '暂无素材库',
+  // 文案缺省走内置 i18n,宿主传 prop 覆盖
+  title: undefined,
+  confirmText: undefined,
+  cancelText: undefined,
+  selectedCountText: undefined,
+  missingAuthText: undefined,
+  loadFailedText: undefined,
+  loadingText: undefined,
+  noLibraryText: undefined,
 })
+
+const { t } = useI18n()
+
+const missingAuth = computed(() => props.missingAuthText ?? t('picker.missingAuth'))
+const loadFailed = computed(() => props.loadFailedText ?? t('picker.loadFailed'))
+const loadingText = computed(() => props.loadingText ?? t('picker.loading'))
+const noLibraryText = computed(() => props.noLibraryText ?? t('library.noLibrary'))
+const selectedCountText = computed(() => props.selectedCountText ?? t('picker.selectedCount'))
 
 const emit = defineEmits<{
   /** 确认添加(文件直链 + 宽高) */
@@ -101,7 +111,7 @@ watch(
     serverUrl = config.server
     token = config.token
     if (!serverUrl || !token) {
-      error.value = props.missingAuthText
+      error.value = missingAuth.value
       emit('error', error.value)
       return
     }
@@ -116,7 +126,7 @@ watch(
         ? saved!
         : (props.initialLibraryId || String(libraries.value[0]?.id || ''))
     } catch (e) {
-      error.value = props.loadFailedText.replace('{error}', (e as Error)?.message || String(e))
+      error.value = loadFailed.value.replace('{error}', (e as Error)?.message || String(e))
       emit('error', error.value)
     } finally {
       loading.value = false
@@ -162,7 +172,7 @@ const services: MediaBrowserServices = {
     }))
   },
   async listFiles(filters) {
-    if (!client) throw new Error(props.missingAuthText)
+    if (!client) throw new Error(missingAuth.value)
     const ret: any = await client.files().getFiles({
       libraryId: currentLibraryId.value,
       filters: { ...toApiFilters(filters ?? {}), limit: 200 } as any,
@@ -238,7 +248,7 @@ async function confirmAdd() {
   <Dialog :open="open" @update:open="value => (open = value)">
     <DialogContent class="flex h-[82vh] max-w-5xl flex-col gap-3 sm:max-w-5xl">
       <DialogHeader>
-        <DialogTitle>{{ title }}</DialogTitle>
+        <DialogTitle>{{ title ?? t('picker.title') }}</DialogTitle>
       </DialogHeader>
 
       <div v-if="error" class="text-destructive px-1 text-xs">{{ error }}</div>
@@ -262,8 +272,8 @@ async function confirmAdd() {
 
       <DialogFooter class="gap-2">
         <span class="text-muted-foreground mr-auto text-xs">{{ selectedCountText.replace('{n}', String(selected.length)) }}</span>
-        <Button variant="outline" @click="close">{{ cancelText }}</Button>
-        <Button :disabled="!selected.length" @click="confirmAdd">{{ confirmText }}</Button>
+        <Button variant="outline" @click="close">{{ cancelText ?? t('common.cancel') }}</Button>
+        <Button :disabled="!selected.length" @click="confirmAdd">{{ confirmText ?? t('picker.confirm') }}</Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>

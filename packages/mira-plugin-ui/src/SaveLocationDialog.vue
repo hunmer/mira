@@ -6,6 +6,7 @@
  */
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './components/ui/dialog'
 import SaveLocationForm from './SaveLocationForm.vue'
+import { useI18n } from './i18n'
 import type { SaveLocation } from './types'
 
 interface Library { id: string | number; name?: string; title?: string }
@@ -39,9 +40,14 @@ withDefaults(defineProps<{
   initialFileName: 'document.tiptap',
   initialUrl: '',
   initialNote: '',
-  title: '保存文档',
-  description: '选择素材库与文件夹，将文档保存到指定位置。',
+  // 文案缺省走内置 i18n,宿主传 prop 覆盖
+  title: undefined,
+  description: undefined,
+  submitText: undefined,
+  cancelText: undefined,
 })
+
+const { t } = useI18n()
 
 const emit = defineEmits<{
   (event: 'update:open', value: boolean): void
@@ -58,8 +64,8 @@ function close () { emit('update:open', false) }
   <Dialog :open="open" @update:open="value => value || close()">
     <DialogContent class="sm:max-w-2xl">
       <DialogHeader>
-        <DialogTitle>{{ title }}</DialogTitle>
-        <DialogDescription>{{ description }}</DialogDescription>
+        <DialogTitle>{{ title ?? t('save.title') }}</DialogTitle>
+        <DialogDescription>{{ description ?? t('save.description') }}</DialogDescription>
       </DialogHeader>
       <SaveLocationForm
         :libraries="libraries"

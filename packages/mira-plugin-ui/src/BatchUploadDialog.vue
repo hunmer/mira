@@ -8,6 +8,7 @@
 import { nextTick, onBeforeUnmount, watch } from 'vue'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './components/ui/dialog'
 import BatchUploadForm from './BatchUploadForm.vue'
+import { useI18n } from './i18n'
 import type { BatchUploadFileService, BatchUploadPayload } from './types'
 
 interface Library { id: string | number; name?: string; title?: string }
@@ -45,11 +46,14 @@ const props = withDefaults(defineProps<{
   maxFiles: 200,
   initialFiles: () => [],
   accept: '*',
-  title: '批量上传文件',
-  description: '选择素材库与文件夹，将多个文件上传到指定位置。',
-  submitText: '开始上传',
-  cancelText: '取消',
+  // 文案缺省走内置 i18n,宿主传 prop 覆盖
+  title: undefined,
+  description: undefined,
+  submitText: undefined,
+  cancelText: undefined,
 })
+
+const { t } = useI18n()
 
 console.log('[mira-batch-upload] setup', {
   cep: Boolean((window as typeof window & { cep?: unknown }).cep),
@@ -139,8 +143,8 @@ function close () { emit('update:open', false) }
       class="cep-batch-upload-dialog flex h-[85vh] max-h-[85vh] flex-col overflow-hidden sm:max-w-4xl"
     >
       <DialogHeader>
-        <DialogTitle>{{ title }}</DialogTitle>
-        <DialogDescription>{{ description }}</DialogDescription>
+        <DialogTitle>{{ title ?? t('batch.title') }}</DialogTitle>
+        <DialogDescription>{{ description ?? t('batch.description') }}</DialogDescription>
       </DialogHeader>
       <BatchUploadForm
         class="min-h-0 flex-1"

@@ -8,6 +8,9 @@
 import { Label } from './components/ui/label'
 import { Input } from './components/ui/input'
 import { Textarea } from './components/ui/textarea'
+import { useI18n } from './i18n'
+
+const { t } = useI18n()
 
 const fileName = defineModel<string>('fileName', { default: '' })
 const url = defineModel<string>('url', { default: '' })
@@ -32,7 +35,7 @@ const emit = defineEmits<{
   <div class="grid content-start gap-4">
     <p v-if="placeholder" class="text-muted-foreground text-sm">{{ placeholder }}</p>
     <div class="grid gap-2">
-      <Label for="file-info-name">文件名</Label>
+      <Label for="file-info-name">{{ t('fileInfo.name') }}</Label>
       <Input id="file-info-name" v-model="fileName" autocomplete="off" :disabled="disabled" @keyup.enter="emit('submit')" />
     </div>
     <div class="grid gap-2">
@@ -40,7 +43,7 @@ const emit = defineEmits<{
       <Input id="file-info-url" v-model="url" type="url" inputmode="url" autocomplete="off" placeholder="https://" :disabled="disabled" />
     </div>
     <div class="grid gap-2">
-      <Label for="file-info-note">注释</Label>
+      <Label for="file-info-note">{{ t('fileInfo.note') }}</Label>
       <Textarea
         id="file-info-note"
         v-model="note"

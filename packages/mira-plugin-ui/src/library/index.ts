@@ -27,6 +27,8 @@ export { buildTree, filterTree, flattenTree, collectIds, ROOT_ID } from './tree'
 export { parseDrop, canAcceptDrop, urlKind, type ParsedDrop } from './drag-data'
 export { defaultDropUpload } from './defaultDropUpload'
 export { createLibraryTreeT } from './i18n'
+export { useI18n, setLocale, parseLocale } from '../i18n'
+export type { Locale } from '../i18n'
 export {
   createDefaultFilterRules,
   resetFilterRule,

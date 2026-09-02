@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { LayoutGrid, ListTree, Loader2, LogOut, Moon, Server, Sun } from '@lucide/vue'
+import { LayoutGrid, Languages, ListTree, Loader2, LogOut, Moon, Server, Sun } from '@lucide/vue'
 import { MiraClient, type HealthResponse } from 'mira-app-core/shared/sdk'
-import { BatchUploadDialog, DeviceListPicker, Progress, SaveLocationDialog, type BatchUploadFileService, type DeviceListItem, type DeviceListPickerServices, type SaveLocation } from '@/index'
+import { BatchUploadDialog, DeviceListPicker, Progress, SaveLocationDialog, setLocale, useI18n, type BatchUploadFileService, type DeviceListItem, type DeviceListPickerServices, type SaveLocation } from '@/index'
 import { Dropzone, LibrarySelect, LibraryTreeView, MediaBrowser, MediaLibraryView, ServerManagerDialog, toApiFilters } from '@/library'
 import type { LibraryFlatItem, LibrarySelectServer, LibraryTreeDialog, LibraryTreeDropUploadMode, LibraryTreeFileDropPayload, LibraryTreeServices, LibraryTreeNode, LibraryTreeUpload, LibraryTreeUploadTarget, ManagedServer, MediaBrowserFilters, MediaBrowserItem, MediaBrowserServerManager, MediaBrowserServices, MediaDetailItem, MediaDetailServices, MediaLibraryServices, ServerManagerServices } from '@/library'
 import { Button } from '@/components/ui/button'
@@ -13,6 +13,12 @@ const dark = ref(false)
 function toggleDark () {
   dark.value = !dark.value
   document.documentElement.classList.toggle('dark', dark.value)
+}
+
+/* ---------- i18n 语言切换 ---------- */
+const { locale } = useI18n()
+function toggleLocale () {
+  setLocale(locale.value === 'zh' ? 'en' : 'zh')
 }
 
 /* ---------- Mira SDK 真实数据 ---------- */
@@ -635,10 +641,16 @@ async function uploadDirect (files: File[], target?: LibraryTreeUploadTarget) {
     <div class="mx-auto flex w-full flex-col gap-8 px-6 py-10">
       <header class="flex items-start justify-between gap-4">
         <h1 class="text-2xl font-semibold tracking-tight">mira-plugin-ui Demo</h1>
-        <Button variant="outline" size="icon" aria-label="切换主题" @click="toggleDark">
-          <Sun v-if="dark" class="size-4" />
-          <Moon v-else class="size-4" />
-        </Button>
+        <div class="flex items-center gap-2">
+          <Button variant="outline" size="icon" aria-label="切换主题" @click="toggleDark">
+            <Sun v-if="dark" class="size-4" />
+            <Moon v-else class="size-4" />
+          </Button>
+          <Button variant="outline" aria-label="切换语言" @click="toggleLocale">
+            <Languages class="size-4" />
+            {{ locale === 'zh' ? 'EN' : '中文' }}
+          </Button>
+        </div>
       </header>
 
       <!-- 连接卡片：登录 / 会话 -->
