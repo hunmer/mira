@@ -1,4 +1,4 @@
-$ErrorActionPreference = 'Stop'
+﻿$ErrorActionPreference = 'Stop'
 Write-Host '[1/7] Checking Node.js ...'
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $MiraRoot = Join-Path $env:ProgramData 'Mira'
