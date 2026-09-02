@@ -101,7 +101,7 @@ export function registerFolderTools(mcp: McpServer, ctx: ToolContext): void {
             inputSchema: {
                 libraryId: z.string(),
                 fileId: z.number(),
-                folderId: z.number(),
+                folderId: z.union([z.number(), z.string()]).describe('文件夹 ID 或名称'),
             },
         },
         async (args) => {

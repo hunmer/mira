@@ -91,7 +91,7 @@ export function registerTagTools(mcp: McpServer, ctx: ToolContext): void {
             inputSchema: {
                 libraryId: z.string(),
                 fileId: z.number(),
-                tags: z.array(z.string()).describe('标签数组（名称或 ID）'),
+                tags: z.array(z.union([z.string(), z.number()])).describe('标签数组（名称或 ID）'),
             },
         },
         async (args) => {

@@ -75,7 +75,7 @@ export interface QueryTagRequest {
 export interface SetFileTagsRequest {
     libraryId: string;
     fileId: number;
-    tags: string[];
+    tags: Array<string | number>;
 }
 
 /**
@@ -248,7 +248,7 @@ export class TagModule {
     async addTagsToFile(
         libraryId: string,
         fileId: number,
-        tags: string[]
+        tags: Array<string | number>
     ): Promise<SetFileTagsResponse> {
         return await this.setFileTags({ libraryId, fileId, tags });
     }

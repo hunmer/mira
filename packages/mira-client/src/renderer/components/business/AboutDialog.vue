@@ -90,6 +90,10 @@
             <div class="rounded-xl bg-primary/10 text-primary px-3 py-2 text-sm">
               {{ $t('business.aboutDialog.newVersionFound') }} <span class="font-semibold">v{{ updateInfo?.version }}</span>
             </div>
+            <!-- 更新日志（release body 为 HTML 片段或 Markdown，由 ReleaseNotes 统一渲染并消毒） -->
+            <div v-if="updateInfo?.releaseNotes" class="max-h-48 overflow-y-auto rounded-xl bg-muted/40 px-1 py-2">
+              <ReleaseNotes :notes="updateInfo.releaseNotes" />
+            </div>
             <div v-if="downloadProgress !== null" class="w-full h-1.5 rounded-full bg-muted overflow-hidden">
               <div
                 class="h-full bg-primary transition-[width] duration-200"
@@ -145,6 +149,7 @@ import { useI18n } from 'vue-i18n'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useToast } from '@renderer/composables/useToast'
 import { environment } from '@renderer/utils'
+import ReleaseNotes from './ReleaseNotes.vue'
 import miraLogo from '@/renderer/assets/mira-logo.png'
 
 interface Props {
@@ -174,7 +179,11 @@ const latestVersion = ref<string>('')
 // 更新状态机：idle | checking | not-available | available | downloading | downloaded | error
 type UpdateState = 'idle' | 'checking' | 'not-available' | 'available' | 'downloading' | 'downloaded' | 'error'
 const updateState = ref<UpdateState>('idle')
-const updateInfo = ref<{ version: string; releaseDate?: string } | null>(null)
+const updateInfo = ref<{
+  version: string
+  releaseDate?: string
+  releaseNotes?: string | Array<{ note?: string; version?: string }> | null
+} | null>(null)
 const downloadProgress = ref<number | null>(null)
 const errorMessage = ref('')
 

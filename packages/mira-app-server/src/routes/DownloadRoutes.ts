@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { AuthRouter } from './AuthRouter';
 import { MiraServer } from '..';
+import { resolveFolderId, resolveTagIds } from './FileAssociationResolver';
 
 /**
  * 下载执行器路由
@@ -34,16 +35,20 @@ export class DownloadRoutes {
                 if (!libraryId) return res.status(400).json({ code: 400, message: 'libraryId 必填' });
                 const urlList: string[] = Array.isArray(urls) ? urls.filter((u) => typeof u === 'string' && u.trim()) : [];
                 if (urlList.length === 0) return res.status(400).json({ code: 400, message: 'urls 为空' });
-                const normalizedTagIds = Array.isArray(tagIds)
-                    ? Array.from(new Set(tagIds.map((id: unknown) => String(id))))
-                    : [];
+                const library = this.backend.libraries?.getLibrary(libraryId);
+                if (!library) return res.status(404).json({ code: 404, message: 'Library not found' });
+                const normalizedTagIds = await resolveTagIds(
+                    library.libraryService,
+                    Array.isArray(tagIds) ? tagIds : [],
+                );
+                const normalizedFolderId = await resolveFolderId(library.libraryService, folderId);
 
                 const batchId = await this.backend.downloadExecutor.enqueueBatch(
                     urlList.map((u) => ({
                         url: u.trim(),
                         libraryId,
                         userId,
-                        folderId: folderId ?? null,
+                        folderId: normalizedFolderId ?? null,
                         tagIds: normalizedTagIds,
                         clientId: clientId ?? null,
                     })),

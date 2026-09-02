@@ -82,7 +82,7 @@ export interface QueryFolderRequest {
 export interface SetFileFolderRequest {
     libraryId: string;
     fileId: number;
-    folder: number | null;
+    folder: number | string | null;
 }
 
 /**
@@ -260,13 +260,13 @@ export class FolderModule {
      * 便捷方法：将文件移动到文件夹
      * @param libraryId 素材库ID
      * @param fileId 文件ID
-     * @param folderId 文件夹ID
+     * @param folderId 文件夹 ID 或名称
      * @returns Promise<SetFileFolderResponse>
      */
     async moveFileToFolder(
         libraryId: string,
         fileId: number,
-        folderId: number
+        folderId: number | string
     ): Promise<SetFileFolderResponse> {
         return await this.setFileFolder({ libraryId, fileId, folder: folderId });
     }

@@ -6,6 +6,7 @@ import multer from 'multer';
 import { MiraServer } from '../server';
 import { canAccessLibrary } from '../middleware/permission';
 import { resolveUploadImport } from './UploadImportMode';
+import { resolveFolderId, resolveTagIds } from './FileAssociationResolver';
 
 export class FileRoutes {
     private router: Router;
@@ -66,8 +67,9 @@ export class FileRoutes {
                     return res.status(404).json({ success: false, error: 'Source file not found' });
                 }
                 const fileData: Record<string, any> = {};
-                if (folderId) fileData.folder_id = Number(folderId);
-                if (Array.isArray(tags)) fileData.tags = JSON.stringify(tags);
+                const resolvedFolderId = await resolveFolderId(obj.libraryService, folderId);
+                if (resolvedFolderId !== undefined) fileData.folder_id = resolvedFolderId;
+                if (Array.isArray(tags)) fileData.tags = JSON.stringify(await resolveTagIds(obj.libraryService, tags));
                 const configuredImportType = obj.libraryService.config.customFields?.importType
                     ?? obj.libraryService.config.importType ?? 'copy';
                 const result = await obj.libraryService.createFileFromPath(sourcePath, fileData, {
@@ -119,9 +121,11 @@ export class FileRoutes {
             if (isUpdateOperation && (!files || !files.length)) {
                 try {
                     const { tags, folder_id } = payload?.data || {};
+                    const tagIds = await resolveTagIds(obj.libraryService, Array.isArray(tags) ? tags : []);
+                    const resolvedFolderId = await resolveFolderId(obj.libraryService, folder_id);
                     const updateData: Record<string, any> = {
-                        tags: JSON.stringify(tags || []),
-                        folder_id: folder_id || existingFile.folder_id,
+                        tags: JSON.stringify(tagIds),
+                        folder_id: resolvedFolderId === undefined ? existingFile.folder_id : resolvedFolderId,
                         imported_at: Date.now(),
                     };
                     if (uploader) updateData.uploader = uploader;
@@ -185,6 +189,9 @@ export class FileRoutes {
             try {
                 const results = [];
                 let urlBatchId: string | undefined;
+                const { tags, folder_id } = payload?.data || {};
+                const tagIds = await resolveTagIds(obj.libraryService, Array.isArray(tags) ? tags : []);
+                const resolvedFolderId = await resolveFolderId(obj.libraryService, folder_id);
                 const validUrlItems = urlItems.filter((url: unknown) => typeof url === 'string' && /^https?:\/\//i.test(url));
                 if (validUrlItems.length) {
                     const userId = (req as any).user?.id;
@@ -197,7 +204,7 @@ export class FileRoutes {
                                 url,
                                 libraryId,
                                 userId,
-                                folderId: payload?.data?.folder_id ? Number(payload.data.folder_id) : null,
+                                folderId: resolvedFolderId ?? null,
                                 clientId,
                             })),
                     );
@@ -206,16 +213,14 @@ export class FileRoutes {
                     try {
                         // 生成唯一文件名并保存文件
                         const originalName = Buffer.from(file.originalname, 'latin1').toString('utf8');
-                        const { tags, folder_id } = payload?.data || {}
-
                         let result;
 
                         if (isUpdateOperation) {
                             // 更新操作：更新文件内容和元数据
                             const updateData: Record<string, any> = {
                                 name: req.body.name || originalName,
-                                tags: JSON.stringify(tags || []),
-                                folder_id: folder_id || existingFile.folder_id,
+                                tags: JSON.stringify(tagIds),
+                                folder_id: resolvedFolderId === undefined ? existingFile.folder_id : resolvedFolderId,
                                 size: file.size,
                                 imported_at: Date.now(),
                             };
@@ -308,8 +313,8 @@ export class FileRoutes {
                             // 创建操作（原有逻辑）
                             const fileData = {
                                 name: req.body.name || originalName,
-                                tags: JSON.stringify(tags || []),
-                                folder_id: folder_id || null,
+                                tags: JSON.stringify(tagIds),
+                                folder_id: resolvedFolderId ?? null,
                                 uploader,
                             };
 
@@ -1560,12 +1565,26 @@ export class FileRoutes {
                 if (data.notes !== undefined) updateData.notes = data.notes;
                 if (data.stars !== undefined) updateData.stars = data.stars;
                 if (data.custom_fields !== undefined) updateData.custom_fields = typeof data.custom_fields === 'string' ? data.custom_fields : JSON.stringify(data.custom_fields);
+                if (data.tags !== undefined) {
+                    if (!Array.isArray(data.tags)) {
+                        return res.status(400).json({ code: 400, message: 'tags must be an array' });
+                    }
+                    updateData.tags = JSON.stringify(await resolveTagIds(obj.libraryService, data.tags));
+                }
+                const requestedFolder = data.folder_id !== undefined ? data.folder_id : data.folderId;
+                const resolvedFolderId = await resolveFolderId(obj.libraryService, requestedFolder);
 
-                if (Object.keys(updateData).length === 0) {
+                if (Object.keys(updateData).length === 0 && resolvedFolderId === undefined) {
                     return res.status(400).json({ code: 400, message: 'No valid fields to update' });
                 }
 
-                const { oldData } = await obj.libraryService.updateFile(parseInt(fileId), updateData);
+                let oldData = file;
+                if (Object.keys(updateData).length > 0) {
+                    ({ oldData } = await obj.libraryService.updateFile(parseInt(fileId), updateData));
+                }
+                if (resolvedFolderId !== undefined) {
+                    await obj.libraryService.setFileFolder(parseInt(fileId), resolvedFolderId);
+                }
                 const result = await obj.libraryService.getFile(parseInt(fileId));
                 this.broadcastFileEvent('file::updated', libraryId, result, parseInt(fileId), oldData);
 

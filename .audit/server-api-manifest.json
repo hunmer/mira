@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-24T11:19:24.774Z",
+  "generatedAt": "2026-09-02T06:59:41.002Z",
   "mounts": {
     "express.static(publicDir)": "/static",
     "express.static(dashboardDir,{//SPA回退：未命中的静态资源回落到index.html，保证前端路由可刷新setHeaders:(res,filePath)=>{if(path.extname(filePath)==='.html'){res.setHeader('Cache-Control','no-cache');}},})": "/dashboard",
@@ -25,6 +25,8 @@
   },
   "unmatchedRouteFiles": [
     "BaseRouter.ts",
+    "FileAssociationResolver.ts",
+    "UploadImportMode.ts",
     "WebSocketRouter.ts"
   ],
   "routes": [
@@ -409,7 +411,7 @@
       "dynamic": false,
       "domain": "download",
       "file": "packages/mira-app-server/src/routes/DownloadRoutes.ts",
-      "line": 26,
+      "line": 27,
       "middlewares": [
         "this.authRouter.authMiddleware"
       ]
@@ -421,10 +423,20 @@
       "dynamic": false,
       "domain": "download",
       "file": "packages/mira-app-server/src/routes/DownloadRoutes.ts",
-      "line": 57,
+      "line": 62,
       "middlewares": [
         "this.authRouter.authMiddleware"
       ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/files/import-path",
+      "rawPath": "/import-path",
+      "dynamic": false,
+      "domain": "files",
+      "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
+      "line": 54,
+      "middlewares": []
     },
     {
       "method": "POST",
@@ -433,7 +445,7 @@
       "dynamic": false,
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 52,
+      "line": 84,
       "middlewares": [
         "this.upload.array('files')"
       ]
@@ -445,7 +457,7 @@
       "dynamic": false,
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 359,
+      "line": 424,
       "middlewares": []
     },
     {
@@ -455,7 +467,7 @@
       "dynamic": false,
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 467,
+      "line": 532,
       "middlewares": []
     },
     {
@@ -465,7 +477,7 @@
       "dynamic": false,
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 484,
+      "line": 549,
       "middlewares": []
     },
     {
@@ -475,7 +487,7 @@
       "dynamic": false,
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 502,
+      "line": 567,
       "middlewares": []
     },
     {
@@ -485,7 +497,7 @@
       "dynamic": false,
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 527,
+      "line": 592,
       "middlewares": [
         "this.coverUpload.single('cover"
       ]
@@ -497,7 +509,7 @@
       "dynamic": false,
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 560,
+      "line": 625,
       "middlewares": []
     },
     {
@@ -507,7 +519,7 @@
       "dynamic": false,
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 589,
+      "line": 654,
       "middlewares": []
     },
     {
@@ -517,7 +529,7 @@
       "dynamic": false,
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 618,
+      "line": 683,
       "middlewares": []
     },
     {
@@ -527,7 +539,7 @@
       "dynamic": false,
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 649,
+      "line": 714,
       "middlewares": []
     },
     {
@@ -537,7 +549,7 @@
       "dynamic": false,
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 742,
+      "line": 807,
       "middlewares": []
     },
     {
@@ -547,7 +559,7 @@
       "dynamic": false,
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 790,
+      "line": 855,
       "middlewares": []
     },
     {
@@ -557,7 +569,7 @@
       "dynamic": false,
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 911,
+      "line": 976,
       "middlewares": []
     },
     {
@@ -567,7 +579,7 @@
       "dynamic": false,
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 991,
+      "line": 1056,
       "middlewares": []
     },
     {
@@ -577,7 +589,7 @@
       "dynamic": false,
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 1056,
+      "line": 1121,
       "middlewares": []
     },
     {
@@ -587,7 +599,7 @@
       "dynamic": false,
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 1161,
+      "line": 1226,
       "middlewares": []
     },
     {
@@ -597,7 +609,7 @@
       "dynamic": false,
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 1207,
+      "line": 1272,
       "middlewares": []
     },
     {
@@ -607,7 +619,7 @@
       "dynamic": false,
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 1238,
+      "line": 1304,
       "middlewares": []
     },
     {
@@ -617,7 +629,7 @@
       "dynamic": false,
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 1291,
+      "line": 1357,
       "middlewares": []
     },
     {
@@ -627,7 +639,7 @@
       "dynamic": false,
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 1357,
+      "line": 1426,
       "middlewares": []
     },
     {
@@ -637,7 +649,7 @@
       "dynamic": false,
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 1421,
+      "line": 1490,
       "middlewares": []
     },
     {
@@ -647,7 +659,7 @@
       "dynamic": false,
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 1479,
+      "line": 1548,
       "middlewares": []
     },
     {
@@ -657,7 +669,7 @@
       "dynamic": false,
       "domain": "folders",
       "file": "packages/mira-app-server/src/routes/FolderRouter.ts",
-      "line": 16,
+      "line": 17,
       "middlewares": []
     },
     {
@@ -667,7 +679,7 @@
       "dynamic": false,
       "domain": "folders",
       "file": "packages/mira-app-server/src/routes/FolderRouter.ts",
-      "line": 21,
+      "line": 22,
       "middlewares": []
     },
     {
@@ -677,7 +689,7 @@
       "dynamic": false,
       "domain": "folders",
       "file": "packages/mira-app-server/src/routes/FolderRouter.ts",
-      "line": 58,
+      "line": 59,
       "middlewares": []
     },
     {
@@ -687,7 +699,7 @@
       "dynamic": false,
       "domain": "folders",
       "file": "packages/mira-app-server/src/routes/FolderRouter.ts",
-      "line": 63,
+      "line": 64,
       "middlewares": []
     },
     {
@@ -697,7 +709,7 @@
       "dynamic": false,
       "domain": "folders",
       "file": "packages/mira-app-server/src/routes/FolderRouter.ts",
-      "line": 73,
+      "line": 74,
       "middlewares": []
     },
     {
@@ -707,7 +719,7 @@
       "dynamic": false,
       "domain": "folders",
       "file": "packages/mira-app-server/src/routes/FolderRouter.ts",
-      "line": 84,
+      "line": 85,
       "middlewares": []
     },
     {
@@ -717,7 +729,7 @@
       "dynamic": false,
       "domain": "folders",
       "file": "packages/mira-app-server/src/routes/FolderRouter.ts",
-      "line": 106,
+      "line": 107,
       "middlewares": []
     },
     {
@@ -727,7 +739,7 @@
       "dynamic": false,
       "domain": "folders",
       "file": "packages/mira-app-server/src/routes/FolderRouter.ts",
-      "line": 119,
+      "line": 120,
       "middlewares": []
     },
     {
@@ -737,7 +749,7 @@
       "dynamic": false,
       "domain": "folders",
       "file": "packages/mira-app-server/src/routes/FolderRouter.ts",
-      "line": 167,
+      "line": 169,
       "middlewares": []
     },
     {
@@ -867,7 +879,7 @@
       "dynamic": false,
       "domain": "fs",
       "file": "packages/mira-app-server/src/routes/FsRouter.ts",
-      "line": 399,
+      "line": 404,
       "middlewares": []
     },
     {
@@ -877,7 +889,7 @@
       "dynamic": false,
       "domain": "fs",
       "file": "packages/mira-app-server/src/routes/FsRouter.ts",
-      "line": 419,
+      "line": 424,
       "middlewares": []
     },
     {
@@ -1037,7 +1049,7 @@
       "dynamic": false,
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 530,
+      "line": 534,
       "middlewares": []
     },
     {
@@ -1047,7 +1059,7 @@
       "dynamic": false,
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 570,
+      "line": 574,
       "middlewares": []
     },
     {
@@ -1057,7 +1069,7 @@
       "dynamic": false,
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 614,
+      "line": 618,
       "middlewares": []
     },
     {
@@ -1067,7 +1079,7 @@
       "dynamic": false,
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 651,
+      "line": 655,
       "middlewares": []
     },
     {
@@ -1077,7 +1089,7 @@
       "dynamic": false,
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 697,
+      "line": 701,
       "middlewares": []
     },
     {
@@ -1319,7 +1331,7 @@
       "dynamic": false,
       "domain": "tags",
       "file": "packages/mira-app-server/src/routes/TagRouter.ts",
-      "line": 16,
+      "line": 17,
       "middlewares": []
     },
     {
@@ -1329,7 +1341,7 @@
       "dynamic": false,
       "domain": "tags",
       "file": "packages/mira-app-server/src/routes/TagRouter.ts",
-      "line": 21,
+      "line": 22,
       "middlewares": []
     },
     {
@@ -1339,7 +1351,7 @@
       "dynamic": false,
       "domain": "tags",
       "file": "packages/mira-app-server/src/routes/TagRouter.ts",
-      "line": 26,
+      "line": 27,
       "middlewares": []
     },
     {
@@ -1349,7 +1361,7 @@
       "dynamic": false,
       "domain": "tags",
       "file": "packages/mira-app-server/src/routes/TagRouter.ts",
-      "line": 36,
+      "line": 37,
       "middlewares": []
     },
     {
@@ -1359,7 +1371,7 @@
       "dynamic": false,
       "domain": "tags",
       "file": "packages/mira-app-server/src/routes/TagRouter.ts",
-      "line": 47,
+      "line": 48,
       "middlewares": []
     },
     {
@@ -1369,7 +1381,7 @@
       "dynamic": false,
       "domain": "tags",
       "file": "packages/mira-app-server/src/routes/TagRouter.ts",
-      "line": 69,
+      "line": 70,
       "middlewares": []
     },
     {
@@ -1379,7 +1391,7 @@
       "dynamic": false,
       "domain": "tags",
       "file": "packages/mira-app-server/src/routes/TagRouter.ts",
-      "line": 81,
+      "line": 82,
       "middlewares": []
     },
     {
@@ -1389,7 +1401,7 @@
       "dynamic": false,
       "domain": "tags",
       "file": "packages/mira-app-server/src/routes/TagRouter.ts",
-      "line": 133,
+      "line": 118,
       "middlewares": []
     },
     {

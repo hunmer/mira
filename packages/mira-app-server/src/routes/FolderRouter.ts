@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { MiraServer } from '../server';
 import { BaseRouter } from './BaseRouter';
+import { resolveFolderId } from './FileAssociationResolver';
 
 export class FolderRouter extends BaseRouter {
     private router: Router;
@@ -120,7 +121,7 @@ export class FolderRouter extends BaseRouter {
             try {
                 const libraryId = req.body.libraryId || req.query.libraryId as string;
                 const fileId = req.body.fileId;
-                const folderId = req.body.folder;
+                const folder = req.body.folder;
 
                 if (!fileId) {
                     res.status(400).json({ code: 400, message: 'File ID is required', data: null });
@@ -135,6 +136,7 @@ export class FolderRouter extends BaseRouter {
 
                 const { library } = validation;
                 const db = library.libraryService;
+                const folderId = await resolveFolderId(db, folder);
 
                 // 移动前注册忽略路径，避免 Watcher 重复处理
                 const oldFile = await db.getFile(parseInt(fileId));
@@ -144,7 +146,7 @@ export class FolderRouter extends BaseRouter {
                     if (oldPath) watcher.ignorePath(oldPath);
                 }
 
-                const result = await db.setFileFolder(parseInt(fileId), folderId);
+                const result = await db.setFileFolder(parseInt(fileId), folderId ?? null);
                 if (result.success) {
                     const newFile = await db.getFile(parseInt(fileId));
                     if (newFile) {

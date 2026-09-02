@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-24T11:20:32.642Z",
+  "generatedAt": "2026-09-02T07:00:14.585Z",
   "summary": {
     "P3": 12,
     "excluded": 13,
@@ -306,7 +306,7 @@
       "evidence": [
         "packages/mira-app-core/src/shared/sdk/modules/UserModule.contract.test.ts:37 [test]",
         "packages/mira-app-core/src/shared/sdk/modules/UserModule.ts:82",
-        "packages/mira-client/dist-renderer/assets/js/main-B6NLT87Y.js:95",
+        "packages/mira-client/dist-renderer/assets/js/main-CleWDgEk.js:95",
         "packages/mira-dashboard-next/src/layouts/DefaultLayout.vue:137",
         "packages/mira-dashboard-next/src/views/mira/statistics/index.vue:369",
         "packages/mira-dashboard-next/src/views/mira/statistics/index.vue:417"

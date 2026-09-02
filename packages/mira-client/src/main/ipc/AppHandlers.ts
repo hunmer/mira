@@ -172,14 +172,17 @@ export class AppHandlers {
   }
 
   /**
-   * 处理窗口最大化/还原
+   * 处理窗口最大化/还原：还原时恢复默认大小（1200x800，与 MainWindowService 默认值一致）
+   * 并居中，而非恢复最大化前的上一次尺寸
    */
   private async handleWindowMaximize(event: IpcMainInvokeEvent): Promise<void> {
     const webContents = event.sender
     const window = BrowserWindow.fromWebContents(webContents)
     if (window) {
       if (window.isMaximized()) {
-        window.restore()
+        window.unmaximize()
+        window.setSize(1200, 800)
+        window.center()
       } else {
         window.maximize()
       }

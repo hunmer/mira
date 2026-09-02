@@ -18,9 +18,13 @@
       <DialogContent class="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{{ $t('commonUi.updateDialog.title', { version: updateDialog.version }) }}</DialogTitle>
-          <DialogDescription>
-            {{ updateDialog.releaseNotes || $t('commonUi.updateDialog.defaultReleaseNotes') }}
+          <!-- 有 releaseNotes 时用普通 div：DialogDescription 渲染为 p，无法容纳富文本块级元素 -->
+          <DialogDescription v-if="!updateDialog.releaseNotes">
+            {{ $t('commonUi.updateDialog.defaultReleaseNotes') }}
           </DialogDescription>
+          <div v-else class="max-h-60 overflow-y-auto text-left">
+            <ReleaseNotes :notes="updateDialog.releaseNotes" />
+          </div>
         </DialogHeader>
         <div v-if="updateDialog.downloading" class="space-y-2">
           <Progress :value="updateDialog.progress" class="w-full" />
@@ -94,6 +98,7 @@ import { useRouter } from 'vue-router'
 import GlobalLoading from './components/GlobalLoading.vue'
 import ServerStartupLoading from './components/ServerStartupLoading.vue'
 import UrlImportDialog from './components/business/UrlImportDialog.vue'
+import ReleaseNotes from './components/business/ReleaseNotes.vue'
 import { useSettingsStore } from './stores/settings'
 import { useUrlImportStore } from './stores/urlImport'
 import { confirmState } from './composables/useConfirm'
