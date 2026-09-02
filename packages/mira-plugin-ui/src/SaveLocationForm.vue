@@ -63,6 +63,8 @@ const props = withDefaults(defineProps<{
   files?: File[]
   initialLibraryId?: string
   initialFolderId?: string
+  /** 初始选中的标签名 */
+  initialTags?: string[]
   initialFileName?: string
   /** 源链接(存入文件元数据 website) */
   initialUrl?: string
@@ -77,6 +79,7 @@ const props = withDefaults(defineProps<{
   files: () => [],
   initialLibraryId: '',
   initialFolderId: '',
+  initialTags: () => [],
   initialFileName: 'document.tiptap',
   initialUrl: '',
   initialNote: '',
@@ -99,7 +102,11 @@ const folderId = ref(props.initialFolderId || '')
 const fileName = ref(props.initialFileName || 'document.tiptap')
 const url = ref(props.initialUrl || '')
 const note = ref(props.initialNote || '')
-const selectedTagIds = ref(new Set<number>())
+const selectedTagIds = ref(new Set(
+  props.tags
+    .filter(item => props.initialTags.includes(item.title ?? item.name ?? String(item.id)))
+    .map(item => Number(item.id)),
+))
 const tab = ref<'folder' | 'tag'>('folder')
 
 // ---- 树数据:扁平项归一化成 LibraryFlatItem(组装/搜索/展开由 LibraryTreeView 自理) ----

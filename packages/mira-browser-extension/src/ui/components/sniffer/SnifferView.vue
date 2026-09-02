@@ -317,6 +317,7 @@ async function uploadSelected() {
 const importToOpen = ref(false);
 const importToLibraryId = ref('');
 const importToInitialFolderId = ref('');
+const importToInitialTags = ref<string[]>([]);
 const importToFolders = ref<any[]>([]);
 const importToTags = ref<any[]>([]);
 
@@ -328,9 +329,20 @@ async function loadImportToTree() {
 
 async function openImportTo() {
   if (!selected.value.size) return;
-  importToLibraryId.value = settings.value.libraryId;
-  importToInitialFolderId.value = '';
+  const rememberedLibraryId = settings.value.snifferImportLibraryId;
+  const canRestoreLocation = libraries.value.some(library => String(library.id) === rememberedLibraryId);
+  importToLibraryId.value = canRestoreLocation
+    ? rememberedLibraryId
+    : settings.value.libraryId;
   await loadImportToTree();
+  importToInitialFolderId.value = canRestoreLocation
+    && importToFolders.value.some(folder => String(folder.id) === settings.value.snifferImportFolderId)
+    ? settings.value.snifferImportFolderId
+    : '';
+  const availableTagNames = new Set(importToTags.value.map(tag => tag.title ?? tag.name ?? String(tag.id)));
+  importToInitialTags.value = canRestoreLocation
+    ? settings.value.snifferImportTags.filter(tag => availableTagNames.has(tag))
+    : [];
   importToOpen.value = true;
 }
 
@@ -338,6 +350,7 @@ async function openImportTo() {
 async function onImportToLibraryChange(id: string) {
   importToLibraryId.value = id;
   importToInitialFolderId.value = '';
+  importToInitialTags.value = [];
   await loadImportToTree();
 }
 
@@ -350,6 +363,11 @@ async function importToCreateNode({ kind, parentId, title }: { kind: 'folder' | 
 
 async function onImportToSave(loc: ImportLocation) {
   importToOpen.value = false;
+  await update({
+    snifferImportLibraryId: loc.libraryId,
+    snifferImportFolderId: loc.folderId ?? '',
+    snifferImportTags: loc.tags ?? [],
+  });
   await importSelected(loc);
 }
 
@@ -590,6 +608,7 @@ async function downloadSelected() {
       :tags="importToTags"
       :initial-library-id="importToLibraryId"
       :initial-folder-id="importToInitialFolderId"
+      :initial-tags="importToInitialTags"
       :title="t('sniffer.importTo')"
       :description="t('sniffer.importToHint')"
       :submit-text="t('sniffer.importToSubmit')"

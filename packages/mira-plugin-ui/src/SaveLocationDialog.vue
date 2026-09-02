@@ -20,6 +20,7 @@ withDefaults(defineProps<{
   files?: File[]
   initialLibraryId?: string
   initialFolderId?: string
+  initialTags?: string[]
   initialFileName?: string
   initialUrl?: string
   initialNote?: string
@@ -34,6 +35,7 @@ withDefaults(defineProps<{
   files: () => [],
   initialLibraryId: '',
   initialFolderId: '',
+  initialTags: () => [],
   initialFileName: 'document.tiptap',
   initialUrl: '',
   initialNote: '',
@@ -66,6 +68,7 @@ function close () { emit('update:open', false) }
         :files="files"
         :initial-library-id="initialLibraryId"
         :initial-folder-id="initialFolderId"
+        :initial-tags="initialTags"
         :initial-file-name="initialFileName"
         :initial-url="initialUrl"
         :initial-note="initialNote"

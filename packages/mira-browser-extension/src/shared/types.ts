@@ -178,6 +178,12 @@ export interface ExtensionSettings {
   autoScrollDelay: number;
   /** 批量导入时的 maxurl 解析和图片抓取并发数 */
   batchImportConcurrency: number;
+  /** 嗅探「导入到」上次使用的素材库 */
+  snifferImportLibraryId: string;
+  /** 嗅探「导入到」上次使用的文件夹 */
+  snifferImportFolderId: string;
+  /** 嗅探「导入到」上次使用的标签名 */
+  snifferImportTags: string[];
   /** 前端高清大图升级(maxurl),默认开 */
   imuEnabled: boolean;
   /** 高清图 URL 替换规则(JSON 编辑后持久化) */
@@ -214,6 +220,9 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   autoScrollEnabled: false,
   autoScrollDelay: 800,
   batchImportConcurrency: 3,
+  snifferImportLibraryId: '',
+  snifferImportFolderId: '',
+  snifferImportTags: [],
   imuEnabled: true,
   imuRules: DEFAULT_IMAGE_URL_RULES,
 };

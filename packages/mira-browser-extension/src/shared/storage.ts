@@ -57,6 +57,7 @@ export function mergeWithDefaults(partial: Partial<ExtensionSettings>): Extensio
     : (merged.dragPopoverHosts.length > 0 ? 'whitelist' : 'blacklist');
   merged.snifferKinds = orDefault(merged.snifferKinds, DEFAULT_SETTINGS.snifferKinds);
   merged.snifferAspectRatios = orDefault(merged.snifferAspectRatios, DEFAULT_SETTINGS.snifferAspectRatios);
+  merged.snifferImportTags = orDefault(merged.snifferImportTags, DEFAULT_SETTINGS.snifferImportTags);
   merged.imuRules = validRules(merged.imuRules);
   merged.batchImportConcurrency = Math.min(10, Math.max(1,
     Math.floor(Number(merged.batchImportConcurrency) || DEFAULT_SETTINGS.batchImportConcurrency)

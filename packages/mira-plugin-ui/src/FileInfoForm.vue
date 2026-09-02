@@ -7,6 +7,7 @@
 // 注意:本组件可经 'mira-plugin-ui/src/...' 源码供宿主直接消费,必须用相对路径(宿主的 @ 别名指向其自身 src)
 import { Label } from './components/ui/label'
 import { Input } from './components/ui/input'
+import { Textarea } from './components/ui/textarea'
 
 const fileName = defineModel<string>('fileName', { default: '' })
 const url = defineModel<string>('url', { default: '' })
@@ -40,12 +41,11 @@ const emit = defineEmits<{
     </div>
     <div class="grid gap-2">
       <Label for="file-info-note">注释</Label>
-      <textarea
+      <Textarea
         id="file-info-note"
         v-model="note"
         rows="3"
         :disabled="disabled"
-        class="bg-muted ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex min-h-16 w-full rounded-md px-3 py-2 text-sm transition-[color,box-shadow] outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
       />
     </div>
   </div>
