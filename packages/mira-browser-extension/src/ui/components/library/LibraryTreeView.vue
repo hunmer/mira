@@ -60,7 +60,7 @@ async function uploadUrls(urls: string[], target?: { folderId?: number; tags?: s
   });
 }
 
-// ---- 本地文件上传:folder 落点 → folderId;tag 落点 → tags(按标题) ----
+// ---- 本地文件上传:folder 落点 → folderId;tag 落点 → tags(标签 ID) ----
 // pick:右键/工具栏「上传」打开批量上传对话框(BatchUploadHost 在 App.vue),带节点落点
 const batchUpload = useBatchUpload();
 const upload = {

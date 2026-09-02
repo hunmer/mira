@@ -20,7 +20,7 @@ export interface BatchUploadFileMeta {
   note?: string
   /** 单独设置的目标文件夹 id(经文件夹树应用到选中文件) */
   folderId?: string
-  /** 单独设置的标签(按标题名称,服务器按名称关联) */
+  /** 单独设置的标签 ID */
   tags?: string[]
 }
 

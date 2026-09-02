@@ -29,7 +29,7 @@ function dragEvent(type: string, dt: DataTransfer) {
 
 const services: LibraryTreeServices = {
   listFolders: async () => [{ id: 1, title: '设计素材', parent_id: 0 }],
-  listTags: async () => [{ id: 1, title: '灵感', parent_id: 0 }],
+  listTags: async () => [{ id: 7, title: '灵感', parent_id: 0 }],
   createNode: async () => 1,
   deleteNode: async () => undefined,
 };
@@ -75,6 +75,25 @@ describe('DragDropOverlay 树拖拽上传', () => {
 
     expect(urlsSpy).toHaveBeenCalledOnce();
     expect(urlsSpy).toHaveBeenCalledWith(['https://example.com/pic.jpg'], { folderId: 1 });
+    app.unmount();
+    mount.remove();
+  });
+
+  it('拖图片链接到标签树节点 → upload.urls 传标签 ID 而不是标题', async () => {
+    const urlsSpy = vi.fn();
+    const { mount, app } = await mountOverlay({ files: vi.fn(), urls: urlsSpy });
+
+    const rows = mount.querySelectorAll('[role="treeitem"] > div');
+    expect(rows).toHaveLength(2);
+    const dt = fakeDataTransfer(
+      ['text/uri-list'],
+      { 'text/uri-list': 'https://example.com/pic.jpg' },
+    );
+    rows[1].dispatchEvent(dragEvent('dragover', dt));
+    rows[1].dispatchEvent(dragEvent('drop', dt));
+
+    expect(urlsSpy).toHaveBeenCalledOnce();
+    expect(urlsSpy).toHaveBeenCalledWith(['https://example.com/pic.jpg'], { tags: ['7'] });
     app.unmount();
     mount.remove();
   });

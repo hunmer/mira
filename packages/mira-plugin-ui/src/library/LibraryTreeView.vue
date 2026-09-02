@@ -168,7 +168,7 @@ function dispatchFileDrop(e: DragEvent, node?: LibraryTreeNode) {
   const { files, urls } = parseDrop(e);
   if (!files.length && !urls.length) return;
   const target = node
-    ? (props.mode === 'folder' ? { folderId: node.id } : { tags: [node.title] })
+    ? (props.mode === 'folder' ? { folderId: node.id } : { tags: [String(node.id)] })
     : undefined;
   // 缺省规则:提供 fileDrop 即视为自定义(走回调);未提供则始终走默认上传。
   // 注意 Vue 对 Boolean prop 未传时缺省为 false(非 undefined),不能用 ?? 判断"未传":
@@ -514,7 +514,7 @@ function onUploadToNode() {
   if (!menu.value) return;
   const target = props.mode === 'folder'
     ? { folderId: menu.value.node.id }
-    : { tags: [menu.value.node.title] };
+    : { tags: [String(menu.value.node.id)] };
   closeMenu();
   props.upload?.pick?.(target);
 }
@@ -526,7 +526,7 @@ function onToolbarUpload() {
     props.upload?.pick?.(folder ? { folderId: folder.id } : undefined);
     return;
   }
-  const tags = (selected.value ?? []).map(n => n.title);
+  const tags = (selected.value ?? []).map(n => String(n.id));
   props.upload?.pick?.(tags.length ? { tags } : undefined);
 }
 

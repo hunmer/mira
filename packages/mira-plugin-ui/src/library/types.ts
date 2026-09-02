@@ -133,7 +133,7 @@ export interface LibraryTreeDialog {
   }): Promise<{ ok: boolean; checked: boolean }>
 }
 
-/** 上传落点:文件夹落点带 folderId,标签落点带 tags(按标题,服务器按名称关联) */
+/** 上传落点:文件夹落点带 folderId,标签落点带 tags(标签 ID 字符串) */
 export interface LibraryTreeUploadTarget {
   folderId?: number
   tags?: string[]

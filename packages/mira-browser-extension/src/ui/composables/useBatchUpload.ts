@@ -3,7 +3,7 @@
  *
  * 对话框 DOM 由 App.vue 挂载的 <BatchUploadHost> 消费;
  * 任意视图(header 菜单「选择文件上传」、树右键「上传到此处」)经 open() 唤起。
- * 打开时可预填文件与落点(folderId/tags 按标题),提交走扩展上传队列。
+ * 打开时可预填文件与落点(folderId/标签 ID),提交走扩展上传队列。
  */
 import { ref } from 'vue';
 import { useBackground } from './useBackground';
@@ -32,7 +32,7 @@ const show = ref(false);
 const files = ref<File[]>([]);
 const folders = ref<any[]>([]);
 const tags = ref<any[]>([]);
-// 对话框当前库(folders/tags 跟随);初始落点(folderId/预选标签标题)
+// 对话框当前库(folders/tags 跟随);initialTagTitles 是共享组件保留的兼容属性名，值传标签 ID。
 const libraryId = ref('');
 const initialFolderId = ref('');
 const initialTagTitles = ref<string[]>([]);

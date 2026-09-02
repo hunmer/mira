@@ -58,7 +58,7 @@ interface UploadItem {
   url?: string
   note?: string
   folderId?: string
-  /** 标签 id 集合(上传时经 tagTitlesOfIds 转标题名) */
+  /** 标签 ID 集合 */
   tags?: string[]
 }
 
@@ -71,7 +71,7 @@ const props = withDefaults(defineProps<{
   tags?: TreeItem[]
   initialLibraryId?: string
   initialFolderId?: string
-  /** 初始预选标签(按标题匹配,与 LibraryTreeUploadTarget.tags 同语义);缺省不预选 */
+  /** 初始预选标签；兼容旧标题值，新调用方应传标签 ID */
   initialTagTitles?: string[]
   /** 上传服务:传入则组件内并发执行并展示进度;未传则 emit('upload') 交宿主 */
   uploadFile?: BatchUploadFileService
@@ -113,10 +113,10 @@ const emit = defineEmits<{
 
 const libraryId = ref(props.initialLibraryId || String(props.libraries[0]?.id || ''))
 const folderId = ref(props.initialFolderId || '')
-// 预选标签:按标题在 props.tags 里找 id(selectedTagIds 存 id,上传时经 tagTitlesOfIds 还原标题)
+// 兼容旧标题值；资料树等新调用方直接传标签 ID。
 const selectedTagIds = ref(new Set<number>(
   (props.initialTagTitles ?? [])
-    .map(title => props.tags.find(t => (t.title ?? t.name) === title))
+    .map(value => props.tags.find(t => String(t.id) === value || (t.title ?? t.name) === value))
     .filter((t): t is TreeItem => t != null)
     .map(t => Number(t.id)),
 ))
@@ -341,10 +341,12 @@ function tagNameOf (id: string) {
   return tagItems.value.find(item => String(item.id) === id)?.title
 }
 
-/** 标签 id 集合 → 标题名列表(上传 payload 的 tags 按名称关联) */
-function tagTitlesOfIds (ids?: string[]): string[] | undefined {
+/** 仅提交当前标签树中仍存在的标签 ID。 */
+function validTagIds (ids?: string[]): string[] | undefined {
   if (!ids?.length) return undefined
-  return tagItems.value.filter(item => ids.includes(String(item.id))).map(item => item.title)
+  const existing = new Set(tagItems.value.map(item => String(item.id)))
+  const valid = ids.filter(id => existing.has(id))
+  return valid.length ? valid : undefined
 }
 
 // ---- Attachment 文件展示 ----
@@ -415,7 +417,7 @@ async function startUpload () {
     file: item.file,
     libraryId: libraryId.value,
     folderId: item.folderId,
-    tags: tagTitlesOfIds(item.tags),
+    tags: validTagIds(item.tags),
     fileName: item.fileName,
     url: item.url,
     note: item.note,
@@ -463,7 +465,7 @@ async function startUpload () {
     failed,
     libraryId: libraryId.value,
     folderId: first?.folderId,
-    tags: tagTitlesOfIds(first?.tags),
+    tags: validTagIds(first?.tags),
   })
 }
 </script>

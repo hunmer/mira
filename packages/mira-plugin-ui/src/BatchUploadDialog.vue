@@ -21,7 +21,7 @@ const props = withDefaults(defineProps<{
   tags?: TreeItem[]
   initialLibraryId?: string
   initialFolderId?: string
-  /** 初始预选标签(按标题匹配);透传给表单 */
+  /** 初始预选标签；兼容旧标题值，新调用方应传标签 ID */
   initialTagTitles?: string[]
   /** 上传服务:透传给表单,传入则组件内并发执行并展示进度 */
   uploadFile?: BatchUploadFileService

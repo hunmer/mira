@@ -57,7 +57,7 @@ const selectedFolderId = ref<number | undefined>();
 const selectedFolderIds = computed(() =>
   selectedFolderId.value != null ? new Set([selectedFolderId.value]) : new Set<number>(),
 );
-// id → title:提交按标题传(与树视图拖拽上传一致,服务器按名称关联标签)
+// id → title:Map value 仅用于展示，提交使用 key 中的标签 ID。
 const selectedTags = ref(new Map<number, string>());
 const checkedTagIds = computed(() => new Set(selectedTags.value.keys()));
 
@@ -249,7 +249,7 @@ async function submit() {
         kind: props.session.kind,
         libraryId: settings.value.libraryId,
         folderId: selectedFolderId.value,
-        tags: [...selectedTags.value.values()],
+        tags: [...selectedTags.value.keys()].map(String),
         referrer: props.session.referrer,
       },
     });
