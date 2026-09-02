@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./assets/app-icon-default.png" alt="Mira" width="160" height="160" />
+  <img src="./assets/app-icon-default.png" alt="Mira" width="80" height="80" />
 
   <h1>Mira</h1>
 
