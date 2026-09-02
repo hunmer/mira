@@ -409,21 +409,21 @@ async function close() {
 .custom-upload { position: relative; display: flex; flex-direction: column; height: 100%; min-height: 0; background: var(--bg); color: var(--fg); }
 .header { display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 8px; border-bottom: 1px solid var(--border); }
 .heading { display: flex; flex-direction: column; min-width: 0; }
-.heading span { overflow: hidden; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.heading span { overflow: hidden; color: var(--muted-foreground); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .form { display: flex; flex: 1; flex-direction: column; gap: 16px; min-height: 0; padding: 12px; overflow-y: auto; }
-.preview { display: flex; align-items: center; justify-content: center; width: 100%; aspect-ratio: 16 / 10; overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-elev); color: var(--muted); }
+.preview { display: flex; align-items: center; justify-content: center; width: 100%; aspect-ratio: 16 / 10; overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-elev); color: var(--muted-foreground); }
 .preview img { width: 100%; height: 100%; object-fit: contain; }
 .field { display: flex; flex-direction: column; gap: 8px; }
-.field-title { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; }
+.field-title { display: flex; justify-content: space-between; color: var(--muted-foreground); font-size: 12px; }
 .create-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; }
 .tree-wrap { display: flex; flex-direction: column; gap: 4px; max-height: 200px; padding: 4px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; }
-.status { margin: 6px 0; color: var(--muted); font-size: 12px; }
+.status { margin: 6px 0; color: var(--muted-foreground); font-size: 12px; }
 .error { margin: 0; color: var(--danger); font-size: 12px; }
-.footer { display: flex; align-items: center; justify-content: space-between; min-height: 54px; padding: 8px 12px; border-top: 1px solid var(--border); color: var(--muted); font-size: 12px; }
+.footer { display: flex; align-items: center; justify-content: space-between; min-height: 54px; padding: 8px 12px; border-top: 1px solid var(--border); color: var(--muted-foreground); font-size: 12px; }
 .actions { display: flex; gap: 8px; }
 .confirm-mask { position: absolute; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center; background: rgb(0 0 0 / 40%); }
 .confirm { display: flex; flex-direction: column; gap: 10px; width: min(320px, 90%); padding: 14px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-elev); }
 .confirm p { margin: 0; }
-.confirm label { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; }
+.confirm label { display: flex; align-items: center; gap: 6px; color: var(--muted-foreground); font-size: 12px; }
 .confirm-actions { display: flex; justify-content: flex-end; gap: 8px; }
 </style>

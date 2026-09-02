@@ -15,7 +15,6 @@
   --bg: var(--background);
   --bg-elev: var(--card);
   --fg: var(--foreground);
-  --muted: var(--muted-foreground);
   --danger: var(--destructive);
   --primary-fg: var(--primary-foreground);
   /* 品牌主色(绿) */

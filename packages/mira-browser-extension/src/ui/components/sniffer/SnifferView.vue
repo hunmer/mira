@@ -627,7 +627,7 @@ async function downloadSelected() {
   flex: 1;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 4px; padding: 24px 12px; text-align: center;
-  color: var(--muted); font-size: 12px;
+  color: var(--muted-foreground); font-size: 12px;
 }
 .empty .big { font-size: 32px; margin-bottom: 4px; }
 .empty .hint { font-size: 11px; opacity: 0.7; }
@@ -641,7 +641,7 @@ async function downloadSelected() {
 .select-all {
   display: inline-flex; align-items: center; justify-content: center;
   width: 24px; height: 24px; flex-shrink: 0; padding: 0;
-  background: var(--bg-elev); color: var(--muted);
+  background: var(--bg-elev); color: var(--muted-foreground);
   border: 1px solid var(--border); border-radius: var(--radius);
   cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
@@ -654,7 +654,7 @@ async function downloadSelected() {
 
 /* 批量操作进度条 */
 .batch-progress { flex: 1; display: flex; flex-direction: column; gap: 4px; }
-.bp-text { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.bp-text { font-size: 11px; color: var(--muted-foreground); white-space: nowrap; }
 .bp-bar { height: 4px; background: var(--border); border-radius: 9999px; overflow: hidden; }
 .bp-fill { height: 100%; background: var(--primary); border-radius: 9999px; transition: width 0.2s ease; }
 /* finish 阶段无逐项进度,显示 indeterminate 滑动条 */
@@ -670,7 +670,7 @@ async function downloadSelected() {
 .seg {
   display: inline-flex; align-items: center; justify-content: center;
   width: 28px; height: 24px; padding: 0;
-  background: var(--bg-elev); color: var(--muted);
+  background: var(--bg-elev); color: var(--muted-foreground);
   border: none; border-right: 1px solid var(--border); cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
@@ -684,7 +684,7 @@ async function downloadSelected() {
 .icon-entry {
   display: inline-flex; align-items: center; justify-content: center;
   width: 28px; height: 24px; padding: 0;
-  background: var(--bg-elev); color: var(--muted);
+  background: var(--bg-elev); color: var(--muted-foreground);
   border: 1px solid var(--border); border-radius: var(--radius);
   cursor: pointer; transition: background 0.15s, color 0.15s;
 }
@@ -696,7 +696,7 @@ async function downloadSelected() {
 .filter-popover { width: 240px; }
 .filter-group { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .filter-group-vertical { display: flex; flex-direction: column; gap: 6px; }
-.filter-label { font-size: 12px; color: var(--muted); }
+.filter-label { font-size: 12px; color: var(--muted-foreground); }
 .seg-group { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
 .seg-group .seg { width: auto; min-width: 40px; height: 26px; padding: 0 8px; font-size: 12px; }
 
@@ -705,7 +705,7 @@ async function downloadSelected() {
 .chip {
   height: 24px; padding: 0 10px;
   font-size: 12px; line-height: 1;
-  background: var(--bg-elev); color: var(--muted);
+  background: var(--bg-elev); color: var(--muted-foreground);
   border: 1px solid var(--border); border-radius: 9999px;
   cursor: pointer;
   transition: background 0.15s, color 0.15s, border-color 0.15s;
@@ -729,8 +729,8 @@ async function downloadSelected() {
   gap: 8px;
 }
 .popover-title { font-size: 13px; font-weight: 600; }
-.popover-hint { margin: 0; font-size: 11px; color: var(--muted); line-height: 1.4; }
-.popover-row { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+.popover-hint { margin: 0; font-size: 11px; color: var(--muted-foreground); line-height: 1.4; }
+.popover-row { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted-foreground); }
 .popover-row .unit { flex-shrink: 0; }
 .popover-ops { display: flex; justify-content: flex-end; }
 </style>

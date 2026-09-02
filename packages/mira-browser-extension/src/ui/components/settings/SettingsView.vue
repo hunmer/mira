@@ -209,11 +209,11 @@ async function addCurrentHost() {
 <style scoped>
 .view { padding: 12px; }
 section { margin-bottom: 16px; }
-h3 { margin: 0 0 8px; font-size: 13px; color: var(--muted); text-transform: uppercase; }
+h3 { margin: 0 0 8px; font-size: 13px; color: var(--muted-foreground); text-transform: uppercase; }
 .row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; }
 .rule-row { align-items: flex-start; gap: 8px; }
 .rule-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
-label { font-size: 12px; color: var(--muted); display: block; margin: 6px 0 2px; }
+label { font-size: 12px; color: var(--muted-foreground); display: block; margin: 6px 0 2px; }
 select { background: var(--bg); color: var(--fg); border: 1px solid var(--border); border-radius: 4px; padding: 2px 6px; }
 .number-input { width: 72px; }
 .debug-categories { padding-left: 10px; border-left: 2px solid var(--border); }

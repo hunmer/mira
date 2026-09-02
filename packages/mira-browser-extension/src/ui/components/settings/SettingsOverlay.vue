@@ -44,7 +44,7 @@ defineEmits<{ close: [] }>();
 .close {
   background: transparent;
   border: none;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 18px;
   line-height: 1;
   cursor: pointer;

@@ -115,7 +115,7 @@ async function submit() {
 <style scoped>
 .form { padding: 16px; display: flex; flex-direction: column; gap: 6px; overflow-y: auto; }
 h2 { margin: 0 0 8px; font-size: 16px; }
-label { font-size: 12px; color: var(--muted); margin-top: 6px; }
+label { font-size: 12px; color: var(--muted-foreground); margin-top: 6px; }
 .err { color: var(--danger); font-size: 12px; margin: 4px 0; }
 
 .saved { margin-bottom: 6px; }
@@ -124,13 +124,13 @@ label { font-size: 12px; color: var(--muted); margin-top: 6px; }
   padding: 4px 10px;
   font-size: 12px;
   background: transparent;
-  color: var(--muted);
+  color: var(--muted-foreground);
   border: 1px solid var(--border);
   border-radius: 999px;
   cursor: pointer;
   transition: all .12s;
 }
-.server-chip:hover { color: var(--fg); border-color: var(--muted); }
+.server-chip:hover { color: var(--fg); border-color: var(--muted-foreground); }
 .server-chip.active {
   background: var(--primary);
   color: var(--primary-fg);

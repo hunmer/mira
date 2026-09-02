@@ -19,5 +19,5 @@ defineEmits<{ cancel: [id: string]; retry: [id: string] }>();
 
 <style scoped>
 .queue { flex: 1; overflow-y: auto; }
-.empty { text-align: center; color: var(--muted); padding: 24px; }
+.empty { text-align: center; color: var(--muted-foreground); padding: 24px; }
 </style>

@@ -81,7 +81,7 @@ onUnmounted(reset);
 }
 .loading {
   position: absolute;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 13px;
 }
 .img {

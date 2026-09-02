@@ -72,7 +72,7 @@ function toggle() {
   background: transparent;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  color: var(--muted);
+  color: var(--muted-foreground);
   cursor: pointer;
   transition: color .12s, border-color .12s;
 }
@@ -118,12 +118,12 @@ function toggle() {
   padding: 6px 10px;
   border-bottom: 1px solid var(--border);
   font-size: 12px;
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 .close {
   background: transparent;
   border: none;
-  color: var(--muted);
+  color: var(--muted-foreground);
   cursor: pointer;
   font-size: 16px;
   line-height: 1;

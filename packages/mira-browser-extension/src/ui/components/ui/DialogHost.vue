@@ -137,7 +137,7 @@ function onKey(e: KeyboardEvent) {
   gap: 10px;
 }
 .title { font-size: 14px; font-weight: 600; color: var(--fg); }
-.msg { margin: 0; font-size: 12px; color: var(--muted); white-space: pre-wrap; word-break: break-word; }
+.msg { margin: 0; font-size: 12px; color: var(--muted-foreground); white-space: pre-wrap; word-break: break-word; }
 .editor { min-height: 260px; resize: vertical; padding: 8px; background: var(--bg); color: var(--fg); border: 1px solid var(--border); border-radius: var(--radius); font: 12px/1.45 monospace; }
 .check {
   display: flex; align-items: center; gap: 6px;

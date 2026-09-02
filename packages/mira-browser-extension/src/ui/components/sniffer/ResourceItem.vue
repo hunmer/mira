@@ -66,6 +66,6 @@ function onLeave() {
 .thumb.icon { display: flex; align-items: center; justify-content: center; font-size: 20px; }
 .meta { flex: 1; overflow: hidden; }
 .url { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.dim { font-size: 11px; color: var(--muted); }
+.dim { font-size: 11px; color: var(--muted-foreground); }
 .source { font-size: 10px; color: var(--primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 </style>

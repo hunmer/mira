@@ -43,7 +43,7 @@ const tabs = [
 .tabs { display: flex; border-bottom: 1px solid var(--border); }
 .tab {
   flex: 1; padding: 8px; background: transparent; border: none;
-  color: var(--muted); cursor: pointer; display: flex;
+  color: var(--muted-foreground); cursor: pointer; display: flex;
   align-items: center; justify-content: center;
   border-bottom: 2px solid transparent; transition: color .15s;
 }

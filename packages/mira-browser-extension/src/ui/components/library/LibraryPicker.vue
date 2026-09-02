@@ -78,14 +78,14 @@ async function onLibChange(libraryId: string) {
   background: transparent;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  color: var(--muted);
+  color: var(--muted-foreground);
   cursor: pointer;
   padding: 4px 8px;
   font-size: 14px;
   line-height: 1;
 }
 .refresh:hover { color: var(--fg); }
-.hint { font-size: 12px; color: var(--muted); margin: 4px 0 12px; }
+.hint { font-size: 12px; color: var(--muted-foreground); margin: 4px 0 12px; }
 
 .select { width: 100%; }
 
@@ -96,7 +96,7 @@ async function onLibChange(libraryId: string) {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  color: var(--muted);
+  color: var(--muted-foreground);
   text-align: center;
 }
 .empty .big { font-size: 40px; }

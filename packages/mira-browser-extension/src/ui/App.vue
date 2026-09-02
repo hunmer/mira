@@ -155,7 +155,7 @@ function onConnected() {
 .app { display: flex; flex-direction: column; height: 100vh; background: var(--bg); position: relative; }
 .app.popup { width: 380px; height: 600px; }
 .content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
-.booting { display: flex; align-items: center; justify-content: center; height: 100vh; color: var(--muted); }
+.booting { display: flex; align-items: center; justify-content: center; height: 100vh; color: var(--muted-foreground); }
 
 /* 底部栏:右下角按钮组(上传队列 + 设置) */
 .bottom-bar {
@@ -176,9 +176,9 @@ function onConnected() {
   background: transparent;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  color: var(--muted);
+  color: var(--muted-foreground);
   cursor: pointer;
   transition: color .12s, border-color .12s;
 }
-.settings-btn:hover { color: var(--fg); border-color: var(--muted); }
+.settings-btn:hover { color: var(--fg); border-color: var(--muted-foreground); }
 </style>

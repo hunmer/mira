@@ -36,7 +36,7 @@ const statusText = computed(() => {
 .item { padding: 8px 12px; border-bottom: 1px solid var(--border); }
 .info { display: flex; justify-content: space-between; }
 .name { font-size: 12px; }
-.size { font-size: 11px; color: var(--muted); }
+.size { font-size: 11px; color: var(--muted-foreground); }
 .status { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; font-size: 11px; }
-.success { color: var(--primary); } .failed { color: var(--danger); } .queued { color: var(--muted); }
+.success { color: var(--primary); } .failed { color: var(--danger); } .queued { color: var(--muted-foreground); }
 </style>

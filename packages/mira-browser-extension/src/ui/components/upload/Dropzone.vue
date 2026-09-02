@@ -50,7 +50,7 @@ function openPicker() {
 </template>
 
 <style scoped>
-.zone { padding: 24px; border: 2px dashed var(--border); border-radius: var(--radius); text-align: center; color: var(--muted); margin: 12px; transition: border-color .15s; cursor: pointer; }
+.zone { padding: 24px; border: 2px dashed var(--border); border-radius: var(--radius); text-align: center; color: var(--muted-foreground); margin: 12px; transition: border-color .15s; cursor: pointer; }
 .zone.hover { border-color: var(--primary); color: var(--fg); }
 .file-input { display: none; }
 </style>

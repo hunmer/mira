@@ -82,7 +82,7 @@ function nameOf(url: string): string {
 }
 .name {
   font-size: 11px;
-  color: var(--muted);
+  color: var(--muted-foreground);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

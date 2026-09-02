@@ -89,5 +89,5 @@ async function onFilesChosen(e: Event) {
 
 <style scoped>
 .view { padding: 8px; display: flex; flex-direction: column; gap: 8px; }
-.msg { color: var(--muted); font-size: 12px; margin-top: 8px; }
+.msg { color: var(--muted-foreground); font-size: 12px; margin-top: 8px; }
 </style>

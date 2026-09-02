@@ -104,7 +104,7 @@ async function onLibChange(libraryId: string) {
   flex-shrink: 0;
   display: inline-flex; align-items: center; justify-content: center;
   width: 28px; height: 24px; padding: 0;
-  background: transparent; color: var(--muted);
+  background: transparent; color: var(--muted-foreground);
   border: 1px solid var(--border); border-radius: var(--radius);
   cursor: pointer; transition: color 0.15s, border-color 0.15s;
 }
