@@ -3,15 +3,20 @@
 #
 # 用法 (在 PowerShell 交互终端执行):
 #   cd <mira repo root>
-#   ./scripts/publish-packages.ps1                     # 默认发 core server
-#   ./scripts/publish-packages.ps1 -Packages core      # 只发 core
-#   ./scripts/publish-packages.ps1 -DryRun             # 只打印不实际发布
+#   ./scripts/publish-packages.ps1 -Release             # 完整发版: bump(patch) -> commit/push -> npm 发布 -> v tag 触发 CI
+#   ./scripts/publish-packages.ps1 -Release -Bump minor # bump minor 版本
+#   ./scripts/publish-packages.ps1                      # 仅发布当前版本到 npm (不 bump, 不打 tag)
+#   ./scripts/publish-packages.ps1 -Packages core       # 只发 core
+#   ./scripts/publish-packages.ps1 -DryRun              # 只打印不实际执行
 #
 # OTP: 若账号开启 2FA, pnpm 会在发布时提示输入 6 位码, 或自动打开浏览器授权。
 
 param(
     [string[]]$Packages = @("core", "server"),
-    [switch]$DryRun
+    [switch]$DryRun,
+    [switch]$Release,
+    [ValidateSet("patch", "minor", "major")]
+    [string]$Bump = "patch"
 )
 
 $ErrorActionPreference = "Stop"
@@ -58,7 +63,60 @@ if ([string]::IsNullOrWhiteSpace($NPM_USER)) {
 Write-Host "    已登录: $NPM_USER  (registry: $registry)"
 Write-Host ""
 
+# ---- 1.5 Release: bump 版本 + commit + push ----
+# 保持 npm 版本与 git tag 一致, 避免脱节。
+$NewVersion = $null
+if ($Release) {
+    $corePkgJson = (Join-Path $Root "packages/mira-app-core/package.json") -replace '\\', '/'
+    $oldVer = (node -p "require('$corePkgJson').version").Trim()
+    if ($oldVer -notmatch '^\d+\.\d+\.\d+$') {
+        throw "core 版本 '$oldVer' 非纯 semver (x.y.z), 不支持自动 bump"
+    }
+
+    $p = $oldVer.Split('.')
+    switch ($Bump) {
+        "major" { $p = @([string]([int]$p[0] + 1), "0", "0") }
+        "minor" { $p = @($p[0], [string]([int]$p[1] + 1), "0") }
+        default { $p = @($p[0], $p[1], [string]([int]$p[2] + 1)) }
+    }
+    $NewVersion = $p -join "."
+    Write-Host "==> [release] bump: $oldVer -> $NewVersion ($Bump)"
+
+    if ($DryRun) {
+        Write-Host "    (dry-run) 跳过 bump/commit/push"
+    } else {
+        # 工作树必须干净, 否则发版 commit 会混入无关更改
+        git diff --quiet HEAD 2> $null
+        if ($LASTEXITCODE -ne 0) { throw "工作树有未提交更改, 请先提交或 stash 再发版" }
+
+        # tag 冲突预检 (本地 + 远端)
+        git rev-parse -q --verify "refs/tags/v$NewVersion" *> $null
+        if ($LASTEXITCODE -eq 0) { throw "本地 tag v$NewVersion 已存在" }
+        if ((git ls-remote --tags origin "refs/tags/v$NewVersion").Trim()) {
+            throw "远端 tag v$NewVersion 已存在"
+        }
+
+        # bump 所有与 core 同版本的 workspace 包 (统一版本惯例)
+        $setVer = 'const fs=require("fs");const[a,v]=process.argv.slice(1);fs.writeFileSync(a,fs.readFileSync(a,"utf8").replace(/("version"\s*:\s*)"[^"]+"/,(m,g)=>g+JSON.stringify(v)));'
+        Get-ChildItem "$Root/packages/*/package.json" | ForEach-Object {
+            $pj = $_.FullName -replace '\\', '/'
+            if ((node -p "require('$pj').version").Trim() -eq $oldVer) {
+                node -e $setVer $pj $NewVersion
+                Write-Host "    bump $($_.Directory.Name) $oldVer -> $NewVersion"
+            }
+        }
+
+        git add -- "packages/*/package.json"
+        git commit -m "chore: release v$NewVersion"
+        if ($LASTEXITCODE -ne 0) { throw "git commit 失败" }
+        git push origin (git branch --show-current).Trim()
+        if ($LASTEXITCODE -ne 0) { throw "git push 失败" }
+    }
+    Write-Host ""
+}
+
 # ---- 2. 逐个 build + publish ----
+$publishSkipped = $false
 foreach ($short in $Packages) {
     $pkg = Get-DirOf $short
     $dir = Join-Path $Root "packages/$pkg"
@@ -86,6 +144,7 @@ foreach ($short in $Packages) {
         if ($LASTEXITCODE -eq 0) {
             Write-Host "    ! 警告: $name@$version 已在 npm 上存在, 发布会被拒绝(E403)。" -ForegroundColor Yellow
             Write-Host "      请先 bump 版本号再跑。跳过此包。"
+            $publishSkipped = $true
             continue
         }
     }
@@ -119,8 +178,24 @@ foreach ($short in $Packages) {
     }
 }
 
+# ---- 3. Release: 打 v tag 触发 CI ----
+if ($Release -and -not $DryRun) {
+    if ($publishSkipped) {
+        Write-Host "! 有包未发布成功, 跳过打 tag 避免与 npm 脱节。" -ForegroundColor Yellow
+    } else {
+        Write-Host "==> [release] 推送 tag v$NewVersion 触发 CI..."
+        git tag "v$NewVersion"
+        if ($LASTEXITCODE -ne 0) { throw "git tag 失败" }
+        git push origin "v$NewVersion"
+        if ($LASTEXITCODE -ne 0) { throw "git push tag 失败" }
+        Write-Host "    tag v$NewVersion 已推送, 用 'gh run list' 查看 Action 进度" -ForegroundColor Green
+        Write-Host ""
+    }
+}
+
 Write-Host "======================================== =="
 Write-Host "完成:" -ForegroundColor Green
+if ($Release -and $NewVersion) { Write-Host "  tag: v$NewVersion" }
 foreach ($short in $Packages) {
     $pkg = Get-DirOf $short
     $pkgJsonPath = (Join-Path $Root "packages/$pkg/package.json") -replace '\\', '/'
