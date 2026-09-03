@@ -737,6 +737,7 @@ export class MiraSDKService {
       const { sourcePath, ...uploadMetadata } = metadata || {}
       const result = await this.client.files().uploadFile(file, libraryId, {
         ...uploadMetadata,
+        silent: true,
         ...(sourcePath ? { sourcePath } : {}),
       })
       const uploaded = result.results?.[0] as (NonNullable<typeof result.results>[number] & {
