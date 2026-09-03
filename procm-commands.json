@@ -48,6 +48,16 @@
         "dev"
       ]
     },
+    "mira-browser-extension-dev": {
+      "script": "pnpm",
+      "args": [
+        "-C",
+        "packages/mira-browser-extension",
+        "run",
+        "dev"
+      ],
+      "group": "mira_typescript"
+    },
     "mira-doc-dev": {
       "script": "pnpm",
       "args": [
