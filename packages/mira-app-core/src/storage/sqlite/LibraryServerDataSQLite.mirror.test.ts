@@ -2,7 +2,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { Database } from 'sqlite3';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { LibraryServerDataSQLite } from './LibraryServerDataSQLite';
 
 function queryFileCount(dbPath: string): Promise<number> {
@@ -62,5 +62,41 @@ describe('LibraryServerDataSQLite DB mirror', () => {
     expect(await queryFileCount(path.join(libraryPath, 'library_data.db'))).toBe(1);
     expect(fs.readdirSync(path.join(mirrorRoot, 'mirror-test')).some(name => name.endsWith('.db'))).toBe(true);
     expect(fs.existsSync(path.join(libraryPath, 'library_data.previous.db'))).toBe(true);
+  });
+
+  it('retries transient remote file locks while syncing', async () => {
+    root = fs.mkdtempSync(path.join(os.tmpdir(), 'mira-db-mirror-retry-'));
+    const libraryPath = path.join(root, 'library');
+    const mirrorRoot = path.join(root, 'data', 'db-mirrors');
+    fs.mkdirSync(libraryPath, { recursive: true });
+
+    const seed = new LibraryServerDataSQLite({ id: 'mirror-retry', customFields: { path: libraryPath } });
+    await seed.initialize();
+    await seed.close();
+
+    const originalRename = fs.promises.rename;
+    let remainingFailures = 2;
+    const renameSpy = vi.spyOn(fs.promises, 'rename').mockImplementation(async (oldPath, newPath) => {
+      if (String(oldPath).endsWith('library_data.db') && remainingFailures-- > 0) {
+        const error = new Error('resource busy or locked') as NodeJS.ErrnoException;
+        error.code = 'EBUSY';
+        throw error;
+      }
+      return originalRename(oldPath, newPath);
+    });
+
+    db = new LibraryServerDataSQLite({
+      id: 'mirror-retry',
+      customFields: { path: libraryPath, enableDbMirror: true },
+    }, { dbMirrorRoot: mirrorRoot, dbMirrorThrottleMs: 10 });
+    await db.initialize();
+    await db.createFile({
+      name: 'sample.jpg', path: path.join(libraryPath, 'sample.jpg'),
+      created_at: Date.now(), imported_at: Date.now(), size: 1, hash: '',
+    });
+
+    await waitForFileCount(path.join(libraryPath, 'library_data.db'), 1);
+    expect(renameSpy).toHaveBeenCalledTimes(3);
+    renameSpy.mockRestore();
   });
 });

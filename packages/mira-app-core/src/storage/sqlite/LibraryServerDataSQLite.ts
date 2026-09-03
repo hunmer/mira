@@ -8,6 +8,7 @@ import { FolderOperations } from './mixins/FolderOperations';
 import { TagOperations } from './mixins/TagOperations';
 import { FileImport } from './mixins/FileImport';
 import { Statistics } from './mixins/Statistics';
+import { retryFileOperation } from './retryFileOperation';
 
 export class LibraryServerDataSQLite {
   private db: Database | null = null;
@@ -248,16 +249,18 @@ export class LibraryServerDataSQLite {
     let renamed = false;
     try {
       if (fs.existsSync(this.remoteDbPath)) {
-        await fs.promises.rm(remoteBackupPath, { force: true });
-        await fs.promises.rename(this.remoteDbPath, remoteBackupPath);
+        await retryFileOperation(() => fs.promises.rm(remoteBackupPath, { force: true }));
+        await retryFileOperation(() => fs.promises.rename(this.remoteDbPath!, remoteBackupPath));
         renamed = true;
       }
-      await fs.promises.copyFile(snapshotPath, this.remoteDbPath);
+      await retryFileOperation(() => fs.promises.copyFile(snapshotPath, this.remoteDbPath!));
       console.log(`[DB mirror] Synced library ${this.config.id} database to ${this.remoteDbPath}`);
     } catch (error) {
       this.mirrorDirty = true;
       if (renamed && !fs.existsSync(this.remoteDbPath)) {
-        try { await fs.promises.rename(remoteBackupPath, this.remoteDbPath); } catch {}
+        try {
+          await retryFileOperation(() => fs.promises.rename(remoteBackupPath, this.remoteDbPath!));
+        } catch {}
       }
       throw error;
     } finally {

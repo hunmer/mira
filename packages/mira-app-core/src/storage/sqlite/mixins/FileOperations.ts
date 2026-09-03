@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { CoreAccessible } from './types';
+import { retryFileOperation } from '../retryFileOperation';
 
 const serializeCustomFields = (value: any) => {
   if (value === '[object Object]') return null;
@@ -103,13 +104,16 @@ export const FileOperations = {
       if (src && fs.existsSync(src) && src !== dest) {
         try {
           if (path.parse(src).root === path.parse(dest).root) {
-            fs.renameSync(src, dest);
+            await retryFileOperation(() => fs.promises.rename(src, dest));
           } else {
-            fs.copyFileSync(src, dest);
-            fs.unlinkSync(src);
+            await retryFileOperation(() => fs.promises.copyFile(src, dest));
+            await retryFileOperation(() => fs.promises.unlink(src));
           }
         } catch (e) {
           console.error(`[deleteFile] move to .trash failed (${src} -> ${dest}):`, e);
+          await this.runSql('UPDATE files SET recycled = ?, path = ? WHERE id = ?', [item.recycled ?? 0, item.path ?? null, id]);
+          try { await fs.promises.rm(dest, { force: true }); } catch {}
+          return false;
         }
       }
       return true;
