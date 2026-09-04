@@ -4,7 +4,7 @@ import { LayoutGrid, Languages, ListTree, Loader2, LogOut, Moon, Server, Sun } f
 import { MiraClient, type HealthResponse } from 'mira-app-core/shared/sdk'
 import { BatchUploadDialog, DeviceListPicker, Progress, SaveLocationDialog, setLocale, useI18n, type BatchUploadFileService, type DeviceListItem, type DeviceListPickerServices, type SaveLocation } from '@/index'
 import { Dropzone, LibrarySelect, LibraryTreeView, MediaBrowser, MediaLibraryView, ServerManagerDialog, toApiFilters } from '@/library'
-import type { LibraryFlatItem, LibrarySelectServer, LibraryTreeDialog, LibraryTreeDropUploadMode, LibraryTreeFileDropPayload, LibraryTreeServices, LibraryTreeNode, LibraryTreeUpload, LibraryTreeUploadTarget, ManagedServer, MediaBrowserFilters, MediaBrowserItem, MediaBrowserServerManager, MediaBrowserServices, MediaDetailItem, MediaDetailServices, MediaLibraryServices, ServerManagerServices } from '@/library'
+import type { LibraryFlatItem, LibrarySelectServer, LibraryTreeDialog, LibraryTreeDropUploadMode, LibraryTreeFileDropPayload, LibraryTreeServices, LibraryTreeSortMode, LibraryTreeNode, LibraryTreeUpload, LibraryTreeUploadTarget, ManagedServer, MediaBrowserFilters, MediaBrowserItem, MediaBrowserServerManager, MediaBrowserServices, MediaDetailItem, MediaDetailServices, MediaLibraryServices, ServerManagerServices } from '@/library'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -246,6 +246,20 @@ const selectedTags = ref<LibraryTreeNode[]>([])
 const folderView = ref<'tree' | 'tiles'>('tree')
 const tagView = ref<'tree' | 'tiles'>('tree')
 
+// 树展示排序:循环切换 id → 首字 → 创建时间 → 最后使用 → 自定义(两棵树共用,实际宿主可分开控制)
+const treeSortModes: LibraryTreeSortMode[] = ['id', 'title', 'created_at', 'last_used', 'custom']
+const treeSortLabels: Record<LibraryTreeSortMode, string> = {
+  id: 'ID',
+  title: '首字',
+  created_at: '创建时间',
+  last_used: '最后使用',
+  custom: '自定义',
+}
+const treeSort = ref<LibraryTreeSortMode>('id')
+function cycleTreeSort () {
+  treeSort.value = treeSortModes[(treeSortModes.indexOf(treeSort.value) + 1) % treeSortModes.length]
+}
+
 // 拖放文件处理演示:开=默认上传(模式见 dropUploadMode),关=fileDrop 自定义回调(alert 展示回调收到的拖放信息)
 const useDefaultDropUpload = ref(true)
 // 默认上传方式:direct=直接上传(立即调 API 传到落点) / dialog=弹批量上传对话框(upload.pick 预填)
@@ -277,6 +291,8 @@ function adaptRows (rows: any[]): LibraryFlatItem[] {
     description: r.description,
     icon: r.icon,
     sort_index: r.sort_index,
+    // 后端字段为 createdAt(驼峰),兼容 snake_case
+    created_at: r.created_at ?? r.createdAt,
   }))
 }
 
@@ -827,6 +843,13 @@ async function uploadDirect (files: File[], target?: LibraryTreeUploadTarget) {
                 :title="dropUploadMode === 'direct' ? '切换为弹出对话框' : '切换为直接上传'"
                 @click="dropUploadMode = dropUploadMode === 'direct' ? 'dialog' : 'direct'"
               >默认方式：{{ dropUploadMode === 'direct' ? '直接上传' : '弹出对话框' }}</button>
+              <!-- 树展示排序切换:ID → 首字 → 创建时间 → 最后使用 → 自定义(循环) -->
+              <button
+                type="button"
+                class="cursor-pointer rounded-md border border-border bg-accent px-2 py-1 text-[11px] leading-none text-muted-foreground transition-colors duration-100 hover:text-foreground"
+                :title="`当前：按${treeSortLabels[treeSort]}排序，点击切换（自定义 = 拖拽顺序，唯一可拖拽的模式）`"
+                @click="cycleTreeSort"
+              >排序：{{ treeSortLabels[treeSort] }}</button>
             </div>
           </div>
           <p class="text-muted-foreground text-xs">拖文件到树节点：{{ dropModeHint }}</p>
@@ -850,6 +873,7 @@ async function uploadDirect (files: File[], target?: LibraryTreeUploadTarget) {
               <LibraryTreeView
                 mode="folder"
                 :view="folderView"
+                :sort="treeSort"
                 :library-id="currentLibraryId"
                 :services="treeServices"
                 :dialog="treeDialog"
@@ -879,6 +903,7 @@ async function uploadDirect (files: File[], target?: LibraryTreeUploadTarget) {
               <LibraryTreeView
                 mode="tag"
                 :view="tagView"
+                :sort="treeSort"
                 :library-id="currentLibraryId"
                 :services="treeServices"
                 :dialog="treeDialog"

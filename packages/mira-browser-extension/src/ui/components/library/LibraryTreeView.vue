@@ -7,6 +7,7 @@
  * 上传队列(本地文件)与 URL 上传(service worker 的 UPLOAD_FROM_URL)。
  */
 import { useI18n } from 'vue-i18n';
+import { onMounted, onUnmounted, ref } from 'vue';
 import { LibraryTreeView as MiraLibraryTreeView } from 'mira-plugin-ui/library';
 import { useSettings } from '@/ui/composables/useSettings';
 import { useUploadQueue } from '@/ui/composables/useUploadQueue';
@@ -18,7 +19,7 @@ import { urlKind } from '@/shared/drag-data';
 import { runConcurrent } from '@/shared/concurrency';
 import { dbg } from '@/shared/debug';
 
-defineProps<{ mode: 'folder' | 'tag' }>();
+const props = defineProps<{ mode: 'folder' | 'tag' }>();
 
 const { t } = useI18n();
 const { settings } = useSettings();
@@ -27,6 +28,16 @@ const dialog = useDialog();
 const { addFiles } = useUploadQueue();
 
 const services = extLibraryServices();
+
+// 「最后使用」记录更新(导入 touch 落盘)→ 该排序模式下重载树,顺序实时反映最近导入
+const activeSort = () => (props.mode === 'folder' ? settings.value.libraryFolderSort : settings.value.libraryTagSort);
+const refreshKey = ref(0);
+function onStorageChanged(changes: Record<string, unknown>, area: string) {
+  if (area !== 'local' || !('mira_node_last_used' in changes)) return;
+  if (activeSort() === 'last_used') refreshKey.value++;
+}
+onMounted(() => chrome.storage.onChanged.addListener(onStorageChanged));
+onUnmounted(() => chrome.storage.onChanged.removeListener(onStorageChanged));
 
 // ---- 链接上传:走 service worker 的 UPLOAD_FROM_URL(fetch → File → 队列) ----
 async function uploadUrls(urls: string[], target?: { folderId?: number; tags?: string[] }) {
@@ -83,6 +94,8 @@ const upload = {
   <MiraLibraryTreeView
     :mode="mode"
     :library-id="settings.libraryId"
+    :sort="activeSort()"
+    :refresh-key="refreshKey"
     :services="services"
     :dialog="dialog"
     :upload="upload"

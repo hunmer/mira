@@ -18,7 +18,7 @@ import { Loader2, Plus, Search, Upload } from '@lucide/vue';
 import { useLibraryTreeData } from './useLibraryTreeData';
 import { useLibraryTreeActions } from './useLibraryTreeActions';
 import { createLibraryTreeT } from './i18n';
-import { filterTree, collectIds, flattenTree, ROOT_ID } from './tree';
+import { filterTree, collectIds, flattenTree, sortTree, ROOT_ID } from './tree';
 import LibraryTree from './LibraryTree.vue';
 import CreateNodeDialog from './CreateNodeDialog.vue';
 import ContextMenu from './ContextMenu.vue';
@@ -39,6 +39,7 @@ import type {
   LibraryTreeNode,
   LibraryTreeKind,
   LibraryTreeServices,
+  LibraryTreeSortMode,
   LibraryTreeT,
   LibraryTreeUpload,
 } from './types';
@@ -63,6 +64,10 @@ const props = defineProps<{
   showDropzone?: boolean;
   /** 视图:tree=经典树(默认);tiles=叶子层多行平铺(所有父级分组卡片恒展开,无折叠按钮)。受控 prop,切换 UI 由宿主实现 */
   view?: 'tree' | 'tiles';
+  /** 展示排序:id/title/created_at/last_used/custom(默认 id);custom 为拖拽自定义顺序,唯一可拖拽排序的模式。切换 UI 由宿主实现 */
+  sort?: LibraryTreeSortMode;
+  /** 刷新键:变化时强制重新加载数据(不重置展开/搜索状态);宿主在外部数据变化(如导入记录更新)时递增 */
+  refreshKey?: number;
   /** 文案函数,缺省用内置中文 */
   t?: LibraryTreeT;
 }>();
@@ -121,6 +126,8 @@ function toggleSearch() {
 const filtered = computed(() => filterTree(tree.value, searchTerm.value));
 const filteredTree = computed(() => filtered.value.tree);
 const matched = computed(() => filtered.value.matched);
+/** 展示排序后的树:sort 缺省按 id;custom 原样(buildTree 已按 sort_index 排好) */
+const displayTree = computed(() => sortTree(filteredTree.value, props.sort ?? 'id'));
 // 搜索态:自动展开全部(命中项连同其祖先/后代都可见)
 const effectiveExpanded = computed(() =>
   searchTerm.value.trim() ? collectIds(filteredTree.value) : expanded.value,
@@ -195,7 +202,8 @@ function onDrop(node: LibraryTreeNode, e: DragEvent) {
 
 // ---- 树内拖拽排序(参考 mira-client FolderTreeComponent/useDragSort 语义) ----
 // services.updateSortIndex 提供后启用;跨层移动需 services.moveNode,确认走内置 AlertDialog。
-const sortable = computed(() => !!props.services.updateSortIndex);
+// 仅自定义排序(custom)可拖拽:其他排序模式下 sort_index 不参与展示,拖了也看不到效果。
+const sortable = computed(() => !!props.services.updateSortIndex && (props.sort ?? 'id') === 'custom');
 const movable = computed(() => !!props.services.moveNode);
 const dragNode = ref<LibraryTreeNode | null>(null);
 const dropMark = ref<{ id: number; position: LibraryTreeDropPosition } | null>(null);
@@ -378,6 +386,15 @@ watch(
     }
   },
   { immediate: true },
+);
+
+// ---- 外部数据变化刷新(如导入记录更新):refreshKey 递增 → 重载,不动展开/搜索状态 ----
+watch(
+  () => props.refreshKey,
+  async () => {
+    if (!props.libraryId) return;
+    await load(props.libraryId);
+  },
 );
 
 const titleText = computed(() => props.mode === 'folder' ? tt('common.folder') : tt('common.tag'));
@@ -606,7 +623,7 @@ const ctxItem = 'flex w-full cursor-pointer items-center gap-1.5 rounded-[4px] b
       ]"
     >
       <LibraryTree
-        :nodes="filteredTree"
+        :nodes="displayTree"
         :kind="mode"
         :expanded="effectiveExpanded"
         :matched="matched"

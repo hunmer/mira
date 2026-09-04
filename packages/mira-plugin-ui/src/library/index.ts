@@ -23,7 +23,7 @@ export { default as ServerManagerView } from './ServerManagerView.vue'
 export { default as ServerManagerDialog } from './ServerManagerDialog.vue'
 export { useLibraryTreeData } from './useLibraryTreeData'
 export { useLibraryTreeActions, type LibraryTreeMenuState, type UseLibraryTreeActionsOptions, type UseLibraryTreeActionsDeps } from './useLibraryTreeActions'
-export { buildTree, filterTree, flattenTree, collectIds, ROOT_ID } from './tree'
+export { buildTree, sortTree, filterTree, flattenTree, collectIds, ROOT_ID } from './tree'
 export { parseDrop, canAcceptDrop, urlKind, type ParsedDrop } from './drag-data'
 export { defaultDropUpload } from './defaultDropUpload'
 export { createLibraryTreeT } from './i18n'
@@ -44,6 +44,7 @@ export type {
   LibrarySelectOption,
   LibrarySelectServer,
   LibraryTreeKind,
+  LibraryTreeSortMode,
   LibraryTreeCreatePayload,
   LibraryTreeUpdatePayload,
   LibraryTreeServices,

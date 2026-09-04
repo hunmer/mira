@@ -3,6 +3,7 @@ import type { UploadTask, UploadSource } from '@/shared/types';
 // Use the SDK subpath (confirmed in Task 7).
 import type { UploadResult } from 'mira-app-core/shared/sdk';
 import { dbg } from '@/shared/debug';
+import { touchNodeLastUsed } from '@/shared/node-last-used';
 
 export const MAX_CONCURRENCY = 3;
 const MAX_RETRY = 2;
@@ -160,6 +161,8 @@ export function createUploader(deps: UploaderDeps): Uploader {
 
   return {
     enqueue(input) {
+      // 记录落点文件夹/标签的使用时间(供树「按最后使用」排序;fire-and-forget)
+      touchNodeLastUsed(input.libraryId, { folderId: input.folderId, tags: input.tags });
       const task: UploadTask = {
         id: crypto.randomUUID(),
         source: input.source,

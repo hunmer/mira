@@ -12,7 +12,8 @@
     "start:client:win": "pnpm -C packages/mira-client run electron:dev",
     "start:client:mac": "pnpm -C packages/mira-client run electron:dev:mac",
     "start:landing": "pnpm -C packages/landing-page run dev",
-    "start:browser-extension": "pnpm -C packages/mira-browser-extension run dev"
+    "start:browser-extension": "pnpm -C packages/mira-browser-extension run dev",
+    "start:plugin-ui": "pnpm -C packages/mira-plugin-ui run dev"
   },
   "keywords": [
     "mira",

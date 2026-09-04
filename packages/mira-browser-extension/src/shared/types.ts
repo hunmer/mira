@@ -37,6 +37,13 @@ export type Locale = 'zh-CN' | 'en';
  */
 export type LibraryTreeStyle = 'tree' | 'tiles';
 
+/**
+ * 素材库树展示排序(与 mira-plugin-ui/library 的 LibraryTreeSortMode 字面量保持一致):
+ * id 按节点 ID / title 按首字 / created_at 按创建时间(新的在前) /
+ * last_used 按最后使用(本扩展导入时记录,最近在前) / custom 自定义拖拽顺序
+ */
+export type LibraryTreeSortMode = 'id' | 'title' | 'created_at' | 'last_used' | 'custom';
+
 /** 拖拽快传站点列表模式 */
 export type DragPopoverMode = 'whitelist' | 'blacklist';
 
@@ -151,6 +158,10 @@ export interface ExtensionSettings {
   theme: Theme;
   /** 素材库树视图样式(快捷导入面板的文件夹/标签树) */
   libraryTreeStyle: LibraryTreeStyle;
+  /** 文件夹树默认排序 */
+  libraryFolderSort: LibraryTreeSortMode;
+  /** 标签树默认排序 */
+  libraryTagSort: LibraryTreeSortMode;
   /** 界面语言:i18n locale */
   locale: Locale;
   dragPopoverEnabled: boolean;
@@ -204,6 +215,8 @@ export const DEFAULT_SETTINGS: ExtensionSettings = {
   uiMode: 'popup',
   theme: 'auto',
   libraryTreeStyle: 'tree',
+  libraryFolderSort: 'id',
+  libraryTagSort: 'id',
   locale: 'zh-CN',
   dragPopoverEnabled: true,
   dragPopoverMode: 'blacklist',

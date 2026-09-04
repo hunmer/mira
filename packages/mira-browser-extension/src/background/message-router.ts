@@ -14,6 +14,7 @@ import { sendToContent } from './inject';
 import { resourceFilename } from '@/shared/resource-filename';
 import { fetchResource, fetchResourceWithFallback } from './resource-fetch';
 import { runConcurrent } from '@/shared/concurrency';
+import { touchNodeLastUsed } from '@/shared/node-last-used';
 
 export interface RouterDeps {
   uploader: Uploader;
@@ -169,6 +170,8 @@ export function createRouter(deps: RouterDeps): RequestHandler {
         return { enqueued: 1 };
       }
       case 'BATCH_IMPORT':
+        // 记录落点文件夹/标签的使用时间(供树「按最后使用」排序;不走 uploader,单独记录)
+        touchNodeLastUsed(req.payload.libraryId, { folderId: req.payload.folderId, tags: req.payload.tags });
         return withAuth(async (client: MiraClient) => {
           const settings = await getSettings();
           const items: (File | string)[] = new Array(req.payload.items.length);

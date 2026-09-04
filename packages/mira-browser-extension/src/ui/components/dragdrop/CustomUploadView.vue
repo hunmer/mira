@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n';
 import type { CustomUploadSession } from '@/shared/messages';
 import { useBackground } from '@/ui/composables/useBackground';
 import { useSettings } from '@/ui/composables/useSettings';
-import { flattenTree, useLibraryTree } from '@/ui/composables/useLibraryTree';
+import { flattenTree, sortTree, useLibraryTree } from '@/ui/composables/useLibraryTree';
 import { useLibraryTreeActions } from '@/ui/composables/useLibraryTreeActions';
 import Button from '@/ui/components/ui/Button.vue';
 import Input from '@/ui/components/ui/Input.vue';
@@ -34,6 +34,10 @@ const {
 
 const loading = computed(() => folderLoading.value || tagLoading.value);
 const loadError = computed(() => folderError.value || tagError.value || '');
+
+// 展示排序:与快捷导入面板树一致,按设置的文件夹/标签默认排序(含「最后使用」)
+const folderTreeSorted = computed(() => sortTree(folderTree.value, settings.value.libraryFolderSort));
+const tagTreeSorted = computed(() => sortTree(tagTree.value, settings.value.libraryTagSort));
 
 // ---- 展开/折叠(两棵树各自持有) ----
 const folderExpanded = ref(new Set<number>());
@@ -294,7 +298,7 @@ async function close() {
           </div>
           <div class="tree-wrap">
             <LibraryTree
-              :nodes="folderTree"
+              :nodes="folderTreeSorted"
               kind="folder"
               :expanded="folderExpanded"
               :selected-ids="selectedFolderIds"
@@ -316,7 +320,7 @@ async function close() {
           </div>
           <div class="tree-wrap">
             <LibraryTree
-              :nodes="tagTree"
+              :nodes="tagTreeSorted"
               kind="tag"
               :expanded="tagExpanded"
               checkable

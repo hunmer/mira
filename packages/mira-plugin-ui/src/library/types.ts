@@ -21,6 +21,10 @@ export interface LibraryTreeNode {
   parentId: number
   level: number
   children: LibraryTreeNode[]
+  /** 创建时间(ISO 字符串或毫秒时间戳,宿主数据带出则透传,供排序) */
+  created_at?: string | number
+  /** 最后使用时间(毫秒时间戳,宿主自行记录,如浏览器扩展导入时间;供排序) */
+  last_used_at?: number
 }
 
 /** 后端 folder/tag 扁平项的通用形态(id/title/parent_id/color 字段一致) */
@@ -34,9 +38,23 @@ export interface LibraryFlatItem {
   icon?: string
   /** 同层排序号(后端 sort_index,拖拽排序保存;缺省按 title 排) */
   sort_index?: number
+  /** 创建时间(ISO 字符串或毫秒时间戳,后端 createdAt 带出,供排序) */
+  created_at?: string | number
+  /** 最后使用时间(毫秒时间戳,宿主自行记录,如浏览器扩展导入时间;供排序) */
+  last_used_at?: number
 }
 
 export type LibraryTreeKind = 'folder' | 'tag'
+
+/**
+ * 树展示排序模式(LibraryTreeView 的 sort prop):
+ * - id: 按节点 id 升序(缺省)
+ * - title: 按标题首字符(中文按拼音 locale)
+ * - created_at: 按创建时间,新的在前
+ * - last_used: 按最后使用时间(宿主记录,如扩展导入时间),最近在前
+ * - custom: 自定义(sort_index 拖拽顺序,缺省按 title;唯一启用拖拽排序的模式)
+ */
+export type LibraryTreeSortMode = 'id' | 'title' | 'created_at' | 'last_used' | 'custom'
 
 /** 新建节点载荷(CreateNodeDialog / services.createNode extra) */
 export interface LibraryTreeCreatePayload {

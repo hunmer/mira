@@ -1,7 +1,7 @@
 /**
  * 树构建与过滤纯函数(自 mira-browser-extension useLibraryTree 迁移)。
  */
-import type { LibraryFlatItem, LibraryTreeNode } from './types'
+import type { LibraryFlatItem, LibraryTreeNode, LibraryTreeSortMode } from './types'
 
 export const ROOT_ID = 0 // parent_id 为 0 或 undefined 均视为根
 
@@ -36,10 +36,40 @@ export function buildTree(items: LibraryFlatItem[]): LibraryTreeNode[] {
         icon: it.icon,
         parentId,
         level,
+        created_at: it.created_at,
+        last_used_at: it.last_used_at,
         children: build(it.id, level + 1),
       }));
 
   return build(ROOT_ID, 0);
+}
+
+/** created_at(ISO 字符串/时间戳)→ 毫秒时间戳,缺失/非法 → -Infinity(排最后) */
+function createdTimeOf(v: string | number | undefined): number {
+  if (v == null) return -Infinity;
+  if (typeof v === 'number') return v;
+  const t = Date.parse(v);
+  return Number.isNaN(t) ? -Infinity : t;
+}
+
+const SORT_COMPARATORS: Record<Exclude<LibraryTreeSortMode, 'custom'>, (a: LibraryTreeNode, b: LibraryTreeNode) => number> = {
+  id: (a, b) => a.id - b.id,
+  title: (a, b) => (a.title || '').localeCompare(b.title || '', 'zh'),
+  // 时间类排序:新的在前;无记录(-Infinity)排最后
+  created_at: (a, b) => createdTimeOf(b.created_at) - createdTimeOf(a.created_at),
+  last_used: (a, b) => (b.last_used_at ?? -Infinity) - (a.last_used_at ?? -Infinity),
+};
+
+/**
+ * 按展示排序模式重排树的每一层(不改动原数组;节点浅拷贝,children 递归重排)。
+ * custom 直接返回原树(buildTree 已按 sort_index 排好)。
+ */
+export function sortTree(nodes: LibraryTreeNode[], mode: LibraryTreeSortMode): LibraryTreeNode[] {
+  if (mode === 'custom') return nodes;
+  const cmp = SORT_COMPARATORS[mode];
+  const walk = (list: LibraryTreeNode[]): LibraryTreeNode[] =>
+    list.slice().sort(cmp).map(n => ({ ...n, children: walk(n.children) }));
+  return walk(nodes);
 }
 
 /**

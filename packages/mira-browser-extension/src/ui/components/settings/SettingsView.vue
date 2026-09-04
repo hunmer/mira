@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useSettings } from '@/ui/composables/useSettings';
 import { useI18n } from 'vue-i18n';
-import type { DragPopoverMode, Locale, Theme, LibraryTreeStyle } from '@/shared/types';
+import type { DragPopoverMode, Locale, Theme, LibraryTreeStyle, LibraryTreeSortMode } from '@/shared/types';
 import Input from '@/ui/components/ui/Input.vue';
 import Switch from '@/ui/components/ui/Switch.vue';
 import Button from '@/ui/components/ui/Button.vue';
@@ -20,6 +20,16 @@ import { ref, onMounted } from 'vue';
 const { t } = useI18n();
 const { settings, update } = useSettings();
 const dialog = useDialog();
+
+// 文件夹/标签树的默认排序选项(last_used = 本扩展导入时记录的使用时间)
+const treeSortModes: LibraryTreeSortMode[] = ['id', 'title', 'created_at', 'last_used', 'custom'];
+const treeSortLabels: Record<LibraryTreeSortMode, string> = {
+  id: 'sortModeId',
+  title: 'sortModeTitle',
+  created_at: 'sortModeCreatedAt',
+  last_used: 'sortModeLastUsed',
+  custom: 'sortModeCustom',
+};
 
 // 调试日志开关(独立于 ExtensionSettings,存 chrome.storage.local 的 mira_debug)
 const debugOn = ref(false);
@@ -127,6 +137,18 @@ async function addCurrentHost() {
         <select :value="settings.libraryTreeStyle" @change="e => update({ libraryTreeStyle: (e.target as HTMLSelectElement).value as LibraryTreeStyle })">
           <option value="tree">{{ t('settings.quickImportStyleTree') }}</option>
           <option value="tiles">{{ t('settings.quickImportStyleTiles') }}</option>
+        </select>
+      </div>
+      <div class="row" :title="t('settings.defaultSortHint')">
+        <span>{{ t('settings.folderDefaultSort') }}</span>
+        <select :value="settings.libraryFolderSort" @change="e => update({ libraryFolderSort: (e.target as HTMLSelectElement).value as LibraryTreeSortMode })">
+          <option v-for="mode in treeSortModes" :key="mode" :value="mode">{{ t(`settings.${treeSortLabels[mode]}`) }}</option>
+        </select>
+      </div>
+      <div class="row" :title="t('settings.defaultSortHint')">
+        <span>{{ t('settings.tagDefaultSort') }}</span>
+        <select :value="settings.libraryTagSort" @change="e => update({ libraryTagSort: (e.target as HTMLSelectElement).value as LibraryTreeSortMode })">
+          <option v-for="mode in treeSortModes" :key="mode" :value="mode">{{ t(`settings.${treeSortLabels[mode]}`) }}</option>
         </select>
       </div>
       <div class="row">

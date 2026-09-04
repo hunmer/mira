@@ -58,6 +58,16 @@
       ],
       "group": "mira_typescript"
     },
+    "mira-plugin-ui-dev": {
+      "script": "pnpm",
+      "args": [
+        "-C",
+        "packages/mira-plugin-ui",
+        "run",
+        "dev"
+      ],
+      "group": "mira_typescript"
+    },
     "mira-doc-dev": {
       "script": "pnpm",
       "args": [
