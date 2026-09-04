@@ -27,7 +27,7 @@
     <div class="flex-1 flex overflow-hidden relative">
       <div class="flex-1 flex flex-col min-w-0 min-h-0">
         <!-- 媒体内容 - files 和 trash 都使用统一的视图 -->
-        <div ref="scrollContainerRef" class="flex-1 min-h-0 overflow-y-auto w-full min-w-0" @wheel="handleCtrlWheel">
+        <div ref="scrollContainerRef" class="media-scroll-hide flex-1 min-h-0 overflow-y-auto w-full min-w-0" @wheel="handleCtrlWheel">
           <OrderedSectionList :items="enabledSections" headerless>
             <template #default="{ item: section }">
               <!-- 顶部的子文件夹 -->
@@ -65,6 +65,9 @@
           @toolbar-action="handleToolbarAction" @previous-page="handlePreviousPage"
           @next-page="handleNextPage" @page-change="handlePageChange" />
       </div>
+
+      <!-- 酷滚动条 overlay：监听上方滚动容器，覆盖整个主内容区域 -->
+      <Scrollbar :container="scrollContainerRef" />
     </div>
 
     <!-- 底部状态栏 -->
@@ -136,6 +139,7 @@ import FolderEditDialog from '@renderer/components/business/FolderEditDialog.vue
 import OrderedSectionList from '@/renderer/components/common/OrderedSectionList.vue'
 import SortableLayoutDialog from '@/renderer/components/common/SortableLayoutDialog.vue'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Scrollbar } from '@/components/ui/scrollbar'
 import {
   AlertDialog,
   AlertDialogContent,
@@ -591,6 +595,15 @@ watch(
   --scrollbar-track-bg: #374151;
   --scrollbar-thumb-bg: #4b5563;
   --scrollbar-thumb-hover-bg: #6b7280;
+}
+
+/* 主滚动容器改用 Scrollbar 组件，隐藏原生滚动条（置于旧规则之后以覆盖） */
+.media-scroll-hide {
+  scrollbar-width: none;
+}
+
+.media-scroll-hide::-webkit-scrollbar {
+  display: none;
 }
 
 /* 悬停效果 */
