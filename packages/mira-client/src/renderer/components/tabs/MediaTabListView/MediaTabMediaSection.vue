@@ -5,21 +5,18 @@ import MediaListComponent from '@renderer/components/business/MediaListComponent
 import WaterfallComponent from '@renderer/components/business/WaterfallComponent.vue'
 import ImportDropdown from '@renderer/views/HomeView/ImportDropdown.vue'
 import { Dropdown } from '@/renderer/components/common/Dropdown'
-import { ChapterScrubber } from '@/components/ui/chapter-scrubber'
-import type { Chapter } from '@/components/ui/chapter-scrubber'
 import type { FileInfo } from '@/shared/types'
 import type { MediaGroupingMode } from '@renderer/composables/LibraryPrefs'
 import type { ImportFolderPayload, ImportTarget } from '@renderer/composables/useImportHandler'
 
 /**
- * 媒体区块：分组导航 + 网格/列表/瀑布流三种视图 + 分组章节导航
+ * 媒体区块：分组导航 + 网格/列表/瀑布流三种视图
  * 从 MediaTabListView.vue 按功能拆出，逻辑保持不变；视图切换后的瀑布流刷新通过 expose 暴露给外壳。
  */
 defineProps<{
   totalCount: number
   groupingOptions: Array<{ value: MediaGroupingMode; label: string }>
   groupingMode: MediaGroupingMode
-  groupChapters: Chapter[]
   mediaGroups: Array<{ key: string; label: string; items: FileInfo[] }>
   viewMode: string
   selectedItems: string[]
@@ -33,7 +30,6 @@ defineProps<{
 
 const emit = defineEmits<{
   groupingChange: [mode: MediaGroupingMode]
-  chapterSelect: [chapter: Chapter, index: number]
   upload: []
   importFolder: [payload: ImportFolderPayload]
   mediaClick: [item: FileInfo, event?: MouseEvent]
@@ -91,16 +87,6 @@ defineExpose({ refreshWaterfalls })
           @import-folder="payload => emit('importFolder', payload)" />
       </div>
     </header>
-
-    <!-- 分组章节导航：滚动时固定在视图右上角 -->
-    <div v-if="groupingMode !== 'none' && groupChapters.length > 0"
-      class="sticky top-2 z-20 flex h-0 justify-end px-5 pointer-events-none">
-      <div class="pointer-events-auto px-1 py-2">
-        <ChapterScrubber :chapters="groupChapters" side="left" :row-height="12" :peak-length="42"
-          :label="$t('tabs.mediaTabListView.groupNavigation')"
-          @select="(chapter, index) => emit('chapterSelect', chapter, index)" />
-      </div>
-    </div>
 
     <section v-for="(group, groupIndex) in mediaGroups" :key="group.key" class="mb-3"
       :data-media-group-index="groupIndex">

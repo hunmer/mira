@@ -9,8 +9,15 @@ import {
   saveTabGroupingMode,
   type MediaGroupingMode
 } from '@renderer/composables/LibraryPrefs'
-import type { Chapter } from '@/components/ui/chapter-scrubber'
 import type { FileInfo } from '@/shared/types'
+
+/** 分组章节（原 ChapterScrubber 的 Chapter，改由 Scrollbar 标注点承接导航） */
+export interface GroupChapter {
+  id: string
+  title: string
+  meta: string
+  description: string
+}
 
 /**
  * 素材分组：按标签 / 文件夹 / 文件类型分组，以及分组章节导航
@@ -70,14 +77,14 @@ export function useMediaTabGrouping(deps: {
     return [...groups].map(([key, groupItems]) => ({ key, label: labels.get(key) || key, items: groupItems }))
   })
 
-  const groupChapters = computed<Chapter[]>(() => mediaGroups.value.map((group, index) => ({
+  const groupChapters = computed<GroupChapter[]>(() => mediaGroups.value.map((group, index) => ({
     id: group.key,
     title: group.label || t('views.sidebarModuleList.media'),
     meta: `${index + 1} / ${mediaGroups.value.length}`,
     description: t('tabs.mediaTabListView.fileCount', { count: group.items.length })
   })))
 
-  const handleGroupChapterSelect = (_chapter: Chapter, index: number) => {
+  const handleGroupChapterSelect = (_chapter: GroupChapter, index: number) => {
     const target = rootEl()?.querySelector(`[data-media-group-index="${index}"]`)
     target?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }

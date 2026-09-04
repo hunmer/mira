@@ -380,8 +380,6 @@
     "componentsDesc": "Demos of common components under components/ui.",
     "interactiveHoverButtonTitle": "Interactive hover button",
     "interactiveHoverButtonDesc": "On hover the label slides away, a primary blob expands to fill the button, revealing the label with an arrow.",
-    "chapterScrubberTitle": "Chapter scrubber",
-    "chapterScrubberDesc": "Hover or use arrow keys to ride the wave ticks; the preview card follows the pointer. Click or press Enter to select.",
     "folderTitle": "Folder card",
     "folderDesc": "Papers fan out and lift on hover. Three sizes and six colors.",
     "galleryTitle": "Expandable gallery",

@@ -2,6 +2,7 @@ export { default as Scrollbar } from "./Scrollbar.vue"
 export type {
   ScrollbarSettings,
   ScrollbarSettingsOverrides,
+  ScrollbarMarker,
   ScrollbarTransitionConfig,
   ScrollbarEase,
   ScrollbarSpringConfig,

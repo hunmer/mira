@@ -40,11 +40,11 @@
 
               <MediaTabMediaSection v-else-if="section.id === 'media'" ref="mediaSectionRef"
                 :total-count="filteredMediaItems.length" :grouping-options="groupingOptions"
-                :grouping-mode="groupingMode" :group-chapters="groupChapters" :media-groups="mediaGroups"
+                :grouping-mode="groupingMode" :media-groups="mediaGroups"
                 :view-mode="viewMode" :selected-items="selectedItems" :card-size="cardSize"
                 :columns-per-row="columnsPerRow" :dynamic-column-width="dynamicColumnWidth"
                 :compact-waterfall="compactWaterfall" :is-trash="isTrash" :import-target="importTarget"
-                @grouping-change="handleGroupingChange" @chapter-select="handleGroupChapterSelect"
+                @grouping-change="handleGroupingChange"
                 @upload="handleListUpload" @import-folder="handleImportFolder" @media-click="handleMediaClick"
                 @media-double-click="handleMediaDoubleClick" @media-select="handleMediaSelect"
                 @media-context-menu="handleMediaContextMenu" @media-info="handleMediaInfo"
@@ -66,8 +66,8 @@
           @next-page="handleNextPage" @page-change="handlePageChange" />
       </div>
 
-      <!-- 酷滚动条 overlay：监听上方滚动容器，覆盖整个主内容区域 -->
-      <Scrollbar :container="scrollContainerRef" />
+      <!-- 酷滚动条：监听上方滚动容器，分组标注点承接原章节导航 -->
+      <Scrollbar :container="scrollContainerRef" :markers="scrollMarkers" @marker-select="handleMarkerSelect" />
     </div>
 
     <!-- 底部状态栏 -->
@@ -140,6 +140,7 @@ import OrderedSectionList from '@/renderer/components/common/OrderedSectionList.
 import SortableLayoutDialog from '@/renderer/components/common/SortableLayoutDialog.vue'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Scrollbar } from '@/components/ui/scrollbar'
+import type { ScrollbarMarker } from '@/components/ui/scrollbar'
 import {
   AlertDialog,
   AlertDialogContent,
@@ -324,6 +325,33 @@ const {
   groupChapters,
   handleGroupChapterSelect
 } = useMediaTabGrouping({ tabId: props.tabId, paginatedMediaItems, rootEl: () => mediaTabListViewRef.value })
+
+// 分组标注点：测量各分组在滚动容器中的位置，映射为滚动条标注（承接原 ChapterScrubber 章节导航）
+const scrollMarkers = ref<ScrollbarMarker[]>([])
+const measureGroupMarkers = async () => {
+  await nextTick()
+  const container = scrollContainerRef.value
+  if (!container || groupingMode.value === 'none') {
+    scrollMarkers.value = []
+    return
+  }
+  const total = Math.max(1, container.scrollHeight)
+  const chapters = groupChapters.value
+  scrollMarkers.value = Array.from(container.querySelectorAll<HTMLElement>('[data-media-group-index]'))
+    .slice(0, chapters.length)
+    .map((node, i) => ({
+      id: chapters[i].id,
+      position: Math.min(1, Math.max(0, node.offsetTop / total)),
+      label: chapters[i].title,
+    }))
+}
+const handleMarkerSelect = (_marker: ScrollbarMarker, index: number) => {
+  const chapter = groupChapters.value[index]
+  if (chapter) handleGroupChapterSelect(chapter, index)
+}
+// 数据/分组/视图变化后重测；内容高度变化（图片加载撑高）由 ResizeObserver 兜底
+watch([() => mediaGroups.value.length, groupingMode, viewMode], () => { void measureGroupMarkers() })
+let markerResizeObserver: ResizeObserver | null = null
 
 // 面包屑导航
 const { breadcrumbItems, handleBreadcrumbClick } = useMediaTabBreadcrumb({ props })
@@ -515,12 +543,22 @@ onMounted(async () => {
 
   // 监听 WebSocket 触发的活跃 tab 刷新事件
   miraEventBus.on('active-tab-refresh', handleActiveTabRefresh)
+
+  // 分组标注点：初始测量 + 内容高度变化时兜底重测
+  void measureGroupMarkers()
+  const content = scrollContainerRef.value?.firstElementChild
+  if (content instanceof HTMLElement) {
+    markerResizeObserver = new ResizeObserver(() => { void measureGroupMarkers() })
+    markerResizeObserver.observe(content)
+  }
 })
 
 // 组件卸载时清理
 onUnmounted(() => {
   // mediaTabData.cleanup()
   miraEventBus.off('active-tab-refresh', handleActiveTabRefresh)
+  markerResizeObserver?.disconnect()
+  markerResizeObserver = null
 })
 
 // 监听器

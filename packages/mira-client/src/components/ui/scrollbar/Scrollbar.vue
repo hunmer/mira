@@ -2,7 +2,7 @@
 /**
  * 滚动条设置类型与默认值
  * 复刻自 scrollbar-but-cooler 的 hooks/useScrollbarSettings.ts
- * （dialkit 调参面板改为 settings prop 覆盖）
+ * （dialkit 调参面板改为 settings prop 覆盖；波纹/标注为移植 ChapterScrubber 后新增）
  */
 import {
   EASE_IN_OUT_CUBIC,
@@ -12,6 +12,15 @@ import {
 
 export type { ScrollbarEase, ScrollbarTransitionConfig, ScrollbarSpringConfig } from "./scrollbarTransitions"
 export type { ScrollbarState, Geometry, LineEndpoints } from "./scrollbarPoses"
+
+/** 标注点：在点列对应位置常显高亮（移植自 ChapterScrubber 的章节刻度） */
+export interface ScrollbarMarker {
+  id: string
+  /** 内容总高比例位置 0~1，将吸附到最近的点 */
+  position: number
+  /** 可选标签（当前仅用于语义，不渲染） */
+  label?: string
+}
 
 /** 外部可覆盖的滚动条设置（深一层 Partial） */
 export interface ScrollbarSettings {
@@ -34,13 +43,15 @@ export interface ScrollbarSettings {
     dotSpacing: number
   }
   tracking: {
-    /** 悬停点向左伸出的最大长度 px（超出轨道宽度的部分会被裁剪） */
+    /** 进度焦点/悬停波峰的伸展长度 px（超出轨道宽度的部分会被裁剪） */
     maxExtension: number
-    /** 伸展量随离焦点距离衰减的底数 */
-    extensionFalloff: number
-    /** 悬停着色随离焦点距离衰减的底数 */
-    colorFalloff: number
-    /** 伸展平滑时间常数（秒） */
+    /** 升余弦波纹半径（行数）——起伏从指针扩散的距离 */
+    rippleRadius: number
+    /** 标注点的放大倍数（线点粗细倍增即更大的圆点） */
+    markerDotScale: number
+    /** 进度焦点伸展随距离衰减的底数 */
+    focusFalloff: number
+    /** 进度焦点伸展平滑时间常数（秒） */
     smoothingTau: number
     /** 点击热区外扩 px */
     hitPadding: number
@@ -50,10 +61,14 @@ export interface ScrollbarSettings {
     extended: ScrollbarTransitionConfig
     split: ScrollbarTransitionConfig
     tracking: ScrollbarTransitionConfig
+    /** 反向（点列收拢回箭头）过渡：所有线段共用这一条缓动曲线（移植适配新增） */
+    reverse: ScrollbarTransitionConfig
   }
   appearance: {
     dotColor: string
     hoverColor: string
+    /** 标注点颜色（任意 CSS 颜色，默认跟随主题 primary） */
+    markerColor: string
     strokeWidth: number
   }
 }
@@ -63,7 +78,7 @@ export type ScrollbarSettingsOverrides = {
 }
 
 /**
- * 默认值面向 40px 占位轨道调整过（原仓库为全屏 overlay）：
+ * 默认值面向窄占位轨道调整过（原仓库为全屏 overlay）：
  * maxExtension 50→24、tracking.hitPadding 10→4，保证伸展/热区不溢出轨道
  */
 export const DEFAULT_SCROLLBAR_SETTINGS: ScrollbarSettings = {
@@ -80,8 +95,9 @@ export const DEFAULT_SCROLLBAR_SETTINGS: ScrollbarSettings = {
   },
   tracking: {
     maxExtension: 24,
-    extensionFalloff: 0.6,
-    colorFalloff: 0.3,
+    rippleRadius: 4,
+    markerDotScale: 1.5,
+    focusFalloff: 0.6,
     smoothingTau: 0.05,
     hitPadding: 4,
   },
@@ -90,10 +106,12 @@ export const DEFAULT_SCROLLBAR_SETTINGS: ScrollbarSettings = {
     extended: { type: "easing", duration: 0.35, ease: EASE_IN_OUT_CUBIC },
     split: { type: "easing", duration: 0.2, ease: EASE_OUT_CUBIC },
     tracking: { type: "easing", duration: 0.2, ease: EASE_OUT_CUBIC },
+    reverse: { type: "easing", duration: 0.3, ease: EASE_IN_OUT_CUBIC },
   },
   appearance: {
     dotColor: "#a6a6a6",
     hoverColor: "#ff00ea",
+    markerColor: "var(--primary)",
     strokeWidth: 4,
   },
 }
@@ -115,11 +133,18 @@ export const resolveScrollbarSettings = (
 
 <script setup lang="ts">
 /**
- * 酷滚动条（由 React 版 scrollbar-but-cooler/Scrollbar.tsx 移植）
+ * 酷滚动条（由 React 版 scrollbar-but-cooler/Scrollbar.tsx 移植，
+ * 并合入了 ChapterScrubber 的悬停波纹与标注点效果）
  *
  * 形态机：idle（右下角浮动箭头提示）→ compressed → extended → split → tracking，
- * 随滚动状态切换；tracking 态呈点列，悬停/点击某点时该点向左伸展并着色，
- * 点击跳到对应滚动位置；idle 态点击箭头下滚一屏。
+ * 随滚动状态切换；正向展开走原版链式分段动画，反向收拢走 timing.reverse
+ * 统一直达动画（所有线段同一条缓动曲线，箭头无延迟成形）。
+ *
+ * tracking 态交互（继承自 ChapterScrubber）：
+ * - 悬停时指针附近的点按升余弦波纹向左隆起伸展并着色，
+ *   波纹中心/强度分别由近临界阻尼弹簧与柔和弹簧跟手
+ * - markers 标注点常显高亮（markerColor + 静息伸展），点击仅触发 marker-select
+ * - 点击轨道跳到对应滚动位置；idle 态点击箭头直达底部
  *
  * 与原版的差异：原版监听 window 全页滚动且 fixed 全屏覆盖；本版是**右侧占位
  * 列**（流内 flex 子项，宽度 trackWidth），通过 container prop 指定滚动元素；
@@ -128,7 +153,7 @@ export const resolveScrollbarSettings = (
  * 用法（挂在滚动容器的 flex 父级里，与内容并排）：
  *   <div class="flex">
  *     <div ref="scrollRef" class="flex-1 min-w-0 overflow-y-auto">…内容…</div>
- *     <Scrollbar :container="scrollRef" />
+ *     <Scrollbar :container="scrollRef" :markers="markers" @marker-select="..." />
  *   </div>
  */
 import { computed, onBeforeUnmount, ref, watch, type CSSProperties } from "vue"
@@ -151,13 +176,21 @@ interface Props {
   settings?: ScrollbarSettingsOverrides
   /** 右侧占位轨道宽度 px */
   trackWidth?: number
+  /** 标注点列表（如分组章节），点击触发 marker-select */
+  markers?: ScrollbarMarker[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
   container: null,
   settings: undefined,
   trackWidth: 34,
+  markers: undefined,
 })
+
+const emit = defineEmits<{
+  /** 点击标注点（index 为 markers 数组中的下标） */
+  "marker-select": [marker: ScrollbarMarker, index: number]
+}>()
 
 const settings = computed(() => resolveScrollbarSettings(props.settings))
 // 点数取决于实测轨道长度：先按视口高度估算，connect 时按容器实测修正
@@ -170,26 +203,40 @@ const dotCount = ref(
     ),
   ),
 )
+// 实测点间距（px）与点列顶部偏移（px），connect 后更新，供点击/悬停行换算
+const measuredSpacing = ref(settings.value.line.dotSpacing)
+const trackTop = ref(0)
+// 标注点悬停卡片（label 展示）；teleport 到 body 渲染，坐标为视口全局坐标
+const hoverMarkerCard = ref<{ marker: ScrollbarMarker; top: number; left: number } | null>(null)
+// 标注点吸附表：dot index -> marker
+const markerDots = computed(() => {
+  const map = new Map<number, ScrollbarMarker>()
+  for (const marker of props.markers ?? []) {
+    const dot = Math.round(
+      Math.min(1, Math.max(0, marker.position)) * (dotCount.value - 1),
+    )
+    map.set(dot, marker)
+  }
+  return map
+})
 // 点列垂直轴贴轨道右缘（右侧不留空白），只留半个线宽防圆头被裁
 const axisMarginRight = computed(() => settings.value.appearance.strokeWidth / 2)
-
-// 调试输出：排查「无动画」类问题时在 DevTools Console 过滤 [Scrollbar]
-const dbg = (msg: string, ...args: unknown[]) => console.log(`[Scrollbar] ${msg}`, ...args)
 
 // ---------- 模板引用 ----------
 const svgRef = ref<SVGSVGElement | null>(null)
 const leftWingRef = ref<SVGLineElement | null>(null)
 const rightWingRef = ref<SVGLineElement | null>(null)
-const pieceRefs = ref<(SVGLineElement | null)[]>([])
-const hitRefs = ref<(SVGRectElement | null)[]>([])
 const arrowHitRef = ref<SVGRectElement | null>(null)
+const pieceRefs = ref<(SVGLineElement | null)[]>([])
 
 const setPieceRef = (i: number, el: unknown) => {
   pieceRefs.value[i] = (el as SVGLineElement | null) ?? null
 }
-const setHitRef = (i: number, el: unknown) => {
-  hitRefs.value[i] = (el as SVGRectElement | null) ?? null
-}
+
+// 当前连接暴露的渲染/唤醒入口（重连时更新，供组件级事件触发一帧）
+let activeRender: (() => void) | null = null
+let activeKick: (() => void) | null = null
+const kickOnce = () => activeKick?.()
 
 // ---------- 状态（跨重连持久，对应 React useRef） ----------
 interface AnimState {
@@ -203,15 +250,54 @@ interface AnimState {
 const anim: AnimState = { current: 0, target: 0, rafId: null, lastTime: 0, state: "idle" }
 let didEnter = false // 入场动画只播一次
 let bobTime = 0
-let loggedFirstFrame = false
+let arrowHovered = false
+// 悬停波纹状态（跨重连共享）：pointer 为行坐标（弹簧跟手），strength 0~1（柔和弹簧）
+const pointerSpring: SpringState = { pos: 0, vel: 0 }
+const strengthSpring: SpringState = { pos: 0, vel: 0 }
+let hoverRow = 0
+let hoverActive = false
 /** 模板绑定的 data-state（syncState 更新） */
 const svgState = ref<ScrollbarState>("idle")
 
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)")
-const canHover = window.matchMedia("(hover: hover)")
-if (reduceMotion.matches) dbg("prefers-reduced-motion: reduce 命中，动画将被禁用")
 
-// ---------- 悬停着色（组件级，模板事件驱动） ----------
+const onArrowEnter = () => {
+  arrowHovered = true
+  kickOnce()
+}
+const onArrowLeave = () => {
+  arrowHovered = false
+  kickOnce()
+}
+
+// 轨道悬停：tracking 态下按指针行更新波纹中心；命中标注点时展示 label 卡片
+const onTrackPointerMove = (event: PointerEvent) => {
+  const svg = svgRef.value
+  if (!svg || anim.state !== "tracking") return
+  const rect = svg.getBoundingClientRect()
+  // 行换算以点列顶部为基准（点列在容器内垂直居中，上方有留白）
+  const row = (event.clientY - rect.top - trackTop.value) / measuredSpacing.value - 0.5
+  hoverRow = row
+  hoverActive = true
+  const dot = Math.min(dotCount.value - 1, Math.max(0, Math.round(row)))
+  const marker = markerDots.value.get(dot)
+  hoverMarkerCard.value = marker?.label
+    ? {
+        marker,
+        top: rect.top + trackTop.value + (dot + 0.5) * measuredSpacing.value,
+        left: rect.left,
+      }
+    : null
+  kickOnce()
+}
+
+const onTrackPointerLeave = () => {
+  hoverActive = false
+  hoverMarkerCard.value = null
+  kickOnce()
+}
+
+// ---------- 悬停着色工具 ----------
 type Rgb = readonly [r: number, g: number, b: number]
 
 const parseHexColor = (hex: string): Rgb => {
@@ -226,48 +312,10 @@ const mixColors = (from: Rgb, to: Rgb, t: number) =>
     lerp(from[1], to[1], t),
   )}, ${Math.round(lerp(from[2], to[2], t))})`
 
-let hoveredDot: number | null = null
-let arrowHovered = false
-
-const applyHoverColors = () => {
-  const leftWing = leftWingRef.value
-  const rightWing = rightWingRef.value
-  if (!leftWing || !rightWing) return
-  const { appearance, tracking } = settings.value
-  const dotColor = parseHexColor(appearance.dotColor)
-  const dotHoverColor = parseHexColor(appearance.hoverColor)
-  // idle 态所有线段都是箭头的一部分，一起着色
-  const arrowStroke = arrowHovered ? "var(--dot-hover-color)" : ""
-  leftWing.style.stroke = arrowStroke
-  rightWing.style.stroke = arrowStroke
-  pieceRefs.value.slice(0, dotCount.value).forEach((el, i) => {
-    if (!el) return
-    el.style.stroke = arrowHovered
-      ? arrowStroke
-      : hoveredDot === null
-        ? ""
-        : mixColors(dotColor, dotHoverColor, tracking.colorFalloff ** Math.abs(i - hoveredDot))
-  })
-}
-
-const onHitEnter = (i: number) => {
-  if (!canHover.matches) return
-  hoveredDot = i
-  applyHoverColors()
-}
-const onHitLeave = (i: number) => {
-  if (hoveredDot !== i) return
-  hoveredDot = null
-  applyHoverColors()
-}
-const onArrowEnter = () => {
-  if (!canHover.matches) return
-  arrowHovered = true
-  applyHoverColors()
-}
-const onArrowLeave = () => {
-  arrowHovered = false
-  applyHoverColors()
+// 升余弦波包：波峰处 1、超出半径为 0，两端零斜率无接缝（移植自 ChapterScrubberTick）
+const bump = (distance: number, radius: number) => {
+  if (distance >= radius) return 0
+  return 0.5 * (1 + Math.cos(Math.PI * (distance / radius)))
 }
 
 // ---------- 滚动工具（基于容器而非 window） ----------
@@ -299,35 +347,80 @@ const scrollToDot = (dot: number) => {
   })
 }
 
-const scrollDownOneViewport = () => {
+const scrollToBottom = () => {
   const container = props.container
   if (!container) return
   container.scrollTo({
-    top: container.scrollTop + container.clientHeight,
+    top: container.scrollHeight,
     behavior: reduceMotion.matches ? "auto" : "smooth",
   })
+}
+
+// 点击轨道：tracking 态下跳到最近点；命中标注点则仅触发 marker-select
+const onTrackClick = (event: MouseEvent) => {
+  const svg = svgRef.value
+  if (!svg || svgState.value !== "tracking") return
+  const rect = svg.getBoundingClientRect()
+  const row = (event.clientY - rect.top - trackTop.value) / measuredSpacing.value - 0.5
+  const dot = Math.min(dotCount.value - 1, Math.max(0, Math.round(row)))
+  const marker = markerDots.value.get(dot)
+  if (marker) {
+    const index = props.markers?.indexOf(marker) ?? -1
+    emit("marker-select", marker, index)
+    return
+  }
+  scrollToDot(dot)
 }
 
 // ---------- 动画连接（svg / container / settings 任一就绪或变化时重建） ----------
 let cleanup: (() => void) | null = null
 
+// 线段几何快照：direct 动画的插值端点（伸展/浮动效果已折算进端点值）
+type Quad = [number, number, number, number]
+interface PoseSnapshot {
+  leftWing: Quad
+  rightWing: Quad
+  pieces: Quad[]
+}
+type PoseLike = {
+  leftWing: LineEndpoints
+  rightWing: LineEndpoints
+  pieces: readonly LineEndpoints[]
+}
+
+// 弹簧参数（移植自 ChapterScrubber）：
+// 近临界阻尼：几乎无滞后、无过冲，波纹像吸附在指针上
+const POINTER_SPRING = { stiffness: 700, damping: 52, mass: 0.5 }
+// 柔和弹簧：起伏优雅地隆起与回落
+const STRENGTH_SPRING = { stiffness: 260, damping: 30, mass: 0.6 }
+
+interface SpringState {
+  pos: number
+  vel: number
+}
+
+const advanceSpring = (
+  state: SpringState,
+  target: number,
+  cfg: { stiffness: number; damping: number; mass: number },
+  dt: number,
+): boolean => {
+  if (reduceMotion.matches) {
+    state.pos = target
+    state.vel = 0
+    return true
+  }
+  const a = (cfg.stiffness * (target - state.pos) - cfg.damping * state.vel) / cfg.mass
+  state.vel += a * dt
+  state.pos += state.vel * dt
+  return Math.abs(target - state.pos) < 0.005 && Math.abs(state.vel) < 0.01
+}
+
 const connectScrollbar = (svg: SVGSVGElement, container: HTMLElement) => {
   const leftWing = leftWingRef.value
   const rightWing = rightWingRef.value
   const pieces = pieceRefs.value.slice(0, dotCount.value).filter((el): el is SVGLineElement => !!el)
-  const hits = hitRefs.value.slice(0, dotCount.value).filter((el): el is SVGRectElement => !!el)
-  const arrowHit = arrowHitRef.value
-  if (!leftWing || !rightWing || !arrowHit || pieces.length < dotCount.value || hits.length < dotCount.value) {
-    dbg("connect 失败：refs 未就绪", {
-      pieces: pieces.length,
-      hits: hits.length,
-      need: dotCount.value,
-      leftWing: !!leftWing,
-      rightWing: !!rightWing,
-      arrowHit: !!arrowHit,
-    })
-    return null
-  }
+  if (!leftWing || !rightWing || pieces.length < dotCount.value) return null
 
   const s = settings.value
   const a = anim
@@ -340,15 +433,16 @@ const connectScrollbar = (svg: SVGSVGElement, container: HTMLElement) => {
 
   // 点数与实测轨道长度对齐；有修正时更新 dotCount 触发模板重渲，由 watch 重连
   const syncDotCount = (): boolean => {
-    const expected = Math.max(1, Math.round(resolveTrackLength() / s.line.dotSpacing))
+    const trackLength = resolveTrackLength()
+    const expected = Math.max(1, Math.round(trackLength / s.line.dotSpacing))
     if (expected !== dotCount.value) {
-      dbg("dotCount 修正", dotCount.value, "->", expected, "trackLength", resolveTrackLength())
       dotCount.value = expected
       return true
     }
+    measuredSpacing.value = trackLength / dotCount.value
+    trackTop.value = (svg.clientHeight - trackLength) / 2
     return false
   }
-  if (syncDotCount()) return null // 等 v-for 按新点数重渲后由 watch 重连
 
   const transitions = [
     resolveTransition(s.timing.compressed),
@@ -368,20 +462,10 @@ const connectScrollbar = (svg: SVGSVGElement, container: HTMLElement) => {
   })
   let poses = getPoses(svg.getBoundingClientRect(), buildGeometry())
 
-  const getExtensionLength = (dot: number, focusDot: number) =>
-    s.tracking.maxExtension * s.tracking.extensionFalloff ** Math.abs(dot - focusDot)
-
-  // 点与点之间的隐形点击热区，向左延伸到伸展后点的长度
-  const placeHitAreas = () => {
-    const spacing = resolveTrackLength() / dotCount.value
-    hits.forEach((el, i) => {
-      const [x, y1, , y2] = poses.split.pieces[i]
-      el.setAttribute("x", String(x - s.tracking.maxExtension - s.tracking.hitPadding))
-      el.setAttribute("y", String((y1 + y2) / 2 - spacing / 2))
-      el.setAttribute("width", String(s.tracking.maxExtension + 2 * s.tracking.hitPadding))
-      el.setAttribute("height", String(spacing))
-    })
-
+  // idle 箭头的隐形点击热区
+  const placeArrowHitArea = () => {
+    const arrowHit = arrowHitRef.value
+    if (!arrowHit) return
     const [, , arrowAxis, bottomY] = poses.idle.leftWing
     const arrowHitTop =
       bottomY - s.arrow.arrowLength - s.arrow.bobAmplitude - s.arrow.hitPadding
@@ -392,14 +476,29 @@ const connectScrollbar = (svg: SVGSVGElement, container: HTMLElement) => {
     arrowHit.setAttribute("height", String(arrowHitBottom - arrowHitTop))
   }
 
+  // direct（反向收拢/直达）动画：所有线段共用一条缓动曲线过渡到目标 pose
+  let direct: {
+    from: PoseSnapshot
+    toKey: ScrollbarState
+    t: number
+    duration: number
+    ease: (t: number) => number
+  } | null = null
+
+  // 最近一次渲染处于 tracking 形态的权重（0~1），标注点放大随其渐入
+  let lastTrackingScale = 0
+
+  // 进度焦点伸展（原版 tracking 效果）：当前滚动位置附近的点常显伸展，
+  // 目标按 focusFalloff 指数衰减，extensions 数组每帧向目标指数平滑
   const extensions = new Float64Array(dotCount.value)
+  const getFocusExtension = (i: number, focusDot: number) =>
+    s.tracking.maxExtension * s.tracking.focusFalloff ** Math.abs(i - focusDot)
   const advanceExtensions = (dt: number): boolean => {
     const focusDot = getFocusDot(container, dotCount.value)
-    // 指数平滑：把补间的进度按时间分摊到每帧（而非一帧到位）
     const alpha = reduceMotion.matches ? 1 : 1 - Math.exp(-dt / s.tracking.smoothingTau)
     let settled = true
     for (let i = 0; i < dotCount.value; i++) {
-      const targetLength = getExtensionLength(i, focusDot)
+      const targetLength = getFocusExtension(i, focusDot)
       const frameLength = extensions[i] + (targetLength - extensions[i]) * alpha
       if (Math.abs(targetLength - frameLength) < 0.05) {
         extensions[i] = targetLength
@@ -411,53 +510,117 @@ const connectScrollbar = (svg: SVGSVGElement, container: HTMLElement) => {
     return settled
   }
 
-  const setLine = (
-    el: SVGLineElement,
-    f: LineEndpoints,
-    g: LineEndpoints,
-    t: number,
-    extendLeft = 0,
-    offsetY = 0,
-  ) => {
-    el.setAttribute("x1", String(lerp(f[0], g[0], t) - extendLeft))
-    el.setAttribute("y1", String(lerp(f[1], g[1], t) + offsetY))
-    el.setAttribute("x2", String(lerp(f[2], g[2], t)))
-    el.setAttribute("y2", String(lerp(f[3], g[3], t) + offsetY))
+  // 每点伸展量：进度焦点 + 悬停波纹隆起（弹簧强度 × 升余弦）
+  const extensionOf = (i: number) =>
+    extensions[i] +
+    strengthSpring.pos *
+      bump(Math.abs(i - pointerSpring.pos), s.tracking.rippleRadius) *
+      s.tracking.maxExtension
+
+  const writeLine = (el: SVGLineElement, [x1, y1, x2, y2]: Quad) => {
+    el.setAttribute("x1", String(x1))
+    el.setAttribute("y1", String(y1))
+    el.setAttribute("x2", String(x2))
+    el.setAttribute("y2", String(y2))
   }
 
-  const applyGeometry = (t: number) => {
+  // 两套线段集合按 local 插值，并叠加伸展（extendLeft）与 idle 浮动（bobOffset）
+  const composeSnapshot = (
+    from: PoseLike,
+    to: PoseLike,
+    local: number,
+    extScale: number,
+    bobScale: number,
+  ): PoseSnapshot => {
+    const bobOffset =
+      bobScale * s.arrow.bobAmplitude * Math.sin((2 * Math.PI * bobTime) / s.arrow.bobPeriod)
+    const mix = (f: LineEndpoints, g: LineEndpoints, extendLeft: number): Quad => [
+      lerp(f[0], g[0], local) - extendLeft,
+      lerp(f[1], g[1], local) + bobOffset,
+      lerp(f[2], g[2], local),
+      lerp(f[3], g[3], local) + bobOffset,
+    ]
+    lastTrackingScale = extScale
+    return {
+      leftWing: mix(from.leftWing, to.leftWing, 0),
+      rightWing: mix(from.rightWing, to.rightWing, 0),
+      pieces: from.pieces.map((f, i) => mix(f, to.pieces[i], extScale * extensionOf(i))),
+    }
+  }
+
+  // 链式分段插值快照（idle→tracking 的原版展开动画）
+  const chainSnapshot = (t: number): PoseSnapshot => {
     const segment = Math.min(Math.max(Math.floor(t), 0), transitions.length - 1)
     const from = poses[POSE_ORDER[segment]]
     const to = poses[POSE_ORDER[segment + 1]]
     const local = transitions[segment].ease(t - segment)
     const trackingExtensionScale = segment === transitions.length - 1 ? local : 0
     const idleBobScale = segment === 0 ? 1 - local : 0
-    const bobOffset =
-      idleBobScale *
-      s.arrow.bobAmplitude *
-      Math.sin((2 * Math.PI * bobTime) / s.arrow.bobPeriod)
-    // 绘制所有线段
-    setLine(leftWing, from.leftWing, to.leftWing, local, 0, bobOffset)
-    setLine(rightWing, from.rightWing, to.rightWing, local, 0, bobOffset)
-    pieces.forEach((el, i) =>
-      setLine(el, from.pieces[i], to.pieces[i], local, trackingExtensionScale * extensions[i], bobOffset),
-    )
+    return composeSnapshot(from, to, local, trackingExtensionScale, idleBobScale)
+  }
+
+  // direct 动画当前快照；bob 渐入仅目标为 idle、伸展渐入仅目标为 tracking
+  const directSnapshot = (): PoseSnapshot => {
+    const d = direct
+    if (!d) return chainSnapshot(a.current)
+    const e = d.ease(d.t)
+    const extScale = d.toKey === "tracking" ? e : 0
+    const bobScale = d.toKey === "idle" ? e : 0
+    return composeSnapshot(d.from, poses[d.toKey], e, extScale, bobScale)
+  }
+
+  // 渲染：几何 + 逐点着色（波纹混色 / 箭头悬停色）；标注由独立圆点元素展示
+  const renderCurrent = () => {
+    const snap = direct ? directSnapshot() : chainSnapshot(a.current)
+    writeLine(leftWing, snap.leftWing)
+    writeLine(rightWing, snap.rightWing)
+    const { appearance, tracking } = s
+    const dotColor = parseHexColor(appearance.dotColor)
+    const hoverColor = parseHexColor(appearance.hoverColor)
+    const arrowStroke = arrowHovered ? appearance.hoverColor : ""
+    leftWing.style.stroke = arrowStroke
+    rightWing.style.stroke = arrowStroke
+    const hoverT = strengthSpring.pos
+    pieces.forEach((el, i) => {
+      writeLine(el, snap.pieces[i])
+      if (markerDots.value.has(i)) {
+        // 标注即点列中的点本身：markerColor 着色 + 随 tracking 形态渐入的圆点放大
+        el.style.stroke = appearance.markerColor
+        el.setAttribute(
+          "stroke-width",
+          String(appearance.strokeWidth * (1 + (tracking.markerDotScale - 1) * lastTrackingScale)),
+        )
+      } else {
+        el.style.stroke = mixColors(
+          dotColor,
+          hoverColor,
+          hoverT * bump(Math.abs(i - pointerSpring.pos), tracking.rippleRadius),
+        )
+        el.removeAttribute("stroke-width")
+      }
+    })
+  }
+
+  // 状态切换动画选择：静止 idle → tracking 走原版链式展开；
+  // 其余（收拢回箭头、动画进行中被打断）走 direct 统一动画
+  const startTransition = (next: ScrollbarState) => {
+    const idleAtRest = next === "tracking" && direct === null && a.current === a.target
+    a.target = getTargetForState(next)
+    if (idleAtRest) return
+    direct = {
+      from: direct ? directSnapshot() : chainSnapshot(a.current),
+      toKey: next,
+      t: reduceMotion.matches ? 1 : 0,
+      ...resolveTransition(s.timing.reverse),
+    }
   }
 
   const syncState = () => {
     const next = getStateForScroll(container.scrollTop)
     if (next !== a.state) {
-      dbg("state:", a.state, "->", next, { scrollTop: container.scrollTop })
       a.state = next
       svgState.value = next
-      if (next !== "tracking" && hoveredDot !== null) {
-        hoveredDot = null
-        applyHoverColors()
-      }
-      if (next !== "idle" && arrowHovered) {
-        arrowHovered = false
-        applyHoverColors()
-      }
+      startTransition(next)
     }
   }
 
@@ -491,23 +654,25 @@ const connectScrollbar = (svg: SVGSVGElement, container: HTMLElement) => {
   const step = (now: number) => {
     const dt = Math.min((now - a.lastTime) / 1000, 0.1)
     a.lastTime = now
-    if (!loggedFirstFrame) {
-      loggedFirstFrame = true
-      dbg("动画循环启动", {
-        current: a.current,
-        target: a.target,
-        state: a.state,
-        reduceMotion: reduceMotion.matches,
-        svgSize: `${svg.clientWidth}x${svg.clientHeight}`,
-        dotCount: dotCount.value,
-      })
-    }
-    advance(dt)
-    const extensionsSettled = advanceExtensions(dt) // 点伸展期间循环保持存活
+    // 波纹弹簧：仅在 tracking 态且指针悬停时激活
+    const strengthTarget = hoverActive && a.state === "tracking" ? 1 : 0
+    const pointerSettled = advanceSpring(pointerSpring, hoverRow, POINTER_SPRING, dt)
+    const strengthSettled = advanceSpring(strengthSpring, strengthTarget, STRENGTH_SPRING, dt)
+    const extensionsSettled = advanceExtensions(dt)
+    const settled = pointerSettled && strengthSettled && extensionsSettled
     if (!reduceMotion.matches) bobTime += dt
-    applyGeometry(a.current)
-    const bobbing = a.current === 0 && !reduceMotion.matches
-    if (a.current === a.target && extensionsSettled && !bobbing) {
+    if (direct) {
+      direct.t = reduceMotion.matches ? 1 : Math.min(1, direct.t + dt / direct.duration)
+      if (direct.t >= 1 && settled) {
+        direct = null
+        a.current = a.target // 直达完成，标量对齐目标 pose
+      }
+    } else {
+      advance(dt)
+    }
+    renderCurrent()
+    const bobbing = direct === null && a.current === 0 && !reduceMotion.matches
+    if (direct === null && a.current === a.target && settled && !bobbing) {
       a.rafId = null
       return
     }
@@ -521,14 +686,8 @@ const connectScrollbar = (svg: SVGSVGElement, container: HTMLElement) => {
     }
   }
 
-  let loggedFirstScroll = false
   const onScroll = () => {
-    if (!loggedFirstScroll) {
-      loggedFirstScroll = true
-      dbg("scroll 事件到达")
-    }
     syncState()
-    a.target = getTargetForState(a.state)
     kick()
   }
 
@@ -540,26 +699,24 @@ const connectScrollbar = (svg: SVGSVGElement, container: HTMLElement) => {
     a.current = reduceMotion.matches ? a.target : Math.max(a.target - 1, 0)
     didEnter = true
   }
-  const mountFocusDot = getFocusDot(container, dotCount.value)
-  for (let i = 0; i < dotCount.value; i++) {
-    extensions[i] = getExtensionLength(i, mountFocusDot)
+  // 进度焦点伸展挂载即就位（不平滑），避免初始一帧全收拢
+  {
+    const mountFocusDot = getFocusDot(container, dotCount.value)
+    for (let i = 0; i < dotCount.value; i++) {
+      extensions[i] = getFocusExtension(i, mountFocusDot)
+    }
   }
-  applyGeometry(a.current)
-  placeHitAreas()
+  renderCurrent()
+  placeArrowHitArea()
   kick() // 启动 idle 浮动或入场动画
-  dbg("connect 成功", {
-    dotCount: dotCount.value,
-    svgSize: `${svg.clientWidth}x${svg.clientHeight}`,
-    scrollHeight: container.scrollHeight,
-    clientHeight: container.clientHeight,
-    state: a.state,
-  })
+  activeRender = renderCurrent
+  activeKick = kick
 
   const resizeObserver = new ResizeObserver(() => {
     if (syncDotCount()) return // 高度变化导致点数变化，等 watch(dotCount) 重连
     poses = getPoses(svg.getBoundingClientRect(), buildGeometry())
-    applyGeometry(a.current)
-    placeHitAreas()
+    renderCurrent()
+    placeArrowHitArea()
   })
   resizeObserver.observe(svg)
 
@@ -569,6 +726,8 @@ const connectScrollbar = (svg: SVGSVGElement, container: HTMLElement) => {
     resizeObserver.disconnect()
     if (a.rafId !== null) cancelAnimationFrame(a.rafId)
     a.rafId = null
+    activeRender = null
+    activeKick = null
   }
 }
 
@@ -583,6 +742,8 @@ const setupScrollbar = () => {
 
 // svg ref / container / settings / dotCount 任一就绪或变化即（重）连接；flush post 保证 DOM 先就绪
 watch([svgRef, () => props.container, () => props.settings, dotCount], setupScrollbar, { flush: "post" })
+// 标注点变化只影响颜色/伸展（rAF 中读取 markerDots），重绘一帧即可，无需重连
+watch(markerDots, () => activeRender?.())
 
 onBeforeUnmount(() => {
   cleanup?.()
@@ -600,23 +761,28 @@ const svgStyle = computed(() => {
 </script>
 
 <template>
-  <div class="scrollbar-wrap" :style="{ width: `${trackWidth}px` }">
+  <div class="scrollbar-wrap" :style="{ width: `${trackWidth}px` }" @pointermove="onTrackPointerMove"
+    @pointerleave="onTrackPointerLeave">
     <svg ref="svgRef" class="scrollbar" :data-state="svgState" aria-hidden="true" :style="svgStyle">
       <line ref="leftWingRef" />
       <line ref="rightWingRef" />
       <line v-for="(_, i) in dotCount" :key="`piece-${i}`" :ref="(el: any) => setPieceRef(i, el)" />
-      <rect
-        v-for="(_, i) in dotCount"
-        :key="`hit-${i}`"
-        class="hit-area"
-        :ref="(el: any) => setHitRef(i, el)"
-        @click="scrollToDot(i)"
-        @mouseenter="onHitEnter(i)"
-        @mouseleave="onHitLeave(i)"
-      />
-      <rect ref="arrowHitRef" class="arrow-hit" @click="scrollDownOneViewport"
+      <!-- tracking 态整轨点击热区 -->
+      <rect class="hit-area" x="0" y="0" width="100%" height="100%" @click="onTrackClick" />
+      <!-- idle 态箭头点击热区 -->
+      <rect ref="arrowHitRef" class="arrow-hit" @click="scrollToBottom"
         @mouseenter="onArrowEnter" @mouseleave="onArrowLeave" />
     </svg>
+
+    <!-- 标注点悬停卡片：teleport 到 body，悬浮于所有容器之上，展示在轨道左侧 -->
+    <Teleport to="body">
+      <Transition name="scrollbar-marker">
+        <div v-if="hoverMarkerCard" class="scrollbar-marker-card"
+          :style="{ top: `${hoverMarkerCard.top}px`, left: `${hoverMarkerCard.left - 8}px` }">
+          {{ hoverMarkerCard.marker.label }}
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -645,13 +811,17 @@ const svgStyle = computed(() => {
   stroke: currentColor;
   stroke-width: var(--stroke-width, 4);
   stroke-linecap: round;
-  transition: stroke 250ms ease;
 }
 
-/* 仅 tracking 态激活点击条 */
+/* 整轨点击热区：仅 tracking 态激活 */
 .scrollbar .hit-area {
   fill: none;
   pointer-events: none;
+}
+
+.scrollbar[data-state="tracking"] .hit-area {
+  pointer-events: all;
+  cursor: pointer;
 }
 
 /* 箭头条仅 idle 态激活 */
@@ -665,8 +835,34 @@ const svgStyle = computed(() => {
   cursor: pointer;
 }
 
-.scrollbar[data-state="tracking"] .hit-area {
-  pointer-events: all;
-  cursor: pointer;
+/* 标注点悬停卡片（teleport 到 body，fixed 定位） */
+.scrollbar-marker-card {
+  position: fixed;
+  transform: translate(-100%, -50%);
+  z-index: 9999;
+  pointer-events: none;
+  white-space: nowrap;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--popover);
+  color: var(--popover-foreground);
+  padding: 0.25rem 0.625rem;
+  font-size: 12px;
+  line-height: 1.4;
+  box-shadow: 0 2px 6px -2px rgba(0, 0, 0, 0.08), 0 8px 24px -8px rgba(0, 0, 0, 0.18);
+}
+
+.scrollbar-marker-enter-active,
+.scrollbar-marker-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.scrollbar-marker-enter-from,
+.scrollbar-marker-leave-to {
+  opacity: 0;
+  transform: translate(-100%, -50%) translateX(4px);
 }
 </style>

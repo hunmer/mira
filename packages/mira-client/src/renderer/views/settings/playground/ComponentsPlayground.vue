@@ -23,25 +23,7 @@
       </div>
     </div>
 
-    <!-- ChapterScrubber：波纹刻度导航 -->
-    <div class="space-y-3 rounded-lg border p-4">
-      <div class="space-y-1">
-        <p class="text-sm font-medium text-foreground">{{ $t('views.playgroundPanel.chapterScrubberTitle') }}</p>
-        <p class="text-xs text-muted-foreground">{{ $t('views.playgroundPanel.chapterScrubberDesc') }}</p>
-      </div>
-      <div class="flex items-start gap-8">
-        <ChapterScrubber
-          :chapters="chapters"
-          :current-index="5"
-          @select="onSelectChapter"
-          @active-change="onActiveChapter"
-        />
-        <div class="space-y-1 text-xs text-muted-foreground pt-2">
-          <p>active: {{ activeTitle || '—' }}</p>
-          <p>selected: {{ selectedTitle || '—' }}</p>
-        </div>
-      </div>
-    </div>
+    <!-- ChapterScrubber 已移除：波纹悬停与标注点效果并入 ui/scrollbar -->
 
     <!-- Folder：悬停纸张扇开 -->
     <div class="space-y-3 rounded-lg border p-4">
@@ -212,7 +194,6 @@ import { ref } from 'vue'
 import { TabsContent } from '@/components/ui/tabs'
 import { NotificationList } from '@/components/ui/notification-list'
 import { InteractiveHoverButton } from '@/components/ui/interactive-hover-button'
-import { ChapterScrubber, type Chapter } from '@/components/ui/chapter-scrubber'
 import { Folder } from '@/components/ui/folder'
 import { ExpandableGallery, type GalleryItem } from '@/components/ui/expandable-gallery'
 import { FileIcon, FolderIcon } from '@/components/ui/file-icon'
@@ -260,28 +241,10 @@ const fileDemo = [
   'style.css',
   'README.md',
   '.gitignore',
-  'photo.png',
+  'photo.jpg',
   'data.yaml',
   '未知类型.xyz',
 ]
-
-const activeTitle = ref('')
-const selectedTitle = ref('')
-
-function onSelectChapter(chapter: Chapter) {
-  selectedTitle.value = chapter.title
-}
-
-function onActiveChapter(chapter: Chapter | null) {
-  activeTitle.value = chapter?.title ?? ''
-}
-
-const chapters: Chapter[] = Array.from({ length: 24 }, (_, i) => ({
-  id: `chapter-${i + 1}`,
-  meta: `00:${String(i * 5).padStart(2, '0')}`,
-  title: `第 ${i + 1} 章`,
-  description: '章节内容简介，悬停刻度可在预览卡中查看，最多显示三行。',
-}))
 
 // 示例图为 unsplash 外链，仅作演示
 const galleryItems: GalleryItem[] = [

@@ -44,7 +44,6 @@ import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 | `calendar` | Calendar, CalendarCell, CalendarGrid, CalendarHeader, ...（被 `date-picker` 复用） |
 | `card` | Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, CardAction |
 | `carousel` | Carousel（v2.x 新增） |
-| `chapter-scrubber` | 章节/时间轴拖动条（v2.x 新增，业务复合） |
 | `checkbox` | Checkbox |
 | `collapsible` | Collapsible 系列（v2.x 回归） |
 | `color-picker` | ColorPicker（v2.x 新增，业务复合） |
@@ -72,6 +71,7 @@ import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 | `progress` | Progress |
 | `radio-group` | RadioGroup, RadioGroupItem |
 | `resizable` | ResizablePanelGroup, ResizableHandle, ResizablePanel |
+| `scrollbar` | Scrollbar（酷滚动条：形态机 + 波纹悬停 + 标注点，2026-09 移植 scrollbar-but-cooler 并合并 ChapterScrubber） |
 | `select` | Select, SelectTrigger, SelectContent, SelectItem, SelectGroup, ... |
 | `separator` | Separator |
 | `sheet` | Sheet, SheetTrigger, SheetContent, SheetHeader, SheetFooter, ... |
