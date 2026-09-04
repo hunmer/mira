@@ -1,8 +1,9 @@
 import type { Folder, Tag } from 'mira-app-core/shared/sdk';
 import { createApp, type App } from 'vue';
-import type { LibraryFlatItem, LibraryTreeServices, LibraryTreeUpload } from 'mira-plugin-ui/library';
+import type { LibraryFlatItem, LibraryTreeServices, LibraryTreeSortMode, LibraryTreeUpload } from 'mira-plugin-ui/library';
 import { dbg } from '@/shared/debug';
 import { parseDrop, urlKind } from '@/shared/drag-data';
+import { readNodeLastUsed } from '@/shared/node-last-used';
 import type { LibraryTreeStyle, ResourceKind } from '@/shared/types';
 import DragDropOverlay from './overlay/DragDropOverlay.vue';
 // 仅在浮层 Shadow DOM 内加载,避免 Tailwind utilities 污染宿主页面
@@ -36,6 +37,8 @@ export interface DragDropHandlers {
   getLibraryId?: () => Promise<string | null>;
   /** 浮层树视图样式(设置「快捷导入样式」);未提供或失败时用 tree */
   getTreeStyle?: () => Promise<LibraryTreeStyle | null>;
+  /** 浮层树展示排序(设置「文件夹/标签排序」);未提供或失败时由组件缺省按 id */
+  getSorts?: () => Promise<{ folder: LibraryTreeSortMode; tag: LibraryTreeSortMode } | null>;
   /**
    * 新建文件夹(浮层树「新建」对话框);返回新文件夹 id;失败返回 null。
    */
@@ -220,6 +223,9 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
   let pendingStyle: Promise<LibraryTreeStyle | null> | null = null;
   // 浮层树的视图样式;dragstart 预热拉取,挂载浮层时取当前缓存值
   let treeStyle: LibraryTreeStyle = 'tree';
+  let pendingSorts: Promise<{ folder: LibraryTreeSortMode; tag: LibraryTreeSortMode } | null> | null = null;
+  // 浮层树展示排序;与视图样式同模式预热缓存
+  let treeSorts: { folder: LibraryTreeSortMode; tag: LibraryTreeSortMode } | null = null;
   let listenersAttached = false;
   // jsdom 无 ResizeObserver(单测环境跳过高度重钳制)
   const resizeObserver = typeof ResizeObserver !== 'undefined'
@@ -283,6 +289,7 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     void fetchFolders(); // 预热文件夹拉取,移动达到阈值时已就绪
     void fetchTags(); // 预热标签拉取
     void fetchTreeStyle(); // 预热树视图样式(快捷导入样式设置)
+    void fetchSorts(); // 预热树展示排序(文件夹/标签排序设置)
   }
 
   /** document 级 dragover:判断位移,首次超过阈值时按拖拽方向显示浮层 */
@@ -308,6 +315,7 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     // 也应显示浮层,释放后由 LibraryTreeView 读取 dataTransfer.files 上传。
     if (!dragOrigin && e.dataTransfer?.types.some(type => type.toLowerCase() === 'files')) {
       void fetchTreeStyle(); // 外部文件拖入无 dragstart,这里补预热
+      void fetchSorts();
       dragOrigin = {
         x: e.clientX,
         y: e.clientY,
@@ -377,6 +385,26 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     return pendingStyle;
   }
 
+  /** 懒加载树展示排序(与 fetchTreeStyle 同策略:结果缓存,5 秒后允许重新拉取) */
+  function fetchSorts(): Promise<{ folder: LibraryTreeSortMode; tag: LibraryTreeSortMode } | null> {
+    if (!handlers.getSorts) return Promise.resolve(null);
+    if (!pendingSorts) {
+      pendingSorts = handlers.getSorts().then(sorts => {
+        if (sorts && sorts !== treeSorts) {
+          dbg.log('dragdrop', 'tree sorts', sorts);
+          treeSorts = sorts;
+        }
+        return sorts;
+      }).catch(e => {
+        dbg.error('dragdrop', 'fetchSorts failed', e);
+        return null;
+      }).finally(() => {
+        setTimeout(() => { pendingSorts = null; }, 5000);
+      });
+    }
+    return pendingSorts;
+  }
+
   /** 懒加载标签列表(与文件夹同策略) */
   function fetchTags(): Promise<Tag[] | null> {
     if (!handlers.getTags) return Promise.resolve(null);
@@ -403,7 +431,11 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
   }
 
   /** Folder/Tag 原始对象 → LibraryFlatItem(与扩展 useLibraryTree 的 adapt 一致,运行时字段相同) */
-  function adaptFlat(raw: { id: number; title: string; parent_id?: number; color?: number; description?: string; icon?: string; sort_index?: number }): LibraryFlatItem {
+  function adaptFlat(
+    raw: { id: number; title: string; parent_id?: number; color?: number; description?: string; icon?: string; sort_index?: number; createdAt?: string | number; created_at?: string | number },
+    lastUsed?: Record<string, number>,
+    libraryId?: string,
+  ): LibraryFlatItem {
     return {
       id: raw.id,
       title: raw.title,
@@ -412,18 +444,20 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
       description: raw.description,
       icon: raw.icon,
       sort_index: raw.sort_index,
+      created_at: raw.created_at ?? raw.createdAt,
+      last_used_at: libraryId != null ? lastUsed?.[`${libraryId}:${raw.id}`] : undefined,
     };
   }
 
   /** 浮层树数据服务:listFolders/listTags 走 handlers(未连接 → null,树显示空态);CRUD 透传可选 handlers */
   const treeServices: LibraryTreeServices = {
-    async listFolders() {
-      const list = await fetchFolders();
-      return list?.map(adaptFlat) ?? null;
+    async listFolders(libraryId) {
+      const [list, lastUsed] = await Promise.all([fetchFolders(), readNodeLastUsed()]);
+      return list?.map(it => adaptFlat(it, lastUsed.folder, libraryId)) ?? null;
     },
-    async listTags() {
-      const list = await fetchTags();
-      return list?.map(adaptFlat) ?? null;
+    async listTags(libraryId) {
+      const [list, lastUsed] = await Promise.all([fetchTags(), readNodeLastUsed()]);
+      return list?.map(it => adaptFlat(it, lastUsed.tag, libraryId)) ?? null;
     },
     async createNode(kind, libraryId, title, parentId) {
       if (handlers.createNode) return handlers.createNode(kind, libraryId, title, parentId);
@@ -567,6 +601,8 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
       services: treeServices,
       upload: makeUploadAdapter(source),
       view: treeStyle,
+      sortFolder: treeSorts?.folder,
+      sortTag: treeSorts?.tag,
       showCustomUpload: !!handlers.openCustomUpload,
       onUploadPayload: handlers.onUpload,
       onCustomUpload: () => {

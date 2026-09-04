@@ -159,6 +159,15 @@ const dragdrop = createDragDrop({
       return null;
     }
   },
+  // 浮层树展示排序:设置「文件夹/标签排序」
+  async getSorts() {
+    try {
+      const settings = await chrome.runtime.sendMessage({ type: 'CONFIG_GET' });
+      return { folder: settings?.libraryFolderSort, tag: settings?.libraryTagSort };
+    } catch {
+      return null;
+    }
+  },
   // 浮层树(LibraryTreeView)的完整 CRUD:消息直连 background
   createNode(kind, libraryId, title, parentId) {
     return chrome.runtime.sendMessage({ type: 'NODE_CREATE', payload: { kind, libraryId, title, parentId } });

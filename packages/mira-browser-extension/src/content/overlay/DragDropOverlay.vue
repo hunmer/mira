@@ -13,7 +13,7 @@
  */
 import { onMounted, ref } from 'vue';
 import { LibraryTreeView } from 'mira-plugin-ui/library';
-import type { LibraryTreeServices, LibraryTreeUpload } from 'mira-plugin-ui/library';
+import type { LibraryTreeServices, LibraryTreeSortMode, LibraryTreeUpload } from 'mira-plugin-ui/library';
 import type { DragSource, DragDropPayload } from '../dragdrop';
 
 const props = defineProps<{
@@ -25,6 +25,9 @@ const props = defineProps<{
   upload: LibraryTreeUpload;
   /** 树视图样式:tree 经典树 / tiles 叶子层平铺(设置「快捷导入样式」,由 dragdrop.ts 注入) */
   view?: 'tree' | 'tiles';
+  /** 文件夹/标签树展示排序(设置「文件夹/标签排序」,由 dragdrop.ts 注入;缺省组件按 id) */
+  sortFolder?: LibraryTreeSortMode;
+  sortTag?: LibraryTreeSortMode;
   /** 提供后才显示「⚙ 自定义上传」zone */
   showCustomUpload: boolean;
   /** 「📂 不设文件夹」zone 释放 → 根区上传(沿用 DragDropPayload 语义) */
@@ -175,6 +178,7 @@ function onRootDrop(e: DragEvent) {
             :use-default-drop-upload="true"
             :show-dropzone="false"
             :view="view"
+            :sort="sortFolder"
           />
         </div>
         <div class="h-[44vh] min-h-0 overflow-hidden rounded-lg border border-border" @dragover.prevent @drop.prevent>
@@ -186,6 +190,7 @@ function onRootDrop(e: DragEvent) {
             :use-default-drop-upload="true"
             :show-dropzone="false"
             :view="view"
+            :sort="sortTag"
           />
         </div>
       </div>
