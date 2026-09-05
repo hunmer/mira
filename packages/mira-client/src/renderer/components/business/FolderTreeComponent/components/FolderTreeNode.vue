@@ -1,12 +1,13 @@
 <template>
   <div :data-folder-tree-node-id="node.id" :class="[
-    'flex items-center min-h-8 py-1 px-2 rounded-lg cursor-pointer transition-colors',
+    'relative flex items-center min-h-8 py-1 px-2 rounded-lg cursor-pointer transition-colors',
     'hover:bg-primary/5',
     selected ? 'bg-primary/10 text-primary font-medium' : '',
     multiSelected ? 'bg-primary/10' : '',
     dragOver ? 'ring-2 ring-primary/50 bg-primary/10' : '',
     locating ? 'sidebar-locate-active' : ''
   ]" @click="onRowClick" @contextmenu="emit('node-context-menu', node, $event)"
+    @mouseenter="emit('node-hover', node.id)" @mouseleave="emit('node-hover', null)"
     @dragover="emit('node-drag-over', $event, node)" @dragleave="emit('node-drag-leave', $event, node)"
     @drop.stop="emit('node-drop', $event, node)">
     <Checkbox v-if="showCheckbox" :model-value="checkState === true"
@@ -76,6 +77,7 @@ const emit = defineEmits<{
   (e: 'node-drag-over', event: DragEvent, node: HeTreeNode): void
   (e: 'node-drag-leave', event: DragEvent, node: HeTreeNode): void
   (e: 'node-drop', event: DragEvent, node: HeTreeNode): void
+  (e: 'node-hover', id: string | null): void
   (e: 'toggle', stat: any, event: MouseEvent): void
   (e: 'check-change', checked: boolean | 'indeterminate'): void
 }>()

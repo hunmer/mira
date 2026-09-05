@@ -258,6 +258,8 @@ let hoverRow = 0
 let hoverActive = false
 /** 模板绑定的 data-state（syncState 更新） */
 const svgState = ref<ScrollbarState>("idle")
+/** 容器是否可滚动（scrollHeight 超出 clientHeight）；不足时整列隐藏 */
+const scrollable = ref(true)
 
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)")
 
@@ -624,6 +626,11 @@ const connectScrollbar = (svg: SVGSVGElement, container: HTMLElement) => {
     }
   }
 
+  // 内容高度不足（无滚动空间）时整列隐藏；滚动/尺寸/内容变化时复查
+  const updateScrollable = () => {
+    scrollable.value = container.scrollHeight - container.clientHeight > 0
+  }
+
   const advance = (dt: number) => {
     if (reduceMotion.matches) {
       a.current = a.target
@@ -687,10 +694,12 @@ const connectScrollbar = (svg: SVGSVGElement, container: HTMLElement) => {
   }
 
   const onScroll = () => {
+    updateScrollable()
     syncState()
     kick()
   }
 
+  updateScrollable()
   syncState()
   a.target = getTargetForState(a.state)
   if (!didEnter) {
@@ -713,6 +722,7 @@ const connectScrollbar = (svg: SVGSVGElement, container: HTMLElement) => {
   activeKick = kick
 
   const resizeObserver = new ResizeObserver(() => {
+    if (!scrollable.value) return // 隐藏时尺寸为 0，跳过重测，重新显示时会再触发
     if (syncDotCount()) return // 高度变化导致点数变化，等 watch(dotCount) 重连
     poses = getPoses(svg.getBoundingClientRect(), buildGeometry())
     renderCurrent()
@@ -720,10 +730,15 @@ const connectScrollbar = (svg: SVGSVGElement, container: HTMLElement) => {
   })
   resizeObserver.observe(svg)
 
+  // 内容增删不改变容器自身尺寸，需监听 DOM 变化复查可滚动性
+  const mutationObserver = new MutationObserver(updateScrollable)
+  mutationObserver.observe(container, { childList: true, subtree: true })
+
   container.addEventListener("scroll", onScroll, { passive: true })
   return () => {
     container.removeEventListener("scroll", onScroll)
     resizeObserver.disconnect()
+    mutationObserver.disconnect()
     if (a.rafId !== null) cancelAnimationFrame(a.rafId)
     a.rafId = null
     activeRender = null
@@ -761,7 +776,7 @@ const svgStyle = computed(() => {
 </script>
 
 <template>
-  <div class="scrollbar-wrap" :style="{ width: `${trackWidth}px` }" @pointermove="onTrackPointerMove"
+  <div v-show="scrollable" class="scrollbar-wrap" :style="{ width: `${trackWidth}px` }" @pointermove="onTrackPointerMove"
     @pointerleave="onTrackPointerLeave">
     <svg ref="svgRef" class="scrollbar" :data-state="svgState" aria-hidden="true" :style="svgStyle">
       <line ref="leftWingRef" />

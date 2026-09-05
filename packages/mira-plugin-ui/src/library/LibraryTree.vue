@@ -14,7 +14,7 @@
  * 组件自递归:LibraryTree 渲染一层 children 时复用自身。
  * 样式为 tailwind/shadcn 原子类,无 scoped CSS、不依赖语义变量。
  */
-import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
 import type { Ref } from 'vue';
 import type { LibraryTreeNode } from './types';
 import { canAcceptDrop, isNodeDrag, NODE_DND_TYPE } from './drag-data';
@@ -217,20 +217,48 @@ function rowClass(node: LibraryTreeNode): string[] {
 const BRANCH_ROW_H = 28; // 行高(与模板行 h-7 耦合)
 const BRANCH_TRUNK_X = 8; // 主干竖线 x(父行箭头槽 w-3.5 的中部)
 const BRANCH_R = 6; // 主干→分支转弯圆角半径
+const BRANCH_LEAF_EXTENSION = 20; // 叶子无箭头:跨过 14px 占位槽 + 6px gap,贴到图标前
 
 const showBranches = computed(() => !props.root && !props.tileLeaves && props.nodes.length > 0);
 /** SVG 左缘 = 本层行 paddingLeft - indent(即父行内容起点) */
 const branchLeft = computed(() => 6 + (props.nodes[0]?.level ?? 1) * props.indent - props.indent);
 const branchEndX = computed(() => props.indent - 1);
-const branchWidth = computed(() => branchEndX.value + 6);
-const branchHeight = computed(() => mainNodes.value.length * BRANCH_ROW_H);
+const branchWidth = computed(() => branchEndX.value + BRANCH_LEAF_EXTENSION + 6);
 const branchStroke = computed(() => props.accentColor || 'var(--primary)');
 
-const rowY = (i: number) => BRANCH_ROW_H / 2 + i * BRANCH_ROW_H;
+/**
+ * 本层各行真实 offsetTop:前面的兄弟展开子树会把后面的行往下推,
+ * 连接线 y 不能用「行号×行高」连续假设,须实测(展开集合/数据变化时重测)。
+ */
+const branchListEl = ref<HTMLElement | null>(null);
+const rowTops = ref<number[]>([]);
+const branchHeight = computed(() => {
+  const tops = rowTops.value;
+  const byDom = tops.length ? tops[tops.length - 1] + BRANCH_ROW_H : 0;
+  return Math.max(byDom, mainNodes.value.length * BRANCH_ROW_H);
+});
+const rowY = (i: number) => (rowTops.value[i] ?? i * BRANCH_ROW_H) + BRANCH_ROW_H / 2;
 
-function branchPathD(y: number): string {
+async function measureRows() {
+  await nextTick();
+  const ul = branchListEl.value;
+  if (!ul) return;
+  const tops: number[] = [];
+  for (const li of ul.children) {
+    // 跳过连接线 li(aria-hidden),其余 li 首个子元素即行 div
+    if ((li as HTMLElement).getAttribute('aria-hidden') !== null) continue;
+    const row = (li as HTMLElement).firstElementChild as HTMLElement | null;
+    tops.push(row?.offsetTop ?? 0);
+  }
+  rowTops.value = tops;
+}
+// expanded 每次折叠/展开都会换新 Set,任何层级变化都触发本层重测
+watch(() => [props.expanded, props.nodes], measureRows, { immediate: true });
+
+function branchPathD(y: number, index: number): string {
   const turn = Math.max(0, y - BRANCH_R);
-  return `M ${BRANCH_TRUNK_X} 0 L ${BRANCH_TRUNK_X} ${turn} A ${BRANCH_R} ${BRANCH_R} 0 0 0 ${BRANCH_TRUNK_X + BRANCH_R} ${y} L ${branchEndX.value} ${y}`;
+  const endX = branchEndX.value + (mainNodes.value[index]?.children.length ? 0 : BRANCH_LEAF_EXTENSION);
+  return `M ${BRANCH_TRUNK_X} 0 L ${BRANCH_TRUNK_X} ${turn} A ${BRANCH_R} ${BRANCH_R} 0 0 0 ${BRANCH_TRUNK_X + BRANCH_R} ${y} L ${endX} ${y}`;
 }
 
 /** 子树内含选中节点(本行是选中节点或其祖先) → 各层线贯通成到选中行的完整路径 */
@@ -382,7 +410,7 @@ const [hoverBranchY, hoverBranchOn] = useSpringY(computed(() => (hoverBranchInde
     </div>
   </div>
 
-  <ul v-else class="relative m-0 list-none p-0" role="tree">
+  <ul v-else ref="branchListEl" class="relative m-0 list-none p-0" role="tree">
     <!-- 分支连接线:底衬(主干+每行分支弧线)挂载时从顶部依次生长;hover/选中线常驻,出现时生长、离开时收回、位置变化弹簧滑动 -->
     <li
       v-if="showBranches"
@@ -397,7 +425,9 @@ const [hoverBranchY, hoverBranchOn] = useSpringY(computed(() => (hoverBranchInde
         fill="none"
         class="block overflow-visible"
       >
-        <!-- 底衬:主干竖线(到最后行的转弯处),先生长(隐藏值 101 略超一周,避免 round 端帽在起点露点) -->
+        <!-- 底衬:主干竖线(到最后行的转弯处),先生长。dash 周期 300(100 实+200 空):
+             隐藏 offset=105 时整条路径落在空隙内,round 端帽不会在首/尾漏点(单值 dasharray 周期 200,
+             offset≈100 时尾部恰逢下一周期实线,会漏出圆点) -->
         <path
           :d="`M ${BRANCH_TRUNK_X} 0 L ${BRANCH_TRUNK_X} ${Math.max(0, rowY(mainNodes.length - 1) - BRANCH_R)}`"
           stroke="var(--border)"
@@ -405,30 +435,30 @@ const [hoverBranchY, hoverBranchOn] = useSpringY(computed(() => (hoverBranchInde
           fill="none"
           stroke-linecap="round"
           pathLength="100"
-          stroke-dasharray="100"
-          stroke-dashoffset="101"
+          stroke-dasharray="100 200"
+          stroke-dashoffset="105"
         >
-          <animate attributeName="stroke-dashoffset" from="101" to="0" dur="0.3s" begin="0s" fill="freeze" />
+          <animate attributeName="stroke-dashoffset" from="105" to="0" dur="0.3s" begin="0s" fill="freeze" />
         </path>
         <!-- 底衬:每行分支弧线,级联生长 -->
         <path
           v-for="(n, i) in mainNodes"
           :key="`bg-branch-${n.id}`"
-          :d="branchPathD(rowY(i))"
+          :d="branchPathD(rowY(i), i)"
           stroke="var(--border)"
           stroke-width="1.5"
           fill="none"
           stroke-linecap="round"
           stroke-linejoin="round"
           pathLength="100"
-          stroke-dasharray="100"
-          stroke-dashoffset="101"
+          stroke-dasharray="100 200"
+          stroke-dashoffset="105"
         >
-          <animate attributeName="stroke-dashoffset" from="101" to="0" dur="0.3s" :begin="`${0.1 + i * 0.04}s`" fill="freeze" />
+          <animate attributeName="stroke-dashoffset" from="105" to="0" dur="0.3s" :begin="`${0.1 + i * 0.04}s`" fill="freeze" />
         </path>
         <!-- hover 高亮线:半透明跟随 -->
         <path
-          :d="branchPathD(hoverBranchY)"
+          :d="branchPathD(hoverBranchY, hoverBranchIndex ?? -1)"
           :stroke="branchStroke"
           stroke-width="1.75"
           fill="none"
@@ -436,21 +466,21 @@ const [hoverBranchY, hoverBranchOn] = useSpringY(computed(() => (hoverBranchInde
           stroke-linecap="round"
           stroke-linejoin="round"
           pathLength="100"
-          stroke-dasharray="100"
-          :stroke-dashoffset="hoverBranchOn ? 0 : 101"
+          stroke-dasharray="100 200"
+          :stroke-dashoffset="hoverBranchOn ? 0 : 105"
           class="transition-[stroke-dashoffset] duration-200 ease-out"
         />
         <!-- 选中路径高亮线 -->
         <path
-          :d="branchPathD(activeBranchY)"
+          :d="branchPathD(activeBranchY, activeBranchIndex)"
           :stroke="branchStroke"
           stroke-width="1.75"
           fill="none"
           stroke-linecap="round"
           stroke-linejoin="round"
           pathLength="100"
-          stroke-dasharray="100"
-          :stroke-dashoffset="activeBranchOn ? 0 : 101"
+          stroke-dasharray="100 200"
+          :stroke-dashoffset="activeBranchOn ? 0 : 105"
           class="transition-[stroke-dashoffset] duration-300 ease-out"
         />
       </svg>
@@ -509,6 +539,8 @@ const [hoverBranchY, hoverBranchOn] = useSpringY(computed(() => (hoverBranchInde
       role="treeitem"
       :aria-expanded="node.children.length ? (isGroupCard(node) || expanded.has(node.id)) : undefined"
       :class="isGroupCard(node) && 'my-1 rounded-lg border border-border bg-accent/35 p-1'"
+      @mouseenter="onRowEnter(idx)"
+      @mouseleave="onRowLeave()"
     >
       <div
         class="flex h-7 items-center gap-1.5 rounded-md pr-2 text-foreground transition-[background-color,box-shadow,opacity] duration-100 select-none"
@@ -516,8 +548,6 @@ const [hoverBranchY, hoverBranchOn] = useSpringY(computed(() => (hoverBranchInde
         :style="{ paddingLeft: 6 + node.level * indent + 'px' }"
         :title="node.title"
         :draggable="sortable"
-        @mouseenter="onRowEnter(idx)"
-        @mouseleave="onRowLeave()"
         @dragstart="onNodeDragStart(node, $event)"
         @dragover="onDragOver($event, node); onNodeDragOver(node, $event)"
         @dragleave="onNodeDragLeave(node, $event)"

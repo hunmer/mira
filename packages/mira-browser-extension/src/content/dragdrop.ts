@@ -509,24 +509,24 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
   function makeUploadAdapter(source: DragSource, getLibraryId: () => string): LibraryTreeUpload {
     return {
       files(files, target) {
-        hideOverlay();
+        // 必须先取 libraryId 再 hideOverlay:hideOverlay 会重置 overlayLibraryId
         const libraryId = getLibraryId() || undefined;
-        dbg.warn('dragdrop', 'overlay drop → files', { libraryId, overlayLibraryId, folderId: target?.folderId });
+        hideOverlay();
         for (const file of files) {
           handlers.onUpload({ file, sourceUrl: source.url, kind: source.kind, libraryId, folderId: target?.folderId, tags: target?.tags });
         }
       },
       urls(urls, target) {
-        hideOverlay();
         const libraryId = getLibraryId() || undefined;
-        dbg.warn('dragdrop', 'overlay drop → urls', { libraryId, overlayLibraryId, folderId: target?.folderId, urls: urls.length });
+        hideOverlay();
         for (const url of urls) {
           handlers.onUpload({ url, kind: urlKind(url), libraryId, folderId: target?.folderId, tags: target?.tags });
         }
       },
       pick() {
+        const libraryId = getLibraryId() || undefined;
         hideOverlay();
-        if (handlers.openCustomUpload) void handlers.openCustomUpload(source, getLibraryId() || undefined);
+        if (handlers.openCustomUpload) void handlers.openCustomUpload(source, libraryId);
       },
     };
   }

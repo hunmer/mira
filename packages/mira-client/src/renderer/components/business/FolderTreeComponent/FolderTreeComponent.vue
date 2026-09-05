@@ -18,24 +18,48 @@
     <ContextMenu>
       <ContextMenuTrigger as-child>
         <div v-if="treeData.length > 0" class="tree-scroll max-h-64 overflow-y-auto">
-          <component :is="draggable ? Draggable : BaseTree" ref="treeRef" v-model="treeData"
-            :indent="indentMode === 'icon' ? 0 : undefined"
-            :default-open="false"
-            :stat-handler="initializeNodeStat"
-            :each-droppable="draggable ? eachDroppable : undefined" @before-drag-start="onBeforeDragStart"
-            @after-drop="onAfterDrop">
-            <template #default="{ node, stat }">
-              <FolderTreeNode :node="node" :stat="stat" :selected="selectedKey === node.id"
-                :multi-selected="selectionActive && isNodeSelected(node)" :drag-over="dragOverNodeId === node.id"
-                :locating="locatingNodeId === node.id" :show-checkbox="showNodeCheckbox && isNodeSelectable(node)"
-                :check-state="showNodeCheckbox ? getNodeCheckState(node) : false" :default-icon="defaultIcon"
-                :icon-indent="indentMode === 'icon'"
-                @node-click="handleNodeClick" @node-context-menu="handleNodeContextMenu"
-                @node-drag-over="handleReadOnlyNodeDragOver" @node-drag-leave="handleReadOnlyNodeDragLeave"
-                @node-drop="handleReadOnlyNodeDrop" @toggle="(stat: any, event: MouseEvent) => handleNodeToggle(node, stat, event)"
-                @check-change="(checked: boolean | 'indeterminate') => handleNodeCheckChange(node, checked)" />
-            </template>
-          </component>
+          <div ref="branchLayerRef" class="folder-tree-branch-layer">
+            <div ref="branchRowsRef">
+              <component :is="draggable ? Draggable : BaseTree" ref="treeRef" v-model="treeData"
+                :indent="indentMode === 'icon' ? 0 : undefined"
+                :default-open="false"
+                :stat-handler="initializeNodeStat"
+                :each-droppable="draggable ? eachDroppable : undefined" @before-drag-start="onBeforeDragStart"
+                @after-drop="onAfterDrop">
+                <template #default="{ node, stat }">
+                  <FolderTreeNode :node="node" :stat="stat" :selected="selectedKey === node.id"
+                    :multi-selected="selectionActive && isNodeSelected(node)" :drag-over="dragOverNodeId === node.id"
+                    :locating="locatingNodeId === node.id" :show-checkbox="showNodeCheckbox && isNodeSelectable(node)"
+                    :check-state="showNodeCheckbox ? getNodeCheckState(node) : false" :default-icon="defaultIcon"
+                    :icon-indent="indentMode === 'icon'"
+                    @node-click="handleNodeClick" @node-context-menu="handleNodeContextMenu"
+                    @node-drag-over="handleReadOnlyNodeDragOver" @node-drag-leave="handleReadOnlyNodeDragLeave"
+                    @node-drop="handleReadOnlyNodeDrop" @node-hover="setBranchHover"
+                    @toggle="(stat: any, event: MouseEvent) => handleNodeToggle(node, stat, event)"
+                    @check-change="(checked: boolean | 'indeterminate') => handleNodeCheckChange(node, checked)" />
+                </template>
+              </component>
+            </div>
+
+            <svg v-if="branchPaths.length" aria-hidden="true" class="folder-tree-branch-svg"
+              :width="branchWidth" :height="branchHeight" :viewBox="`0 0 ${branchWidth} ${branchHeight}`" fill="none">
+              <!-- 分层绘制，避免后续兄弟的灰色主干覆盖前面分支的高亮主干。 -->
+              <path v-for="path in branchPaths" :key="`base-${path.key}`" :d="path.d"
+                stroke="var(--border)" stroke-width="1.5" fill="none" stroke-linecap="round"
+                stroke-linejoin="round" pathLength="100" stroke-dasharray="100 200" stroke-dashoffset="105">
+                <animate attributeName="stroke-dashoffset" from="105" to="0" dur="0.3s" fill="freeze" />
+              </path>
+              <path v-for="path in branchPaths" :key="`hover-${path.key}`" :d="path.d" :stroke="path.stroke"
+                stroke-width="1.75" fill="none" opacity="0.45" stroke-linecap="round" stroke-linejoin="round"
+                pathLength="100" stroke-dasharray="100 200"
+                :stroke-dashoffset="hoverPathKeys.has(path.key) ? 0 : 105"
+                class="transition-[stroke-dashoffset] duration-200 ease-out" />
+              <path v-for="path in branchPaths" :key="`active-${path.key}`" :d="path.d" :stroke="path.stroke"
+                stroke-width="1.75" fill="none" stroke-linecap="round" stroke-linejoin="round" pathLength="100"
+                stroke-dasharray="100 200" :stroke-dashoffset="activePathKeys.has(path.key) ? 0 : 105"
+                class="transition-[stroke-dashoffset] duration-300 ease-out" />
+            </svg>
+          </div>
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent v-if="!readOnly || contextMenuItems.length > 0" class="w-52">
@@ -101,6 +125,7 @@ import { useNodeToggleAnimation } from './composables/useNodeToggleAnimation'
 import { getSidebarFolderNodeOpenStates, saveSidebarFolderNodeOpenState } from '@/renderer/composables/LibraryPrefs'
 import { buildSelectPayload, convertFoldersToNodes, convertTagsToNodes, filterNodes } from './utils'
 import type { HeTreeNode, BaseCategory } from './types'
+import { useBranchLines } from './composables/useBranchLines'
 import FolderTreeBaseCategories from './components/FolderTreeBaseCategories.vue'
 import FolderTreeHeader from './components/FolderTreeHeader.vue'
 import FolderTreeNode from './components/FolderTreeNode.vue'
@@ -202,6 +227,8 @@ const showSearch = ref(props.defaultShowSearch || false)
 const searchQuery = ref('')
 const treeRef = ref<any>(null)
 const treeContainerRef = ref<HTMLElement | null>(null)
+const branchLayerRef = ref<HTMLElement | null>(null)
+const branchRowsRef = ref<HTMLElement | null>(null)
 
 function toggleSearch() {
   showSearch.value = !showSearch.value
@@ -233,6 +260,22 @@ const nodeMap = computed(() => {
   }
   walk(treeData.value)
   return map
+})
+
+// 分支连接线:统一 SVG 覆盖可见行,DOM 实测兼容展开动画和两种缩进模式
+const {
+  paths: branchPaths,
+  width: branchWidth,
+  height: branchHeight,
+  activePathKeys,
+  hoverPathKeys,
+  setHover: setBranchHover,
+} = useBranchLines({
+  treeData: () => treeData.value,
+  selectedKey: () => props.selectedKey,
+  layerRef: branchLayerRef,
+  rowsRef: branchRowsRef,
+  iconIndent: () => props.indentMode === 'icon',
 })
 
 // 选择模式（单选/多选/不启用）
@@ -504,5 +547,20 @@ onUnmounted(() => {
 
 .tree-scroll::-webkit-scrollbar {
   display: none;
+}
+
+.folder-tree-branch-layer {
+  position: relative;
+  min-width: 100%;
+}
+
+.folder-tree-branch-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  display: block;
+  overflow: visible;
+  pointer-events: none;
 }
 </style>

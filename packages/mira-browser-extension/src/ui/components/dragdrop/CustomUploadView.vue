@@ -3,7 +3,6 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { Library } from 'mira-app-core/shared/sdk';
 import type { CustomUploadSession } from '@/shared/messages';
-import { dbg } from '@/shared/debug';
 import { readCachedLibraries, readCachedTree, writeCachedLibraries } from '@/shared/library-cache';
 import { useBackground } from '@/ui/composables/useBackground';
 import { useSettings } from '@/ui/composables/useSettings';
@@ -57,7 +56,6 @@ async function seedFromCache(libId: string) {
     readCachedTree(scope, 'folder', libId),
     readCachedTree(scope, 'tag', libId),
   ]);
-  dbg.log('dragdrop', 'seed from cache', { libId, scope, folders: folders?.length ?? 0, tags: tags?.length ?? 0 });
   seedFolders(libId, folders ?? []);
   seedTags(libId, tags ?? []);
   seeded.value = true;
@@ -261,26 +259,19 @@ const sourceName = computed(() => {
 onMounted(async () => {
   const libId = activeLibraryId.value;
   const scope = cacheScope();
-  dbg.log('dragdrop', 'custom-upload mounted', { libId, scope, settingsLibraryId: settings.value.libraryId });
   // 1) 缓存占位:内存命中(常驻 sidePanel 内再次打开)首帧即渲染;storage 命中毫秒级
   await seedFromCache(libId);
   const cachedLibs = await readCachedLibraries(scope);
-  dbg.log('dragdrop', 'cached libraries', { count: cachedLibs?.length ?? 0 });
   if (cachedLibs?.length) libraries.value = cachedLibs;
   if (!libId) return;
   // 2) 后台刷新:库列表与两棵树并行,刷新成功自动写缓存(services 层)
   await Promise.all([
     bg.listLibraries().then(list => {
-      dbg.log('dragdrop', 'listLibraries ok', {
-        isArray: Array.isArray(list),
-        count: Array.isArray(list) ? list.length : -1,
-        names: Array.isArray(list) ? list.slice(0, 5).map(l => l?.name ?? l?.id) : list,
-      });
       if (list?.length) {
         libraries.value = list;
         writeCachedLibraries(scope, list);
       }
-    }).catch(e => dbg.warn('dragdrop', 'listLibraries failed', { message: e?.message ?? String(e) })),
+    }).catch(() => {}),
     loadFolders(libId),
     loadTags(libId),
   ]);
