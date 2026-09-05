@@ -5,7 +5,8 @@
  * 复刻 React 版 headless-tree 树形交互:
  * - 按层级缩进(level * indent)
  * - 分支连接线(参考 feature-tree-navigation):非顶层每层左侧画底衬主干+分支弧线,
- *   选中路径线常驻、hover 线半透明跟随,位置变化走弹簧动画(手写 rAF spring,零依赖)
+ *   选中路径线常驻、hover 线半透明跟随;出现/离开走 dashoffset 生长/收回动画,
+ *   位置变化走弹簧动画(手写 rAF spring,零依赖)
  * - 有子节点的项显示展开/折叠箭头(plus-minus 风格)
  * - 文件夹/标签图标(内联 SVG,零依赖)
  * - 拖拽落点高亮 + drop 抛回目标节点
@@ -227,8 +228,7 @@ const branchStroke = computed(() => props.accentColor || 'var(--primary)');
 
 const rowY = (i: number) => BRANCH_ROW_H / 2 + i * BRANCH_ROW_H;
 
-function branchPathD(y: number | null): string {
-  if (y == null) return '';
+function branchPathD(y: number): string {
   const turn = Math.max(0, y - BRANCH_R);
   return `M ${BRANCH_TRUNK_X} 0 L ${BRANCH_TRUNK_X} ${turn} A ${BRANCH_R} ${BRANCH_R} 0 0 0 ${BRANCH_TRUNK_X + BRANCH_R} ${y} L ${branchEndX.value} ${y}`;
 }
@@ -258,9 +258,14 @@ function onRowLeave() {
   hoverBranchClear = setTimeout(() => { hoverBranchIndex.value = null; }, 120);
 }
 
-/** y 弹簧补间(参考 motion spring: stiffness 420 / damping 34 / mass 0.5 → a = -840x - 68v);null 表示线隐藏 */
-function useSpringY(target: Ref<number | null>) {
-  const pos = ref<number | null>(target.value);
+/**
+ * y 弹簧补间(参考 motion spring: stiffness 420 / damping 34 / mass 0.5 → a = -840x - 68v)。
+ * 返回 [pos, visible]:pos 恒为数字(隐藏时冻结在原位),visible 驱动线条 dashoffset 生长/收回;
+ * 可见状态下位置变化走弹簧滑动,隐藏→出现直接落位后生长。
+ */
+function useSpringY(target: Ref<number | null>): [Ref<number>, Ref<boolean>] {
+  const pos = ref(0);
+  const visible = ref(false);
   let vel = 0;
   let raf = 0;
   let last = 0;
@@ -269,33 +274,31 @@ function useSpringY(target: Ref<number | null>) {
     if (to == null) { raf = 0; return; }
     const dt = Math.min((now - last) / 1000, 1 / 30);
     last = now;
-    vel += (-840 * ((pos.value as number) - to) - 68 * vel) * dt;
-    pos.value = (pos.value as number) + vel * dt;
-    if (Math.abs((pos.value as number) - to) < 0.1 && Math.abs(vel) < 0.1) {
+    vel += (-840 * (pos.value - to) - 68 * vel) * dt;
+    pos.value += vel * dt;
+    if (Math.abs(pos.value - to) < 0.1 && Math.abs(vel) < 0.1) {
       pos.value = to; vel = 0; raf = 0; return;
     }
     raf = requestAnimationFrame(step);
   };
   watch(target, (to, from) => {
     if (to == null) {
+      // 隐藏:冻结位置,线由 dashoffset 过渡收回
       if (raf) cancelAnimationFrame(raf);
-      raf = 0; vel = 0; pos.value = null;
+      raf = 0; vel = 0;
+      visible.value = false;
       return;
     }
-    if (pos.value == null) {
-      // 线从隐藏到出现:落位即可(显隐由 v-if 承担);此后位置变化走弹簧
-      pos.value = to;
-      vel = 0;
-      if (from == null) return;
-    }
+    if (from == null || !visible.value) { pos.value = to; vel = 0; }
+    visible.value = true;
     if (!raf) { last = performance.now(); raf = requestAnimationFrame(step); }
-  });
+  }, { immediate: true });
   onBeforeUnmount(() => raf && cancelAnimationFrame(raf));
-  return pos;
+  return [pos, visible];
 }
 
-const activeBranchY = useSpringY(computed(() => (activeBranchIndex.value >= 0 ? rowY(activeBranchIndex.value) : null)));
-const hoverBranchY = useSpringY(computed(() => (hoverBranchIndex.value != null ? rowY(hoverBranchIndex.value) : null)));
+const [activeBranchY, activeBranchOn] = useSpringY(computed(() => (activeBranchIndex.value >= 0 ? rowY(activeBranchIndex.value) : null)));
+const [hoverBranchY, hoverBranchOn] = useSpringY(computed(() => (hoverBranchIndex.value != null ? rowY(hoverBranchIndex.value) : null)));
 </script>
 
 <template>
@@ -380,7 +383,7 @@ const hoverBranchY = useSpringY(computed(() => (hoverBranchIndex.value != null ?
   </div>
 
   <ul v-else class="relative m-0 list-none p-0" role="tree">
-    <!-- 分支连接线:底衬(主干+每行分支弧线)常驻;hover 半透明线跟随,选中路径线常驻,位置变化走弹簧动画 -->
+    <!-- 分支连接线:底衬(主干+每行分支弧线)挂载时从顶部依次生长;hover/选中线常驻,出现时生长、离开时收回、位置变化弹簧滑动 -->
     <li
       v-if="showBranches"
       aria-hidden="true"
@@ -394,15 +397,20 @@ const hoverBranchY = useSpringY(computed(() => (hoverBranchIndex.value != null ?
         fill="none"
         class="block overflow-visible"
       >
-        <line
-          :x1="BRANCH_TRUNK_X"
-          y1="0"
-          :x2="BRANCH_TRUNK_X"
-          :y2="Math.max(0, rowY(mainNodes.length - 1) - BRANCH_R)"
+        <!-- 底衬:主干竖线(到最后行的转弯处),先生长(隐藏值 101 略超一周,避免 round 端帽在起点露点) -->
+        <path
+          :d="`M ${BRANCH_TRUNK_X} 0 L ${BRANCH_TRUNK_X} ${Math.max(0, rowY(mainNodes.length - 1) - BRANCH_R)}`"
           stroke="var(--border)"
           stroke-width="1.5"
+          fill="none"
           stroke-linecap="round"
-        />
+          pathLength="100"
+          stroke-dasharray="100"
+          stroke-dashoffset="101"
+        >
+          <animate attributeName="stroke-dashoffset" from="101" to="0" dur="0.3s" begin="0s" fill="freeze" />
+        </path>
+        <!-- 底衬:每行分支弧线,级联生长 -->
         <path
           v-for="(n, i) in mainNodes"
           :key="`bg-branch-${n.id}`"
@@ -412,9 +420,14 @@ const hoverBranchY = useSpringY(computed(() => (hoverBranchIndex.value != null ?
           fill="none"
           stroke-linecap="round"
           stroke-linejoin="round"
-        />
+          pathLength="100"
+          stroke-dasharray="100"
+          stroke-dashoffset="101"
+        >
+          <animate attributeName="stroke-dashoffset" from="101" to="0" dur="0.3s" :begin="`${0.1 + i * 0.04}s`" fill="freeze" />
+        </path>
+        <!-- hover 高亮线:半透明跟随 -->
         <path
-          v-if="hoverBranchY != null"
           :d="branchPathD(hoverBranchY)"
           :stroke="branchStroke"
           stroke-width="1.75"
@@ -422,15 +435,23 @@ const hoverBranchY = useSpringY(computed(() => (hoverBranchIndex.value != null ?
           opacity="0.45"
           stroke-linecap="round"
           stroke-linejoin="round"
+          pathLength="100"
+          stroke-dasharray="100"
+          :stroke-dashoffset="hoverBranchOn ? 0 : 101"
+          class="transition-[stroke-dashoffset] duration-200 ease-out"
         />
+        <!-- 选中路径高亮线 -->
         <path
-          v-if="activeBranchY != null"
           :d="branchPathD(activeBranchY)"
           :stroke="branchStroke"
           stroke-width="1.75"
           fill="none"
           stroke-linecap="round"
           stroke-linejoin="round"
+          pathLength="100"
+          stroke-dasharray="100"
+          :stroke-dashoffset="activeBranchOn ? 0 : 101"
+          class="transition-[stroke-dashoffset] duration-300 ease-out"
         />
       </svg>
     </li>

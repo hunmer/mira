@@ -231,6 +231,7 @@ const dragdrop = createDragDrop({
   },
   onUpload(payload: DragDropPayload) {
     const libId = payload.libraryId || '';
+    dbg.warn('content', 'onUpload', { payloadLibraryId: libId, kind: payload.kind, folderId: payload.folderId });
     if (payload.file) {
       if (payload.sourceUrl) {
         uploadUrl(payload.sourceUrl, payload.kind, payload.folderId, payload.tags, libId);

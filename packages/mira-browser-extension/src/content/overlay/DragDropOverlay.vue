@@ -141,7 +141,8 @@ function onRootDrop(e: DragEvent) {
           @dragover.prevent="switchLibrary(lib.id)"
           @mouseenter="switchLibrary(lib.id)"
         >
-          <span v-if="lib.icon" class="mr-1">{{ lib.icon }}</span>{{ lib.name }}
+          <!-- 服务端 icon 占位值为 'default'(非图标名),不渲染 -->
+          <span v-if="lib.icon && lib.icon !== 'default'" class="mr-1">{{ lib.icon }}</span>{{ lib.name }}
         </button>
       </div>
 

@@ -511,6 +511,7 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
       files(files, target) {
         hideOverlay();
         const libraryId = getLibraryId() || undefined;
+        dbg.warn('dragdrop', 'overlay drop → files', { libraryId, overlayLibraryId, folderId: target?.folderId });
         for (const file of files) {
           handlers.onUpload({ file, sourceUrl: source.url, kind: source.kind, libraryId, folderId: target?.folderId, tags: target?.tags });
         }
@@ -518,6 +519,7 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
       urls(urls, target) {
         hideOverlay();
         const libraryId = getLibraryId() || undefined;
+        dbg.warn('dragdrop', 'overlay drop → urls', { libraryId, overlayLibraryId, folderId: target?.folderId, urls: urls.length });
         for (const url of urls) {
           handlers.onUpload({ url, kind: urlKind(url), libraryId, folderId: target?.folderId, tags: target?.tags });
         }

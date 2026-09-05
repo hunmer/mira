@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  :root { --border: #cbd5e1; --primary: #3b82f6; }
+  body { font-family: sans-serif; background: #fff; padding: 20px; }
+  .row { display: flex; align-items: center; height: 28px; }
+</style>
+</head>
+<body>
+  <h3>1. var() in presentation attribute vs style</h3>
+  <svg width="300" height="40">
+    <path d="M 20 10 L 20 30" stroke="var(--border)" stroke-width="1.5" />
+    <path d="M 60 10 L 60 30" style="stroke: var(--border)" stroke-width="1.5" />
+    <path d="M 100 10 L 100 30" stroke="#cbd5e1" stroke-width="1.5" />
+  </svg>
+  <p>左: attr var() / 中: style var() / 右: 字面值。可见的线 = 对应方式有效</p>
+
+  <h3>2. round cap endpoint dots (底衬分支终点圆头)</h3>
+  <svg width="300" height="120" style="background:#fafafa">
+    <path d="M 8 0 L 8 30 A 6 6 0 0 0 14 36 L 19 36" stroke="var(--border)" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M 8 36 L 8 62 A 6 6 0 0 0 14 68 L 19 68" stroke="var(--border)" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M 60 0 L 60 30 A 6 6 0 0 0 66 36 L 71 36" stroke="var(--border)" stroke-width="1.5" fill="none" stroke-linecap="butt" stroke-linejoin="round" />
+    <path d="M 60 36 L 60 62 A 6 6 0 0 0 66 68 L 71 68" stroke="var(--border)" stroke-width="1.5" fill="none" stroke-linecap="butt" stroke-linejoin="round" />
+  </svg>
+  <p>左组: round cap(行首/转弯处有圆点) / 右组: butt cap(平头无点)</p>
+
+  <h3>3. dash 生长动画 + butt cap</h3>
+  <svg width="300" height="80">
+    <path d="M 8 0 L 8 30 A 6 6 0 0 0 14 36 L 19 36" stroke="var(--primary)" stroke-width="1.75" fill="none" stroke-linecap="round" stroke-linejoin="round" pathLength="100" stroke-dasharray="100" stroke-dashoffset="101">
+      <animate attributeName="stroke-dashoffset" from="101" to="0" dur="0.5s" begin="0.2s" fill="freeze" />
+    </path>
+  </svg>
+</body>
+</html>

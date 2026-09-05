@@ -380,7 +380,8 @@ async function close() {
         @focus="hoverLibrary(lib.id)"
         @click="hoverLibrary(lib.id)"
       >
-        <span v-if="lib.icon" class="lib-icon">{{ lib.icon }}</span>
+        <!-- 服务端 icon 占位值为 'default'(非图标名),不渲染 -->
+        <span v-if="lib.icon && lib.icon !== 'default'" class="lib-icon">{{ lib.icon }}</span>
         <span class="lib-name">{{ lib.name }}</span>
       </button>
     </nav>
