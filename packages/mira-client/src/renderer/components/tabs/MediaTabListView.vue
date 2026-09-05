@@ -35,7 +35,7 @@
                 :available-folders="availableFolders" :folder-cover-urls="folderCoverUrls"
                 :folder-card-ui-size="folderCardUiSize" :folder-grid-item-size="folderGridItemSize"
                 :get-folder-color="getFolderColor" :can-upload="canUpload" @add-folder="showFolderDialog = true"
-                @select="handleChildFolderSelect" @refresh="handleRefresh(true)" @drop="handleDrop"
+                @select="handleChildFolderClick" @refresh="handleRefresh(true)" @drop="handleDrop"
                 @card-drag-over="handleFolderCardDragOver" @card-drag-leave="handleFolderCardDragLeave" />
 
               <MediaTabMediaSection v-else-if="section.id === 'media'" ref="mediaSectionRef"
@@ -69,6 +69,9 @@
       <!-- 酷滚动条：监听上方滚动容器，分组标注点承接原章节导航 -->
       <Scrollbar :container="scrollContainerRef" :markers="scrollMarkers" @marker-select="handleMarkerSelect" />
     </div>
+
+    <!-- 收入文件夹动画覆盖层（选中素材点击文件夹时触发） -->
+    <FolderCollectOverlay :flights="collectFlights" :drops="collectDrops" />
 
     <!-- 底部状态栏 -->
     <MediaTabStatusBar :show-breadcrumb="showMediaBreadcrumb" :breadcrumb-items="breadcrumbItems"
@@ -170,6 +173,8 @@ import MediaTabFoldersSection from './MediaTabListView/MediaTabFoldersSection.vu
 import MediaTabMediaSection from './MediaTabListView/MediaTabMediaSection.vue'
 import MediaTabFloatingToolbar from './MediaTabListView/MediaTabFloatingToolbar.vue'
 import MediaTabStatusBar from './MediaTabListView/MediaTabStatusBar.vue'
+import FolderCollectOverlay from './MediaTabListView/FolderCollectOverlay.vue'
+import { useFolderCollect } from './MediaTabListView/useFolderCollect'
 import { miraEventBus } from '@renderer/services/EventBus'
 
 // Props
@@ -370,6 +375,25 @@ const {
   handleChildFolderSelect,
   getFolderColor
 } = useMediaTabFolders({ props, homeController, handleRefresh })
+
+// 收入文件夹动画：选中素材时点击文件夹 = 移动素材（两阶段飞入动画），否则保持原导航行为
+const {
+  flights: collectFlights,
+  drops: collectDrops,
+  collectToFolder
+} = useFolderCollect({
+  getSelectedIds: () => selectedItems.value,
+  getMediaItems: () => paginatedMediaItems.value,
+  handleRefresh,
+  clearSelection: handleClearSelection,
+})
+
+const handleChildFolderClick = async (folder: any, event?: MouseEvent | KeyboardEvent) => {
+  if (!event?.ctrlKey && !event?.metaKey && selectedItems.value.length > 0 && !isTrash.value) {
+    if (await collectToFolder(folder)) return
+  }
+  handleChildFolderSelect(folder, event)
+}
 
 // 拖拽上传 / 导入
 const {

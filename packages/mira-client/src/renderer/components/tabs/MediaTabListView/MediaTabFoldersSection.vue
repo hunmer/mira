@@ -86,6 +86,7 @@ onUnmounted(() => {
         <FolderContextMenu v-for="item in visibleChildFolderItems" :key="String(item.raw.id)"
           :folder="item.raw as any" :folders="availableFolders as any" @refresh="emit('refresh')">
           <div class="folder-card-button" role="button" tabindex="0" :title="item.label"
+            :data-folder-id="String(item.raw.id)"
             @click="emit('select', item.raw, $event)"
             @keydown.enter.prevent="emit('select', item.raw, $event)"
             @keydown.space.prevent="emit('select', item.raw, $event)"

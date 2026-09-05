@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import type { CustomUploadSession } from '@/shared/messages';
 import { useBackground } from '@/ui/composables/useBackground';
@@ -55,6 +55,19 @@ const toggleTagNode = (id: number) => toggleIn(tagExpanded, id);
 function expandAllIds(nodes: LibraryTreeNode[]): Set<number> {
   return new Set(flattenTree(nodes).filter(n => n.children.length).map(n => n.id));
 }
+
+// 首次加载可能在组件挂载后才完成;树数据到达时补齐默认展开状态。
+// 仅在当前没有展开项时同步,避免覆盖用户主动折叠。
+watch(folderTree, nodes => {
+  if (folderExpanded.value.size === 0 && nodes.length > 0) {
+    folderExpanded.value = expandAllIds(nodes);
+  }
+});
+watch(tagTree, nodes => {
+  if (tagExpanded.value.size === 0 && nodes.length > 0) {
+    tagExpanded.value = expandAllIds(nodes);
+  }
+});
 
 // ---- 选中:文件夹单选(可取消),标签 checkbox 多选 ----
 const selectedFolderId = ref<number | undefined>();
