@@ -6,7 +6,9 @@ import { useLibraryTreeData } from 'mira-plugin-ui/library';
 import { buildTree, filterTree, flattenTree, collectIds, sortTree, ROOT_ID } from 'mira-plugin-ui/library';
 import type { LibraryFlatItem, LibraryTreeServices } from 'mira-plugin-ui/library';
 import { useBackground } from './useBackground';
+import { useSettings } from './useSettings';
 import { readNodeLastUsed } from '@/shared/node-last-used';
+import { writeCachedTree } from '@/shared/library-cache';
 
 export { buildTree, filterTree, flattenTree, collectIds, sortTree, ROOT_ID };
 export type { LibraryFlatItem };
@@ -37,17 +39,23 @@ function adapt(
   };
 }
 
-/** 扩展数据服务:background 桥 → mira-plugin-ui LibraryTreeServices */
+/** 扩展数据服务:background 桥 → mira-plugin-ui LibraryTreeServices;网络成功后写本地缓存供下次占位 */
 export function extLibraryServices(): LibraryTreeServices {
   const bg = useBackground();
+  const { settings } = useSettings();
+  const cacheScope = () => settings.value.activeServerId || settings.value.serverURL || 'default';
   return {
     async listFolders(libraryId) {
       const [list, lastUsed] = await Promise.all([bg.listFolders(libraryId), readNodeLastUsed()]);
-      return (list ?? []).map(it => adapt(it, lastUsed.folder, libraryId));
+      const items = (list ?? []).map(it => adapt(it, lastUsed.folder, libraryId));
+      writeCachedTree(cacheScope(), 'folder', libraryId, items);
+      return items;
     },
     async listTags(libraryId) {
       const [list, lastUsed] = await Promise.all([bg.listTags(libraryId), readNodeLastUsed()]);
-      return (list ?? []).map(it => adapt(it, lastUsed.tag, libraryId));
+      const items = (list ?? []).map(it => adapt(it, lastUsed.tag, libraryId));
+      writeCachedTree(cacheScope(), 'tag', libraryId, items);
+      return items;
     },
     createNode: (kind, libraryId, title, parentId) => bg.createNode(kind, libraryId, title, parentId),
     deleteNode: (kind, libraryId, id, deleteFiles) => bg.deleteNode(kind, libraryId, id, deleteFiles),

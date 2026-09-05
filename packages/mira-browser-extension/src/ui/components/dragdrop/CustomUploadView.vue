@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import type { Library } from 'mira-app-core/shared/sdk';
 import type { CustomUploadSession } from '@/shared/messages';
+import { dbg } from '@/shared/debug';
+import { readCachedLibraries, readCachedTree, writeCachedLibraries } from '@/shared/library-cache';
 import { useBackground } from '@/ui/composables/useBackground';
 import { useSettings } from '@/ui/composables/useSettings';
 import { flattenTree, sortTree, useLibraryTree } from '@/ui/composables/useLibraryTree';
@@ -24,16 +27,65 @@ const {
   loading: folderLoading,
   error: folderError,
   load: loadFolders,
+  seed: seedFolders,
 } = useLibraryTree('folder');
 const {
   tree: tagTree,
   loading: tagLoading,
   error: tagError,
   load: loadTags,
+  seed: seedTags,
 } = useLibraryTree('tag');
 
 const loading = computed(() => folderLoading.value || tagLoading.value);
 const loadError = computed(() => folderError.value || tagError.value || '');
+
+// ---- 顶部素材库列表:hover 切换当前库,下方树/新建/删除/上传都作用于它 ----
+const libraries = ref<Library[]>([]);
+const activeLibraryId = ref(settings.value.libraryId || '');
+// 占位已渲染(缓存命中):刷新期间不再整屏显示「加载中」,避免闪烁
+const seeded = ref(false);
+
+const cacheScope = () => settings.value.activeServerId || settings.value.serverURL || 'default';
+
+/** 缓存占位:命中则立即渲染;未命中 seed 空数组,清掉旧库残留展示 */
+async function seedFromCache(libId: string) {
+  if (!libId) return;
+  const scope = cacheScope();
+  const [folders, tags] = await Promise.all([
+    readCachedTree(scope, 'folder', libId),
+    readCachedTree(scope, 'tag', libId),
+  ]);
+  dbg.log('dragdrop', 'seed from cache', { libId, scope, folders: folders?.length ?? 0, tags: tags?.length ?? 0 });
+  seedFolders(libId, folders ?? []);
+  seedTags(libId, tags ?? []);
+  seeded.value = true;
+  folderExpanded.value = folders ? expandAllIds(folderTree.value) : new Set();
+  tagExpanded.value = tags ? expandAllIds(tagTree.value) : new Set();
+}
+
+let hoverTimer: number | undefined;
+/** hover 防抖:鼠标快速划过 chips 不触发加载 */
+function hoverLibrary(libId: string) {
+  clearTimeout(hoverTimer);
+  hoverTimer = window.setTimeout(() => switchLibrary(libId), 120);
+}
+onUnmounted(() => clearTimeout(hoverTimer));
+
+async function switchLibrary(libId: string) {
+  if (!libId || libId === activeLibraryId.value) return;
+  activeLibraryId.value = libId;
+  // 不同库的节点 id 空间不同:清掉旧库的选中;展开状态清空后由 watch 在新树到达时补齐
+  selectedFolderId.value = undefined;
+  selectedTags.value = new Map();
+  folderExpanded.value = new Set();
+  tagExpanded.value = new Set();
+  await seedFromCache(libId);
+  await Promise.all([loadFolders(libId), loadTags(libId)]);
+  if (activeLibraryId.value !== libId) return;
+  folderExpanded.value = expandAllIds(folderTree.value);
+  tagExpanded.value = expandAllIds(tagTree.value);
+}
 
 // 展示排序:与快捷导入面板树一致,按设置的文件夹/标签默认排序(含「最后使用」)
 const folderTreeSorted = computed(() => sortTree(folderTree.value, settings.value.libraryFolderSort));
@@ -90,12 +142,12 @@ function toggleTag(node: LibraryTreeNode) {
 
 // ---- 重载(创建/删除后):拉数据并保持全部展开 ----
 async function reloadFolders() {
-  await loadFolders(settings.value.libraryId);
+  await loadFolders(activeLibraryId.value);
   folderExpanded.value = expandAllIds(folderTree.value);
 }
 
 async function reloadTags() {
-  await loadTags(settings.value.libraryId);
+  await loadTags(activeLibraryId.value);
   tagExpanded.value = expandAllIds(tagTree.value);
 }
 
@@ -113,7 +165,7 @@ const {
   deleting: folderDeleting,
 } = useLibraryTreeActions({
   mode: 'folder',
-  libraryId: () => settings.value.libraryId,
+  libraryId: () => activeLibraryId.value,
   reload: reloadFolders,
 });
 const {
@@ -128,7 +180,7 @@ const {
   deleting: tagDeleting,
 } = useLibraryTreeActions({
   mode: 'tag',
-  libraryId: () => settings.value.libraryId,
+  libraryId: () => activeLibraryId.value,
   reload: reloadTags,
 });
 
@@ -163,7 +215,7 @@ function openTagCreate(parentId: number) {
 async function createViaDialog(payload: LibraryTreeCreatePayload): Promise<number | undefined> {
   const created: any = await bg.createNode(
     payload.kind,
-    settings.value.libraryId,
+    activeLibraryId.value,
     payload.title,
     payload.parentId || undefined,
   );
@@ -206,9 +258,31 @@ const sourceName = computed(() => {
 });
 
 onMounted(async () => {
-  const libId = settings.value.libraryId;
+  const libId = activeLibraryId.value;
+  const scope = cacheScope();
+  dbg.log('dragdrop', 'custom-upload mounted', { libId, scope, settingsLibraryId: settings.value.libraryId });
+  // 1) 缓存占位:内存命中(常驻 sidePanel 内再次打开)首帧即渲染;storage 命中毫秒级
+  await seedFromCache(libId);
+  const cachedLibs = await readCachedLibraries(scope);
+  dbg.log('dragdrop', 'cached libraries', { count: cachedLibs?.length ?? 0 });
+  if (cachedLibs?.length) libraries.value = cachedLibs;
   if (!libId) return;
-  await Promise.all([loadFolders(libId), loadTags(libId)]);
+  // 2) 后台刷新:库列表与两棵树并行,刷新成功自动写缓存(services 层)
+  await Promise.all([
+    bg.listLibraries().then(list => {
+      dbg.log('dragdrop', 'listLibraries ok', {
+        isArray: Array.isArray(list),
+        count: Array.isArray(list) ? list.length : -1,
+        names: Array.isArray(list) ? list.slice(0, 5).map(l => l?.name ?? l?.id) : list,
+      });
+      if (list?.length) {
+        libraries.value = list;
+        writeCachedLibraries(scope, list);
+      }
+    }).catch(e => dbg.warn('dragdrop', 'listLibraries failed', { message: e?.message ?? String(e) })),
+    loadFolders(libId),
+    loadTags(libId),
+  ]);
   folderExpanded.value = expandAllIds(folderTree.value);
   tagExpanded.value = expandAllIds(tagTree.value);
 });
@@ -219,7 +293,7 @@ async function createFolder() {
   creatingFolder.value = true;
   actionError.value = '';
   try {
-    const created: any = await bg.createNode('folder', settings.value.libraryId, title);
+    const created: any = await bg.createNode('folder', activeLibraryId.value, title);
     const folderId = typeof created === 'number' ? created : created?.id;
     if (typeof folderId !== 'number') throw new Error('创建文件夹失败');
     await reloadFolders();
@@ -238,7 +312,7 @@ async function createTag() {
   creatingTag.value = true;
   actionError.value = '';
   try {
-    const created: any = await bg.createNode('tag', settings.value.libraryId, title);
+    const created: any = await bg.createNode('tag', activeLibraryId.value, title);
     const tagId = typeof created === 'number' ? created : created?.id;
     if (typeof tagId !== 'number') throw new Error('创建标签失败');
     await reloadTags();
@@ -264,7 +338,7 @@ async function submit() {
       payload: {
         url: props.session.sourceUrl,
         kind: props.session.kind,
-        libraryId: settings.value.libraryId,
+        libraryId: activeLibraryId.value,
         folderId: selectedFolderId.value,
         tags: [...selectedTags.value.keys()].map(String),
         referrer: props.session.referrer,
@@ -293,13 +367,31 @@ async function close() {
       </div>
     </header>
 
+    <!-- 横向素材库列表:hover 切换下方文件夹/标签树(点击/聚焦等效) -->
+    <nav v-if="libraries.length" class="library-bar" aria-label="素材库">
+      <button
+        v-for="lib in libraries"
+        :key="lib.id"
+        type="button"
+        class="lib-chip"
+        :class="{ active: lib.id === activeLibraryId }"
+        @mouseenter="hoverLibrary(lib.id)"
+        @focus="hoverLibrary(lib.id)"
+        @click="hoverLibrary(lib.id)"
+      >
+        <span v-if="lib.icon" class="lib-icon">{{ lib.icon }}</span>
+        <span class="lib-name">{{ lib.name }}</span>
+      </button>
+    </nav>
+
     <main class="form">
       <div class="preview">
         <img v-if="!previewFailed" :src="session.sourceUrl" :alt="sourceName" @error="previewFailed = true" />
         <span v-else>图片预览加载失败</span>
       </div>
 
-      <p v-if="loading" class="status">加载中…</p>
+      <!-- 未占位时才整屏显示加载(占位后静默刷新,避免闪烁) -->
+      <p v-if="loading && !seeded" class="status">加载中…</p>
       <template v-else>
         <section class="field">
           <div class="field-title"><span>文件夹</span><span>可选</span></div>
@@ -319,7 +411,7 @@ async function close() {
               @select="selectFolder"
               @contextmenu="openFolderMenu"
             />
-            <p v-if="!folderTree.length" class="status">暂无文件夹</p>
+            <p v-if="!folderTree.length" class="status">{{ folderLoading ? '加载中…' : '暂无文件夹' }}</p>
           </div>
         </section>
 
@@ -342,7 +434,7 @@ async function close() {
               @select="toggleTag"
               @contextmenu="openTagMenu"
             />
-            <p v-if="!tagTree.length" class="status">暂无标签</p>
+            <p v-if="!tagTree.length" class="status">{{ tagLoading ? '加载中…' : '暂无标签' }}</p>
           </div>
         </section>
       </template>
@@ -425,6 +517,12 @@ async function close() {
 <style scoped>
 .custom-upload { position: relative; display: flex; flex-direction: column; height: 100%; min-height: 0; background: var(--bg); color: var(--fg); }
 .header { display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 8px; border-bottom: 1px solid var(--border); }
+.library-bar { display: flex; gap: 6px; padding: 8px 12px; overflow-x: auto; border-bottom: 1px solid var(--border); scrollbar-width: thin; }
+.lib-chip { display: inline-flex; flex-shrink: 0; align-items: center; gap: 4px; max-width: 160px; padding: 4px 10px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg-elev); color: var(--muted-foreground); font-size: 12px; line-height: 1.2; white-space: nowrap; cursor: pointer; }
+.lib-chip:hover { color: var(--fg); border-color: var(--muted-foreground); }
+.lib-chip.active { color: var(--fg); border-color: var(--primary); background: color-mix(in srgb, var(--primary) 14%, transparent); }
+.lib-icon { font-size: 12px; }
+.lib-name { overflow: hidden; text-overflow: ellipsis; }
 .heading { display: flex; flex-direction: column; min-width: 0; }
 .heading span { overflow: hidden; color: var(--muted-foreground); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .form { display: flex; flex: 1; flex-direction: column; gap: 16px; min-height: 0; padding: 12px; overflow-y: auto; }

@@ -12,7 +12,7 @@ import { isDragPopoverHostAllowed } from '@/shared/types';
 import { OVERLAY_Z } from './overlay/styles';
 import { dbg } from '@/shared/debug';
 import type { ResourceKind } from '@/shared/types';
-import type { Folder, Tag } from 'mira-app-core/shared/sdk';
+import type { Folder, Library, Tag } from 'mira-app-core/shared/sdk';
 
 dbg.info('content', 'script loaded', { url: location.href, readyState: document.readyState });
 
@@ -67,13 +67,13 @@ async function ensureConnected(): Promise<boolean> {
   return pendingConnection ?? Promise.resolve(false);
 }
 
-/** 取当前素材库文件夹列表;未连接素材库时返回 null */
-async function fetchFolders(): Promise<Folder[] | null> {
+/** 取文件夹列表(传 libraryId 拉指定库,缺省当前素材库);未连接素材库时返回 null */
+async function fetchFolders(libraryId?: string): Promise<Folder[] | null> {
   if (!await ensureConnected()) return null;
-  const libraryId = await getLibraryId();
-  if (!libraryId) return null;
+  const libId = libraryId ?? await getLibraryId();
+  if (!libId) return null;
   try {
-    const res = await chrome.runtime.sendMessage({ type: 'FOLDER_LIST', payload: { libraryId } });
+    const res = await chrome.runtime.sendMessage({ type: 'FOLDER_LIST', payload: { libraryId: libId } });
     return Array.isArray(res) ? res as Folder[] : null;
   } catch (e) {
     // 后台会在未连接/认证失效时尝试自动登录;仍失败时保留 null,
@@ -83,16 +83,28 @@ async function fetchFolders(): Promise<Folder[] | null> {
   }
 }
 
-/** 取当前素材库标签列表;未连接素材库时返回 null */
-async function fetchTags(): Promise<Tag[] | null> {
+/** 取标签列表(传 libraryId 拉指定库,缺省当前素材库);未连接素材库时返回 null */
+async function fetchTags(libraryId?: string): Promise<Tag[] | null> {
   if (!await ensureConnected()) return null;
-  const libraryId = await getLibraryId();
-  if (!libraryId) return null;
+  const libId = libraryId ?? await getLibraryId();
+  if (!libId) return null;
   try {
-    const res = await chrome.runtime.sendMessage({ type: 'TAG_LIST', payload: { libraryId } });
+    const res = await chrome.runtime.sendMessage({ type: 'TAG_LIST', payload: { libraryId: libId } });
     return Array.isArray(res) ? res as Tag[] : null;
   } catch (e) {
     dbg.warn('content', 'fetchTags failed', e);
+    return null;
+  }
+}
+
+/** 素材库列表(拖拽浮层顶部横向展示);未连接时返回 null */
+async function fetchLibraries(): Promise<Library[] | null> {
+  if (!await ensureConnected()) return null;
+  try {
+    const res = await chrome.runtime.sendMessage({ type: 'LIB_LIST' });
+    return Array.isArray(res) ? res as Library[] : null;
+  } catch (e) {
+    dbg.warn('content', 'fetchLibraries failed', e);
     return null;
   }
 }
@@ -149,6 +161,7 @@ function showToast(message: string) {
 const dragdrop = createDragDrop({
   getFolders: fetchFolders,
   getTags: fetchTags,
+  getLibraries: fetchLibraries,
   getLibraryId,
   // 浮层树视图样式:设置「快捷导入样式」(CONFIG_GET 返回完整 settings)
   async getTreeStyle() {
@@ -217,9 +230,10 @@ const dragdrop = createDragDrop({
     }).catch(error => dbg.error('dragdrop', 'custom upload side panel request failed', error));
   },
   onUpload(payload: DragDropPayload) {
+    const libId = payload.libraryId || '';
     if (payload.file) {
       if (payload.sourceUrl) {
-        uploadUrl(payload.sourceUrl, payload.kind, payload.folderId, payload.tags);
+        uploadUrl(payload.sourceUrl, payload.kind, payload.folderId, payload.tags, libId);
         return;
       }
       fileToStaged(payload.file).then(staged => {
@@ -227,14 +241,14 @@ const dragdrop = createDragDrop({
           type: 'UPLOAD_FILES',
           payload: {
             files: [staged],
-            libraryId: '',
+            libraryId: libId,
             folderId: payload.folderId != null ? String(payload.folderId) : undefined,
             tags: payload.tags,
           },
         }).catch(e => dbg.error('content', 'UPLOAD_FILES send failed', e));
       });
     } else if (payload.url) {
-      uploadUrl(payload.url, payload.kind, payload.folderId, payload.tags);
+      uploadUrl(payload.url, payload.kind, payload.folderId, payload.tags, libId);
     }
   },
 });
@@ -265,12 +279,12 @@ async function upgradeBest(url: string): Promise<string> {
   return url;
 }
 
-/** 网页图片上传:先升级到高清原图,再发 service worker 下载入库 */
-async function uploadUrl(url: string, kind: ResourceKind, folderId?: number, tags?: string[]) {
+/** 网页图片上传:先升级到高清原图,再发 service worker 下载入库(libraryId 空 = 当前设置库) */
+async function uploadUrl(url: string, kind: ResourceKind, folderId?: number, tags?: string[], libraryId?: string) {
   const best = await upgradeBest(url);
   chrome.runtime.sendMessage({
     type: 'UPLOAD_FROM_URL',
-    payload: { url: best, kind, libraryId: '', folderId, tags, referrer: location.href },
+    payload: { url: best, kind, libraryId: libraryId || '', folderId, tags, referrer: location.href },
   }).catch(e => dbg.error('content', 'UPLOAD_FROM_URL send failed', e));
 }
 

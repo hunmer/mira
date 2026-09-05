@@ -12,6 +12,7 @@
  * 数据与动作全部经 props 注入(services/upload/回调),组件不直接访问 chrome API。
  */
 import { onMounted, ref } from 'vue';
+import type { Library } from 'mira-app-core/shared/sdk';
 import { LibraryTreeView } from 'mira-plugin-ui/library';
 import type { LibraryTreeServices, LibraryTreeSortMode, LibraryTreeUpload } from 'mira-plugin-ui/library';
 import type { DragSource, DragDropPayload } from '../dragdrop';
@@ -20,6 +21,8 @@ const props = defineProps<{
   source: DragSource;
   /** 当前素材库 id(挂载后异步取,树据此加载) */
   getLibraryId: () => Promise<string | null>;
+  /** 素材库列表(挂载后异步取,顶部横向展示;hover 切换 libraryId) */
+  getLibraries?: () => Promise<Library[] | null>;
   services: LibraryTreeServices;
   /** 树上传服务:files/urls 直接上传,pick = 自定义上传对话框 */
   upload: LibraryTreeUpload;
@@ -40,7 +43,10 @@ const props = defineProps<{
   onDropped: () => void;
 }>();
 
+const emit = defineEmits<{ (e: 'library-change', libraryId: string): void }>();
+
 const libraryId = ref('');
+const libraries = ref<Library[]>([]);
 /** null=探测中;false=未连接(树区域替换为空态 zone) */
 const connected = ref<boolean | null>(null);
 const rootHover = ref(false);
@@ -79,6 +85,9 @@ function onDebugDrop(e: DragEvent) {
 
 onMounted(async () => {
   libraryId.value = (await props.getLibraryId().catch(() => null)) ?? '';
+  if (props.getLibraries) {
+    libraries.value = (await props.getLibraries().catch(() => null)) ?? [];
+  }
   // listFolders 返回 null = 未连接(listFolders 忽略 libId,走注入的 getFolders)
   try {
     const list = await props.services.listFolders(libraryId.value || ' ');
@@ -88,16 +97,25 @@ onMounted(async () => {
   }
 });
 
+/** 顶部素材库列表切换:树随 libraryId 自动重载,上传落点经事件同步外层。
+ *  拖拽中 mouseenter 不触发,由 dragenter/dragover 驱动;幂等(同库直接返回)。 */
+function switchLibrary(id: string) {
+  if (!id || id === libraryId.value) return;
+  libraryId.value = id;
+  emit('library-change', id);
+}
+
 /** 根区 zone:本地文件优先(带 sourceUrl),否则上传拖拽源 url */
 function onRootDrop(e: DragEvent) {
   rootHover.value = false;
   props.onDropped();
   const dtFile = e.dataTransfer?.files?.[0];
+  const libId = libraryId.value || undefined;
   if (dtFile) {
-    props.onUploadPayload({ file: dtFile, sourceUrl: props.source.url, kind: props.source.kind });
+    props.onUploadPayload({ file: dtFile, sourceUrl: props.source.url, kind: props.source.kind, libraryId: libId });
     return;
   }
-  props.onUploadPayload({ url: props.source.url, kind: props.source.kind });
+  props.onUploadPayload({ url: props.source.url, kind: props.source.kind, libraryId: libId });
 }
 </script>
 
@@ -108,6 +126,25 @@ function onRootDrop(e: DragEvent) {
     </div>
 
     <div class="flex min-h-0 flex-1 flex-col gap-2 p-3">
+      <!-- 顶部横向素材库列表:拖拽/鼠标悬停切换下方两栏树为对应素材库 -->
+      <div v-if="libraries.length" class="flex gap-1.5 overflow-x-auto pb-0.5" aria-label="素材库">
+        <button
+          v-for="lib in libraries"
+          :key="lib.id"
+          type="button"
+          class="flex-shrink-0 rounded-full border px-2.5 py-[3px] text-[11px] leading-[16px] whitespace-nowrap transition-colors"
+          :class="lib.id === libraryId
+            ? 'border-primary bg-primary/15 text-foreground'
+            : 'border-border text-muted-foreground hover:border-muted-foreground hover:text-foreground'"
+          :title="lib.name"
+          @dragenter.prevent="switchLibrary(lib.id)"
+          @dragover.prevent="switchLibrary(lib.id)"
+          @mouseenter="switchLibrary(lib.id)"
+        >
+          <span v-if="lib.icon" class="mr-1">{{ lib.icon }}</span>{{ lib.name }}
+        </button>
+      </div>
+
       <div v-if="showDebugDropZone"
         class="mira-dropzone w-full text-left"
         :class="debugHover && 'mira-hover'"

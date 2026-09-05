@@ -1,4 +1,4 @@
-import type { Folder, Tag } from 'mira-app-core/shared/sdk';
+import type { Folder, Library, Tag } from 'mira-app-core/shared/sdk';
 import { createApp, type App } from 'vue';
 import type { LibraryFlatItem, LibraryTreeServices, LibraryTreeSortMode, LibraryTreeUpload } from 'mira-plugin-ui/library';
 import { dbg } from '@/shared/debug';
@@ -19,6 +19,8 @@ export interface DragDropPayload {
   /** 或仅有 url(网页图片) */
   url?: string;
   kind: ResourceKind;
+  /** 上传落点素材库 id(浮层内 hover 切换后携带);缺省走当前设置库 */
+  libraryId?: string;
   /** 目标文件夹 id(根区/不设文件夹时为 undefined) */
   folderId?: number;
   /** 拖到标签 chip 上释放时携带的标签(树视图按标题关联) */
@@ -30,9 +32,11 @@ export interface DragDropHandlers {
   /** “自定义上传”落点由侧边栏完整表单接管(浮层内右键「上传到此处」也走这里)。 */
   openCustomUpload?: (source: DragSource) => void | Promise<void>;
   /** 取当前素材库的文件夹列表;未连接素材库时返回 null */
-  getFolders?: () => Promise<Folder[] | null>;
+  getFolders?: (libraryId?: string) => Promise<Folder[] | null>;
   /** 取当前素材库的标签列表;未连接素材库时返回 null */
-  getTags?: () => Promise<Tag[] | null>;
+  getTags?: (libraryId?: string) => Promise<Tag[] | null>;
+  /** 素材库列表(浮层顶部横向列表,hover 切换下方树);未连接返回 null */
+  getLibraries?: () => Promise<Library[] | null>;
   /** 当前素材库 id;未连接返回 null(浮层树据此加载) */
   getLibraryId?: () => Promise<string | null>;
   /** 浮层树视图样式(设置「快捷导入样式」);未提供或失败时用 tree */
@@ -218,8 +222,10 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
   let overlayRoot: HTMLElement | null = null;
   let vueApp: App | null = null;
   let scrollTimer: ReturnType<typeof setInterval> | null = null;
-  let pendingFolders: Promise<Folder[] | null> | null = null;
-  let pendingTags: Promise<Tag[] | null> | null = null;
+  // 文件夹/标签按库缓存(键 '' = 当前设置库);dragstart 预热,5 秒后允许重新拉取
+  const pendingFoldersByLib = new Map<string, Promise<Folder[] | null>>();
+  const pendingTagsByLib = new Map<string, Promise<Tag[] | null>>();
+  let pendingLibraries: Promise<Library[] | null> | null = null;
   let pendingStyle: Promise<LibraryTreeStyle | null> | null = null;
   // 浮层树的视图样式;dragstart 预热拉取,挂载浮层时取当前缓存值
   let treeStyle: LibraryTreeStyle = 'tree';
@@ -235,6 +241,8 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
   let dragOrigin: { x: number; y: number; source: DragSource; target: Element | null } | null = null;
   // 部分站点会拦截 dragstart；提前在 pointerdown 捕获拖拽候选，供 dragover 恢复。
   let pointerOrigin: { x: number; y: number; source: DragSource; target: Element | null } | null = null;
+  // 浮层内当前选中的素材库 id(组件 hover 切换时经 onLibraryChange 同步;'' = 当前设置库)
+  let overlayLibraryId = '';
 
   function sourceFromEvent(e: Event): DragSource | null {
     const target = e.target instanceof Element ? e.target : null;
@@ -288,6 +296,7 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     };
     void fetchFolders(); // 预热文件夹拉取,移动达到阈值时已就绪
     void fetchTags(); // 预热标签拉取
+    void fetchLibraries(); // 预热素材库列表(浮层顶部横向列表)
     void fetchTreeStyle(); // 预热树视图样式(快捷导入样式设置)
     void fetchSorts(); // 预热树展示排序(文件夹/标签排序设置)
   }
@@ -347,22 +356,25 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     setTimeout(onDragEnd, 0);
   }
 
-  /** 懒加载文件夹列表(dragstart 时触发,多次 dragstart 复用同一次请求) */
-  function fetchFolders(): Promise<Folder[] | null> {
+  /** 懒加载文件夹列表(dragstart 时触发,多次 dragstart 复用同一次请求;libraryId 缺省=当前设置库) */
+  function fetchFolders(libraryId?: string): Promise<Folder[] | null> {
     if (!handlers.getFolders) { dbg.log('dragdrop', 'no getFolders handler'); return Promise.resolve(null); }
-    if (!pendingFolders) {
-      pendingFolders = handlers.getFolders().then(f => {
+    const key = libraryId ?? '';
+    let pending = pendingFoldersByLib.get(key);
+    if (!pending) {
+      pending = handlers.getFolders(libraryId).then(f => {
         const folders = Array.isArray(f) ? f : null;
-        dbg.log('dragdrop', 'fetchFolders ok', { count: folders?.length ?? 0, valid: folders !== null });
+        dbg.log('dragdrop', 'fetchFolders ok', { libraryId: key || '(current)', count: folders?.length ?? 0, valid: folders !== null });
         return folders;
       }).catch(e => {
         dbg.error('dragdrop', 'fetchFolders failed', e);
         return null;
       });
+      pendingFoldersByLib.set(key, pending);
       // 下一次 dragstart 重新拉取
-      setTimeout(() => { pendingFolders = null; }, 5000);
+      setTimeout(() => { pendingFoldersByLib.delete(key); }, 5000);
     }
-    return pendingFolders;
+    return pending;
   }
 
   /** 懒加载树视图样式(与 fetchFolders 同策略:结果缓存,5 秒后允许重新拉取) */
@@ -405,21 +417,41 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     return pendingSorts;
   }
 
-  /** 懒加载标签列表(与文件夹同策略) */
-  function fetchTags(): Promise<Tag[] | null> {
+  /** 懒加载标签列表(与文件夹同策略;libraryId 缺省=当前设置库) */
+  function fetchTags(libraryId?: string): Promise<Tag[] | null> {
     if (!handlers.getTags) return Promise.resolve(null);
-    if (!pendingTags) {
-      pendingTags = handlers.getTags().then(t => {
+    const key = libraryId ?? '';
+    let pending = pendingTagsByLib.get(key);
+    if (!pending) {
+      pending = handlers.getTags(libraryId).then(t => {
         const tags = Array.isArray(t) ? t : null;
-        dbg.log('dragdrop', 'fetchTags ok', { count: tags?.length ?? 0, valid: tags !== null });
+        dbg.log('dragdrop', 'fetchTags ok', { libraryId: key || '(current)', count: tags?.length ?? 0, valid: tags !== null });
         return tags;
       }).catch(e => {
         dbg.error('dragdrop', 'fetchTags failed', e);
         return null;
       });
-      setTimeout(() => { pendingTags = null; }, 5000);
+      pendingTagsByLib.set(key, pending);
+      setTimeout(() => { pendingTagsByLib.delete(key); }, 5000);
     }
-    return pendingTags;
+    return pending;
+  }
+
+  /** 懒加载素材库列表(浮层顶部横向列表;同 5 秒缓存策略) */
+  function fetchLibraries(): Promise<Library[] | null> {
+    if (!handlers.getLibraries) return Promise.resolve(null);
+    if (!pendingLibraries) {
+      pendingLibraries = handlers.getLibraries().then(list => {
+        const libraries = Array.isArray(list) ? list : null;
+        dbg.log('dragdrop', 'fetchLibraries ok', { count: libraries?.length ?? 0 });
+        return libraries;
+      }).catch(e => {
+        dbg.error('dragdrop', 'fetchLibraries failed', e);
+        return null;
+      });
+      setTimeout(() => { pendingLibraries = null; }, 5000);
+    }
+    return pendingLibraries;
   }
 
   function startAutoScroll(dir: -1 | 1) {
@@ -452,11 +484,11 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
   /** 浮层树数据服务:listFolders/listTags 走 handlers(未连接 → null,树显示空态);CRUD 透传可选 handlers */
   const treeServices: LibraryTreeServices = {
     async listFolders(libraryId) {
-      const [list, lastUsed] = await Promise.all([fetchFolders(), readNodeLastUsed()]);
+      const [list, lastUsed] = await Promise.all([fetchFolders(libraryId || undefined), readNodeLastUsed()]);
       return list?.map(it => adaptFlat(it, lastUsed.folder, libraryId)) ?? null;
     },
     async listTags(libraryId) {
-      const [list, lastUsed] = await Promise.all([fetchTags(), readNodeLastUsed()]);
+      const [list, lastUsed] = await Promise.all([fetchTags(libraryId || undefined), readNodeLastUsed()]);
       return list?.map(it => adaptFlat(it, lastUsed.tag, libraryId)) ?? null;
     },
     async createNode(kind, libraryId, title, parentId) {
@@ -473,19 +505,21 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     moveNode: handlers.moveNode,
   };
 
-  /** 浮层树上传服务:拖到节点释放 → 直接上传(direct);pick(右键「上传到此处」/工具栏) → 自定义上传对话框 */
-  function makeUploadAdapter(source: DragSource): LibraryTreeUpload {
+  /** 浮层树上传服务:拖到节点释放 → 直接上传(direct),携带浮层当前选中库;pick(右键「上传到此处」/工具栏) → 自定义上传对话框 */
+  function makeUploadAdapter(source: DragSource, getLibraryId: () => string): LibraryTreeUpload {
     return {
       files(files, target) {
         hideOverlay();
+        const libraryId = getLibraryId() || undefined;
         for (const file of files) {
-          handlers.onUpload({ file, sourceUrl: source.url, kind: source.kind, folderId: target?.folderId, tags: target?.tags });
+          handlers.onUpload({ file, sourceUrl: source.url, kind: source.kind, libraryId, folderId: target?.folderId, tags: target?.tags });
         }
       },
       urls(urls, target) {
         hideOverlay();
+        const libraryId = getLibraryId() || undefined;
         for (const url of urls) {
-          handlers.onUpload({ url, kind: urlKind(url), folderId: target?.folderId, tags: target?.tags });
+          handlers.onUpload({ url, kind: urlKind(url), libraryId, folderId: target?.folderId, tags: target?.tags });
         }
       },
       pick() {
@@ -598,8 +632,9 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     vueApp = createApp(DragDropOverlay, {
       source,
       getLibraryId: handlers.getLibraryId ?? (async () => null),
+      getLibraries: handlers.getLibraries ?? (async () => null),
       services: treeServices,
-      upload: makeUploadAdapter(source),
+      upload: makeUploadAdapter(source, () => overlayLibraryId),
       view: treeStyle,
       sortFolder: treeSorts?.folder,
       sortTag: treeSorts?.tag,
@@ -607,6 +642,12 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
       onUploadPayload: handlers.onUpload,
       onCustomUpload: () => {
         if (handlers.openCustomUpload) void handlers.openCustomUpload(source);
+      },
+      onLibraryChange: (libId: string) => {
+        if (overlayLibraryId !== libId) {
+          overlayLibraryId = libId;
+          dbg.log('dragdrop', 'overlay library switched', { libId });
+        }
       },
       batchUrls: collectImagesUnder(target),
       onBatchImport: handlers.onBatchImport,
@@ -626,6 +667,7 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
   function hideOverlay() {
     stopAutoScroll();
     resizeObserver?.disconnect();
+    overlayLibraryId = '';
     if (vueApp) {
       vueApp.unmount();
       vueApp = null;

@@ -33,8 +33,18 @@ export function useLibraryTreeData(mode: LibraryTreeKind, services: LibraryTreeS
     }
   }
 
+  /**
+   * 注入已知数据占位(如宿主的本地缓存):不触发 loading,立即渲染。
+   * 随后的 load 会以最新数据覆盖;传空数组用于清掉旧库的残留展示。
+   */
+  function seed(libId: string, items: LibraryFlatItem[]) {
+    if (!libId) return;
+    libraryId.value = libId;
+    raw.value = items ?? [];
+  }
+
   const tree = computed(() => buildTree(raw.value));
   const count = computed(() => raw.value.length);
 
-  return { tree, count, loading, error, libraryId, load };
+  return { tree, count, loading, error, libraryId, load, seed };
 }
