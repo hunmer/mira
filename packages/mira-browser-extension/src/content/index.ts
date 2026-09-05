@@ -221,10 +221,10 @@ const dragdrop = createDragDrop({
       .then(() => { dbg.info('content', 'urls copied', { count: urls.length }); showToast(`已复制 ${urls.length} 个图片 URL`); })
       .catch(e => { dbg.error('content', 'copy urls failed', e); showToast('复制失败'); });
   },
-  openCustomUpload(source) {
+  openCustomUpload(source, libraryId) {
     return chrome.runtime.sendMessage({
       type: 'CUSTOM_UPLOAD_SIDEPANEL_OPEN',
-      payload: { sourceUrl: source.url, kind: source.kind, referrer: location.href },
+      payload: { sourceUrl: source.url, kind: source.kind, referrer: location.href, libraryId: libraryId || undefined },
     }).then(result => {
       dbg.info('dragdrop', 'custom upload side panel requested', result);
     }).catch(error => dbg.error('dragdrop', 'custom upload side panel request failed', error));

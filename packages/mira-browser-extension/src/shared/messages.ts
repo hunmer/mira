@@ -13,6 +13,8 @@ export interface CustomUploadSession {
   sourceUrl: string;
   kind: ResourceKind;
   referrer: string;
+  /** 浮层打开时选中的素材库(缺省用设置里的当前库) */
+  libraryId?: string;
 }
 
 /**

@@ -224,7 +224,7 @@ describe('createDragDrop lifecycle', () => {
     expect(customUpload?.textContent).toContain('自定义上传');
     customUpload?.dispatchEvent(new MouseEvent('drop', { bubbles: true }));
     expect(openCustomUpload).toHaveBeenCalledOnce();
-    expect(openCustomUpload).toHaveBeenCalledWith({ url: img.src, kind: 'image' });
+    expect(openCustomUpload).toHaveBeenCalledWith({ url: img.src, kind: 'image' }, undefined);
     expect(overlayQuery('.mira-overlay input')).toBeNull();
     img.remove();
   });
@@ -321,7 +321,7 @@ describe('createDragDrop lifecycle', () => {
     const empty = overlayQuery<HTMLElement>('.mira-empty-state-dropzone');
     expect(empty?.textContent).toBe('未连接到素材库，将文件拖拽到此处打开侧边栏');
     empty?.dispatchEvent(new Event('drop', { bubbles: true, cancelable: true }));
-    expect(openCustomUpload).toHaveBeenCalledWith({ url: img.src, kind: 'image' });
+    expect(openCustomUpload).toHaveBeenCalledWith({ url: img.src, kind: 'image' }, undefined);
     img.remove();
   });
 });

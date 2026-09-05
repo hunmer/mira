@@ -4,6 +4,8 @@
  *
  * 复刻 React 版 headless-tree 树形交互:
  * - 按层级缩进(level * indent)
+ * - 分支连接线(参考 feature-tree-navigation):非顶层每层左侧画底衬主干+分支弧线,
+ *   选中路径线常驻、hover 线半透明跟随,位置变化走弹簧动画(手写 rAF spring,零依赖)
  * - 有子节点的项显示展开/折叠箭头(plus-minus 风格)
  * - 文件夹/标签图标(内联 SVG,零依赖)
  * - 拖拽落点高亮 + drop 抛回目标节点
@@ -11,7 +13,8 @@
  * 组件自递归:LibraryTree 渲染一层 children 时复用自身。
  * 样式为 tailwind/shadcn 原子类,无 scoped CSS、不依赖语义变量。
  */
-import { computed, ref } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import type { Ref } from 'vue';
 import type { LibraryTreeNode } from './types';
 import { canAcceptDrop, isNodeDrag, NODE_DND_TYPE } from './drag-data';
 import type { LibraryTreeDropPosition } from './types';
@@ -47,6 +50,8 @@ const props = withDefaults(
     root?: boolean;
     /** 根目录虚拟分组卡的头部文案(root 时显示) */
     rootLabel?: string;
+    /** 分支连接线主色(父级递归时传父节点颜色;缺省用主题 primary) */
+    accentColor?: string;
   }>(),
   { kind: 'folder', indent: 20, checkable: false, sortable: false, dropMark: null, draggingId: null, tileLeaves: false, inline: false, root: false, rootLabel: '' },
 );
@@ -204,6 +209,93 @@ function rowClass(node: LibraryTreeNode): string[] {
     selectable.value ? 'cursor-pointer' : 'cursor-default',
   ];
 }
+
+// ---- 分支连接线(复刻 feature-tree-navigation 树形导航) ----
+// 底衬灰线(主干竖线 + 每行分支弧线)常驻;选中/hover 各有一条主色线,位置变化走弹簧动画。
+// 仅非顶层且非平铺模式的层渲染。线画在「本层行首缩进带」:主干对齐父行箭头槽,分支终点距本层行首 1px。
+const BRANCH_ROW_H = 28; // 行高(与模板行 h-7 耦合)
+const BRANCH_TRUNK_X = 8; // 主干竖线 x(父行箭头槽 w-3.5 的中部)
+const BRANCH_R = 6; // 主干→分支转弯圆角半径
+
+const showBranches = computed(() => !props.root && !props.tileLeaves && props.nodes.length > 0);
+/** SVG 左缘 = 本层行 paddingLeft - indent(即父行内容起点) */
+const branchLeft = computed(() => 6 + (props.nodes[0]?.level ?? 1) * props.indent - props.indent);
+const branchEndX = computed(() => props.indent - 1);
+const branchWidth = computed(() => branchEndX.value + 6);
+const branchHeight = computed(() => mainNodes.value.length * BRANCH_ROW_H);
+const branchStroke = computed(() => props.accentColor || 'var(--primary)');
+
+const rowY = (i: number) => BRANCH_ROW_H / 2 + i * BRANCH_ROW_H;
+
+function branchPathD(y: number | null): string {
+  if (y == null) return '';
+  const turn = Math.max(0, y - BRANCH_R);
+  return `M ${BRANCH_TRUNK_X} 0 L ${BRANCH_TRUNK_X} ${turn} A ${BRANCH_R} ${BRANCH_R} 0 0 0 ${BRANCH_TRUNK_X + BRANCH_R} ${y} L ${branchEndX.value} ${y}`;
+}
+
+/** 子树内含选中节点(本行是选中节点或其祖先) → 各层线贯通成到选中行的完整路径 */
+function subtreeHasSelected(nodes: LibraryTreeNode[], sel: Set<number>): boolean {
+  for (const n of nodes) {
+    if (sel.has(n.id) || subtreeHasSelected(n.children, sel)) return true;
+  }
+  return false;
+}
+const activeBranchIndex = computed(() => {
+  const sel = props.selectedIds ?? props.checked;
+  if (!sel?.size) return -1;
+  return mainNodes.value.findIndex(n => sel.has(n.id) || subtreeHasSelected(n.children, sel));
+});
+
+// hover 行索引(120ms 钝化:行间移动不熄线,与上面 dragOverId 同套路)
+const hoverBranchIndex = ref<number | null>(null);
+let hoverBranchClear: ReturnType<typeof setTimeout> | null = null;
+function onRowEnter(i: number) {
+  if (hoverBranchClear) { clearTimeout(hoverBranchClear); hoverBranchClear = null; }
+  hoverBranchIndex.value = i;
+}
+function onRowLeave() {
+  if (hoverBranchClear) clearTimeout(hoverBranchClear);
+  hoverBranchClear = setTimeout(() => { hoverBranchIndex.value = null; }, 120);
+}
+
+/** y 弹簧补间(参考 motion spring: stiffness 420 / damping 34 / mass 0.5 → a = -840x - 68v);null 表示线隐藏 */
+function useSpringY(target: Ref<number | null>) {
+  const pos = ref<number | null>(target.value);
+  let vel = 0;
+  let raf = 0;
+  let last = 0;
+  const step = (now: number) => {
+    const to = target.value;
+    if (to == null) { raf = 0; return; }
+    const dt = Math.min((now - last) / 1000, 1 / 30);
+    last = now;
+    vel += (-840 * ((pos.value as number) - to) - 68 * vel) * dt;
+    pos.value = (pos.value as number) + vel * dt;
+    if (Math.abs((pos.value as number) - to) < 0.1 && Math.abs(vel) < 0.1) {
+      pos.value = to; vel = 0; raf = 0; return;
+    }
+    raf = requestAnimationFrame(step);
+  };
+  watch(target, (to, from) => {
+    if (to == null) {
+      if (raf) cancelAnimationFrame(raf);
+      raf = 0; vel = 0; pos.value = null;
+      return;
+    }
+    if (pos.value == null) {
+      // 线从隐藏到出现:落位即可(显隐由 v-if 承担);此后位置变化走弹簧
+      pos.value = to;
+      vel = 0;
+      if (from == null) return;
+    }
+    if (!raf) { last = performance.now(); raf = requestAnimationFrame(step); }
+  });
+  onBeforeUnmount(() => raf && cancelAnimationFrame(raf));
+  return pos;
+}
+
+const activeBranchY = useSpringY(computed(() => (activeBranchIndex.value >= 0 ? rowY(activeBranchIndex.value) : null)));
+const hoverBranchY = useSpringY(computed(() => (hoverBranchIndex.value != null ? rowY(hoverBranchIndex.value) : null)));
 </script>
 
 <template>
@@ -287,7 +379,61 @@ function rowClass(node: LibraryTreeNode): string[] {
     </div>
   </div>
 
-  <ul v-else class="m-0 list-none p-0" role="tree">
+  <ul v-else class="relative m-0 list-none p-0" role="tree">
+    <!-- 分支连接线:底衬(主干+每行分支弧线)常驻;hover 半透明线跟随,选中路径线常驻,位置变化走弹簧动画 -->
+    <li
+      v-if="showBranches"
+      aria-hidden="true"
+      class="pointer-events-none absolute top-0 list-none"
+      :style="{ left: branchLeft + 'px' }"
+    >
+      <svg
+        :width="branchWidth"
+        :height="branchHeight"
+        :viewBox="`0 0 ${branchWidth} ${branchHeight}`"
+        fill="none"
+        class="block overflow-visible"
+      >
+        <line
+          :x1="BRANCH_TRUNK_X"
+          y1="0"
+          :x2="BRANCH_TRUNK_X"
+          :y2="Math.max(0, rowY(mainNodes.length - 1) - BRANCH_R)"
+          stroke="var(--border)"
+          stroke-width="1.5"
+          stroke-linecap="round"
+        />
+        <path
+          v-for="(n, i) in mainNodes"
+          :key="`bg-branch-${n.id}`"
+          :d="branchPathD(rowY(i))"
+          stroke="var(--border)"
+          stroke-width="1.5"
+          fill="none"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+        <path
+          v-if="hoverBranchY != null"
+          :d="branchPathD(hoverBranchY)"
+          :stroke="branchStroke"
+          stroke-width="1.75"
+          fill="none"
+          opacity="0.45"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+        <path
+          v-if="activeBranchY != null"
+          :d="branchPathD(activeBranchY)"
+          :stroke="branchStroke"
+          stroke-width="1.75"
+          fill="none"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </li>
     <!-- 平铺根层:「根目录」虚拟分组卡置顶,收纳无子节点的散叶子(恒展开,头部仅展示无节点交互) -->
     <li v-if="rootLeaves.length" class="my-1 rounded-lg border border-border bg-accent/35 p-1">
       <div class="flex h-7 items-center gap-1.5 rounded-md pr-2 pl-2 text-foreground select-none" :title="rootLabel">
@@ -337,7 +483,7 @@ function rowClass(node: LibraryTreeNode): string[] {
     </li>
 
     <li
-      v-for="node in mainNodes"
+      v-for="(node, idx) in mainNodes"
       :key="node.id"
       role="treeitem"
       :aria-expanded="node.children.length ? (isGroupCard(node) || expanded.has(node.id)) : undefined"
@@ -349,6 +495,8 @@ function rowClass(node: LibraryTreeNode): string[] {
         :style="{ paddingLeft: 6 + node.level * indent + 'px' }"
         :title="node.title"
         :draggable="sortable"
+        @mouseenter="onRowEnter(idx)"
+        @mouseleave="onRowLeave()"
         @dragstart="onNodeDragStart(node, $event)"
         @dragover="onDragOver($event, node); onNodeDragOver(node, $event)"
         @dragleave="onNodeDragLeave(node, $event)"
@@ -468,7 +616,7 @@ function rowClass(node: LibraryTreeNode): string[] {
         >{{ node.children.length }}</span>
       </div>
 
-      <!-- 子树:展开时渲染;分组卡片体强制展开(传 inline 去缩进) -->
+      <!-- 子树:展开时渲染;分组卡片体强制展开(传 inline 去缩进);连接线主色随本节点 color -->
       <LibraryTree
         v-if="node.children.length && (isGroupCard(node) || expanded.has(node.id))"
         :nodes="node.children"
@@ -484,6 +632,7 @@ function rowClass(node: LibraryTreeNode): string[] {
         :dragging-id="draggingId"
         :tile-leaves="tileLeaves"
         :inline="isGroupCard(node)"
+        :accent-color="colorHex(node.color) || undefined"
         @toggle="emit('toggle', $event)"
         @select="emit('select', $event)"
         @drop="(n, f) => emit('drop', n, f)"

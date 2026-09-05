@@ -42,7 +42,8 @@ const loadError = computed(() => folderError.value || tagError.value || '');
 
 // ---- 顶部素材库列表:hover 切换当前库,下方树/新建/删除/上传都作用于它 ----
 const libraries = ref<Library[]>([]);
-const activeLibraryId = ref(settings.value.libraryId || '');
+// 初始库优先用浮层打开时选中的(session.libraryId),否则设置里的当前库
+const activeLibraryId = ref(props.session.libraryId || settings.value.libraryId || '');
 // 占位已渲染(缓存命中):刷新期间不再整屏显示「加载中」,避免闪烁
 const seeded = ref(false);
 

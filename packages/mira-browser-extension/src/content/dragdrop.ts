@@ -30,7 +30,7 @@ export interface DragDropPayload {
 export interface DragDropHandlers {
   onUpload: (payload: DragDropPayload) => void;
   /** “自定义上传”落点由侧边栏完整表单接管(浮层内右键「上传到此处」也走这里)。 */
-  openCustomUpload?: (source: DragSource) => void | Promise<void>;
+  openCustomUpload?: (source: DragSource, libraryId?: string) => void | Promise<void>;
   /** 取当前素材库的文件夹列表;未连接素材库时返回 null */
   getFolders?: (libraryId?: string) => Promise<Folder[] | null>;
   /** 取当前素材库的标签列表;未连接素材库时返回 null */
@@ -524,7 +524,7 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
       },
       pick() {
         hideOverlay();
-        if (handlers.openCustomUpload) void handlers.openCustomUpload(source);
+        if (handlers.openCustomUpload) void handlers.openCustomUpload(source, getLibraryId() || undefined);
       },
     };
   }
@@ -641,7 +641,7 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
       showCustomUpload: !!handlers.openCustomUpload,
       onUploadPayload: handlers.onUpload,
       onCustomUpload: () => {
-        if (handlers.openCustomUpload) void handlers.openCustomUpload(source);
+        if (handlers.openCustomUpload) void handlers.openCustomUpload(source, overlayLibraryId || undefined);
       },
       onLibraryChange: (libId: string) => {
         if (overlayLibraryId !== libId) {
