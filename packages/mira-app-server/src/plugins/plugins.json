@@ -218,5 +218,19 @@
     ],
     "installedAt": "2026-08-23T00:00:00.000Z",
     "status": "active"
+  },
+  {
+    "name": "mira_office_viewer",
+    "enabled": true,
+    "path": "../../../../plugins/plugins/mira_office_viewer",
+    "version": "1.0.0",
+    "description": "使用 vue-office 预览 docx、xlsx、pptx 和 pdf 文件。",
+    "author": "Mira Team",
+    "main": "index.ts",
+    "icon": "description",
+    "title": "Office 文档预览",
+    "category": "productivity",
+    "tags": ["Office", "Word", "Excel", "PowerPoint", "PDF", "预览"],
+    "status": "active"
   }
 ]

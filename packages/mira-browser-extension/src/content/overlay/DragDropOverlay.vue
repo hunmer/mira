@@ -59,6 +59,13 @@ const debugDrop = ref('');
 const showBatchZones = true;
 const showDebugDropZone = false;
 
+/** Overlay 只处理页面内产生的拖拽;文件管理器等外部拖拽带有 Files 类型。 */
+function isInternalDrag(e: DragEvent) {
+  const types = Array.from(e.dataTransfer?.types ?? []);
+  // 无 dataTransfer 的程序化 drop 事件沿用原行为;真实外部文件拖拽会带 Files 类型。
+  return !types.some(type => type.toLowerCase() === 'files');
+}
+
 function onDebugDrop(e: DragEvent) {
   debugHover.value = false;
   e.preventDefault();
@@ -107,6 +114,7 @@ function switchLibrary(id: string) {
 
 /** 根区 zone:本地文件优先(带 sourceUrl),否则上传拖拽源 url */
 function onRootDrop(e: DragEvent) {
+  if (!isInternalDrag(e)) return;
   rootHover.value = false;
   props.onDropped();
   const dtFile = e.dataTransfer?.files?.[0];
@@ -149,7 +157,7 @@ function onRootDrop(e: DragEvent) {
       <div v-if="showDebugDropZone"
         class="mira-dropzone w-full text-left"
         :class="debugHover && 'mira-hover'"
-        @dragover.prevent="debugHover = true"
+        @dragover.prevent="isInternalDrag($event) && (debugHover = true)"
         @dragleave="debugHover = false"
         @drop="onDebugDrop"
       >
@@ -161,7 +169,7 @@ function onRootDrop(e: DragEvent) {
         <div
           class="mira-dropzone mira-root w-auto flex-1"
           :class="rootHover && 'mira-hover'"
-          @dragover.prevent="rootHover = true"
+          @dragover.prevent="isInternalDrag($event) && (rootHover = true)"
           @dragleave="rootHover = false"
           @drop.prevent="onRootDrop"
         >📂 不设文件夹</div>
@@ -169,9 +177,9 @@ function onRootDrop(e: DragEvent) {
           v-if="showCustomUpload"
           class="mira-dropzone mira-root mira-custom-upload w-auto flex-1"
           :class="customHover && 'mira-hover'"
-          @dragover.prevent="customHover = true"
+          @dragover.prevent="isInternalDrag($event) && (customHover = true)"
           @dragleave="customHover = false"
-          @drop.prevent="() => { customHover = false; onDropped(); onCustomUpload(); }"
+          @drop.prevent="isInternalDrag($event) && (customHover = false, onDropped(), onCustomUpload())"
         >⚙ 自定义上传</div>
       </div>
 
@@ -181,17 +189,17 @@ function onRootDrop(e: DragEvent) {
           v-if="onBatchImport"
           class="mira-dropzone w-auto flex-1"
           :class="importHover && 'mira-hover'"
-          @dragover.prevent="importHover = true"
+          @dragover.prevent="isInternalDrag($event) && (importHover = true)"
           @dragleave="importHover = false"
-          @drop.prevent="() => { importHover = false; onDropped(); batchUrls && onBatchImport!(batchUrls); }"
+          @drop.prevent="isInternalDrag($event) && (importHover = false, onDropped(), batchUrls && onBatchImport!(batchUrls))"
         >🖼 批量导入({{ batchUrls.length }})</div>
         <div
           v-if="onCopyUrls"
           class="mira-dropzone w-auto flex-1"
           :class="copyHover && 'mira-hover'"
-          @dragover.prevent="copyHover = true"
+          @dragover.prevent="isInternalDrag($event) && (copyHover = true)"
           @dragleave="copyHover = false"
-          @drop.prevent="() => { copyHover = false; onDropped(); batchUrls && onCopyUrls!(batchUrls); }"
+          @drop.prevent="isInternalDrag($event) && (copyHover = false, onDropped(), batchUrls && onCopyUrls!(batchUrls))"
         >🔗 批量复制url</div>
       </div>
 
@@ -200,14 +208,14 @@ function onRootDrop(e: DragEvent) {
         v-if="connected === false"
         class="mira-empty-state-dropzone"
         :class="emptyHover && 'mira-hover'"
-        @dragover.prevent="emptyHover = true"
+        @dragover.prevent="isInternalDrag($event) && (emptyHover = true)"
         @dragleave="emptyHover = false"
-        @drop.prevent="() => { emptyHover = false; onDropped(); onCustomUpload(); }"
+        @drop.prevent="isInternalDrag($event) && (emptyHover = false, onDropped(), onCustomUpload())"
       >未连接到素材库，将文件拖拽到此处打开侧边栏</div>
 
       <!-- 左右两栏树:文件夹树 | 标签树;拖到节点直接上传到目标,右键「上传到此处」走自定义上传对话框 -->
       <div v-else class="grid min-h-0 flex-1 grid-cols-2 gap-2">
-        <div class="h-[44vh] min-h-0 overflow-hidden rounded-lg border border-border" @dragover.prevent @drop.prevent>
+        <div class="h-[44vh] min-h-0 overflow-hidden rounded-lg border border-border" @dragover.capture.prevent @drop.capture.prevent="!isInternalDrag($event) && $event.stopPropagation()">
           <LibraryTreeView
             mode="folder"
             :library-id="libraryId"
@@ -219,7 +227,7 @@ function onRootDrop(e: DragEvent) {
             :sort="sortFolder"
           />
         </div>
-        <div class="h-[44vh] min-h-0 overflow-hidden rounded-lg border border-border" @dragover.prevent @drop.prevent>
+        <div class="h-[44vh] min-h-0 overflow-hidden rounded-lg border border-border" @dragover.capture.prevent @drop.capture.prevent="!isInternalDrag($event) && $event.stopPropagation()">
           <LibraryTreeView
             mode="tag"
             :library-id="libraryId"

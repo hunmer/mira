@@ -1,0 +1,17 @@
+{
+  "pluginName": "Office 文档预览",
+  "pluginId": "d4e5f607-1829-4abc-9def-0123456789ab",
+  "priority": 20,
+  "version": "1.0.0",
+  "index": "index.js",
+  "tags": ["Office", "Word", "Excel", "PowerPoint", "PDF", "预览"],
+  "category": "productivity",
+  "description": "使用 vue-office 预览 docx、xlsx、pptx 和 pdf 文件。",
+  "author": "Mira Team",
+  "homepage": "https://github.com/501351981/vue-office",
+  "enable": true,
+  "config": {},
+  "permissions": ["ui", "dom"],
+  "dependencies": [],
+  "platform": ["win32", "darwin", "linux"]
+}

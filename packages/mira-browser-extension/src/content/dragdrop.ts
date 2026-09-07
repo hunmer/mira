@@ -320,18 +320,6 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
       dragOrigin = pointerOrigin;
       dbg.warn('dragdrop', 'dragstart missed, recovered from pointer candidate', { source: dragOrigin.source });
     }
-    // 从文件管理器拖入页面时不会触发页面 dragstart;仅凭 dragover 的 Files 类型
-    // 也应显示浮层,释放后由 LibraryTreeView 读取 dataTransfer.files 上传。
-    if (!dragOrigin && e.dataTransfer?.types.some(type => type.toLowerCase() === 'files')) {
-      void fetchTreeStyle(); // 外部文件拖入无 dragstart,这里补预热
-      void fetchSorts();
-      dragOrigin = {
-        x: e.clientX,
-        y: e.clientY,
-        source: { url: '', kind: 'image' },
-        target: null,
-      };
-    }
     if (!dragOrigin || overlayHost) return; // 已显示或无起点不处理
     const externalFiles = !dragOrigin.target && dragOrigin.source.url === '';
     const dx = e.clientX - dragOrigin.x;

@@ -145,6 +145,7 @@
     "mira_swf_format": "link:../../../../plugins/plugins/mira_swf_format",
     "mira_tiptap_format": "link:../../../../plugins/plugins/mira_tiptap_format",
     "mira_zipper_format": "link:../../../../plugins/plugins/mira_zipper_format",
+    "mira_office_viewer": "link:../../../../plugins/plugins/mira_office_viewer",
     "mira-app-core": "link:../../../mira-app-core",
     "mira-app-server": "link:../..",
     "mkdirp": "^1.0.4",
