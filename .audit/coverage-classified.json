@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-02T06:59:41.294Z",
+  "generatedAt": "2026-09-08T03:32:30.483Z",
   "summary": {
     "covered": 126,
     "missing": 13,
@@ -636,7 +636,7 @@
       "path": "/api/files/update",
       "domain": "files",
       "file": "packages/mira-app-server/src/routes/FileRoutes.ts",
-      "line": 1548,
+      "line": 1551,
       "category": "covered",
       "sdkMethods": [
         "File.updateFile"
@@ -735,7 +735,7 @@
       "path": "/api/folders/file/:param",
       "domain": "folders",
       "file": "packages/mira-app-server/src/routes/FolderRouter.ts",
-      "line": 169,
+      "line": 177,
       "category": "covered",
       "sdkMethods": [
         "Folder.getFileFolder"
@@ -1417,7 +1417,7 @@
       "path": "/api/tags/file/:param",
       "domain": "tags",
       "file": "packages/mira-app-server/src/routes/TagRouter.ts",
-      "line": 118,
+      "line": 127,
       "category": "covered",
       "sdkMethods": [
         "Tag.getFileTags"

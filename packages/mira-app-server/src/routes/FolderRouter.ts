@@ -136,10 +136,18 @@ export class FolderRouter extends BaseRouter {
 
                 const { library } = validation;
                 const db = library.libraryService;
+                const oldFile = await db.getFile(parseInt(fileId));
+                if (!oldFile) {
+                    this.sendError(res, 404, 'File not found');
+                    return;
+                }
+                if (Number(oldFile.recycled) === 1) {
+                    this.sendError(res, 409, 'Cannot update a recycled file');
+                    return;
+                }
                 const folderId = await resolveFolderId(db, folder);
 
                 // 移动前注册忽略路径，避免 Watcher 重复处理
-                const oldFile = await db.getFile(parseInt(fileId));
                 const watcher = this.backend.libraries!.getLibrary(libraryId)?.watcher;
                 if (oldFile && watcher) {
                     const oldPath = await db.getItemFilePath(oldFile);

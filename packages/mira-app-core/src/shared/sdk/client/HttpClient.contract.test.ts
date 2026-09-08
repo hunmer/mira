@@ -20,6 +20,7 @@ const mockAxiosInstance = {
     put: vi.fn(),
     patch: vi.fn(),
     delete: vi.fn(),
+    request: vi.fn(),
 };
 
 vi.mock('axios', () => ({
@@ -99,5 +100,56 @@ describe('HttpClient contract', () => {
         await expect(onRejected({ request: {}, message: 'timeout' })).rejects.toMatchObject({
             error: 'NETWORK_ERROR',
         });
+    });
+
+    it('reauthenticates once and retries a request after a 401 response', async () => {
+        const onUnauthorized = vi.fn().mockResolvedValue('renewed-token');
+        new HttpClient({ baseURL: 'http://localhost:8081', onUnauthorized });
+        const onRejected = responseHandlers[0];
+        const requestConfig = { url: '/api/files', headers: { Authorization: 'Bearer expired-token' } };
+        mockAxiosInstance.request.mockResolvedValueOnce({ data: { code: 0, data: [] } });
+
+        await expect(onRejected({
+            response: { status: 401, data: { message: 'token expired' } },
+            config: requestConfig,
+            message: 'Request failed with status code 401',
+        })).resolves.toEqual({ data: { code: 0, data: [] } });
+
+        expect(onUnauthorized).toHaveBeenCalledTimes(1);
+        expect(mockAxiosInstance.request).toHaveBeenCalledWith(expect.objectContaining({
+            url: '/api/files',
+            headers: expect.objectContaining({ Authorization: 'Bearer renewed-token' }),
+        }));
+    });
+
+    it('shares one reauthentication attempt across concurrent 401 responses', async () => {
+        let resolveToken!: (token: string) => void;
+        const onUnauthorized = vi.fn(() => new Promise<string>((resolve) => { resolveToken = resolve; }));
+        new HttpClient({ baseURL: 'http://localhost:8081', onUnauthorized });
+        const onRejected = responseHandlers[0];
+        mockAxiosInstance.request.mockResolvedValue({ data: { code: 0, data: [] } });
+
+        const first = onRejected({ response: { status: 401, data: {} }, config: { url: '/api/files', headers: {} } });
+        const second = onRejected({ response: { status: 401, data: {} }, config: { url: '/api/tags', headers: {} } });
+        expect(onUnauthorized).toHaveBeenCalledTimes(1);
+
+        resolveToken('renewed-token');
+        await Promise.all([first, second]);
+        expect(mockAxiosInstance.request).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not recursively reauthenticate a failed login request', async () => {
+        const onUnauthorized = vi.fn().mockResolvedValue('renewed-token');
+        new HttpClient({ baseURL: 'http://localhost:8081', onUnauthorized });
+        const onRejected = responseHandlers[0];
+
+        await expect(onRejected({
+            response: { status: 401, data: { message: 'invalid credentials' } },
+            config: { url: '/api/auth/login', headers: {} },
+            message: 'Request failed with status code 401',
+        })).rejects.toMatchObject({ status: 401 });
+
+        expect(onUnauthorized).not.toHaveBeenCalled();
+        expect(mockAxiosInstance.request).not.toHaveBeenCalled();
     });
 });

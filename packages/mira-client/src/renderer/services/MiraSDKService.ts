@@ -134,7 +134,11 @@ export class MiraSDKService {
 
       this.client = new MiraClient(config.serverUrl, {
         timeout: config.timeout || 30000,
-        getToken: () => authStore.token ?? undefined
+        getToken: () => authStore.token ?? undefined,
+        onUnauthorized: async () => {
+          const success = await authStore.reauthenticate()
+          return success ? authStore.token ?? undefined : undefined
+        }
       })
 
       // 保存连接配置
@@ -621,6 +625,7 @@ export class MiraSDKService {
           website: file.website || '',
           stars: Number(file.stars ?? file.rating ?? 0),
           notes: file.notes || '',
+          recycled: Number(file.recycled) || 0,
           hash: file.hash || '',
           thumbnailPath: toFileUrl(appendToken(thumbnailPath || (resolveServerUrl(file.thumb, this.connectionConfig?.serverUrl) as string | undefined))),
           libraryId,
@@ -692,6 +697,7 @@ export class MiraSDKService {
         website: file.website || '',
         stars: Number(file.stars ?? file.rating ?? 0),
         notes: file.notes || '',
+        recycled: Number(file.recycled) || 0,
         hash: file.hash || '',
         thumbnailPath: toFileUrl(appendToken(useLocalThumb ? file.thumbnail_path : (file.thumb || undefined))),
         libraryId,

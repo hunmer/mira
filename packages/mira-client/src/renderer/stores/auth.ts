@@ -522,6 +522,28 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  /** 令牌失效后使用当前服务器保存的凭据重新登录。 */
+  const reauthenticate = async (): Promise<boolean> => {
+    const { useServerListStore } = await import('./serverList')
+    const activeServer = useServerListStore().activeServer
+    if (!activeServer) {
+      await clearAuthState()
+      return false
+    }
+
+    const credentials = await getCredentialsFromLibrary(activeServer.id)
+    if (!credentials) {
+      await clearAuthState()
+      return false
+    }
+
+    // getToken 优先于 SDK 内部 token；先清除旧值，确保 login 后的 verify 使用新令牌。
+    token.value = null
+    tokenExpiration.value = null
+    const result = await login(credentials, undefined, false)
+    return result.success && !!token.value
+  }
+
   /**
    * 清除保存的凭据
    * @param libraryId - 素材库ID
@@ -718,6 +740,7 @@ export const useAuthStore = defineStore('auth', () => {
     initializeAuthAfterConnection,
     loginWithRetry,
     autoLogin,
+    reauthenticate,
     saveCredentialsToLibrary,
     getCredentialsFromLibrary,
     clearSavedCredentials

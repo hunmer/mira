@@ -28,6 +28,8 @@ export interface ClientConfig {
     headers?: Record<string, string>;
     token?: string;
     getToken?: () => string | undefined;
+    /** 401 时重新认证并返回新的访问令牌；返回空值时不重试原请求 */
+    onUnauthorized?: () => Promise<string | undefined>;
 }
 
 // 插件商店源（服务端存储）
@@ -467,6 +469,7 @@ export interface FileData {
     created_at: string;
     updated_at: string;
     imported_at: number;
+    recycled?: number;
 }
 
 // 数据库类型

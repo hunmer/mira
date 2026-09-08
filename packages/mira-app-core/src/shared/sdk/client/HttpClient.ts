@@ -8,6 +8,7 @@ import { ClientConfig, ErrorResponse, BaseResponse } from '../types';
 export class HttpClient {
     private axiosInstance: AxiosInstance;
     private config: ClientConfig;
+    private reauthenticationPromise: Promise<string | undefined> | null = null;
 
     constructor(config: ClientConfig) {
         this.config = config;
@@ -39,8 +40,33 @@ export class HttpClient {
             (response) => {
                 return response;
             },
-            (error) => {
+            async (error) => {
                 if (error.response) {
+                    const requestConfig = error.config as (AxiosRequestConfig & { _miraAuthRetried?: boolean }) | undefined;
+                    const isLoginRequest = requestConfig?.url?.includes('/api/auth/login');
+                    const isActiveReauthenticationRequest = !!this.reauthenticationPromise
+                        && requestConfig?.url?.includes('/api/auth/');
+                    if (
+                        error.response.status === 401
+                        && requestConfig
+                        && !requestConfig._miraAuthRetried
+                        && !isLoginRequest
+                        && !isActiveReauthenticationRequest
+                        && this.config.onUnauthorized
+                    ) {
+                        requestConfig._miraAuthRetried = true;
+                        try {
+                            const token = await this.reauthenticate();
+                            if (token) {
+                                requestConfig.headers = requestConfig.headers || {};
+                                requestConfig.headers.Authorization = `Bearer ${token}`;
+                                return this.axiosInstance.request(requestConfig);
+                            }
+                        } catch {
+                            // 重认证失败时继续抛出原始 401，保留调用方现有错误处理语义
+                        }
+                    }
+
                     // 服务器返回了错误状态码
                     const errorResponse: ErrorResponse = {
                         error: error.response.data?.error || 'HTTP_ERROR',
@@ -69,6 +95,19 @@ export class HttpClient {
                 }
             }
         );
+    }
+
+    private reauthenticate(): Promise<string | undefined> {
+        if (!this.reauthenticationPromise) {
+            this.reauthenticationPromise = (async () => {
+                try {
+                    return await this.config.onUnauthorized?.();
+                } finally {
+                    this.reauthenticationPromise = null;
+                }
+            })();
+        }
+        return this.reauthenticationPromise;
     }
 
     /**

@@ -1505,10 +1505,13 @@ export class FileRoutes {
 
                 const file = await obj.libraryService.getFile(parseInt(fileId));
                 if (!file) return res.status(404).json({ code: 404, message: 'File not found' });
+                if (Number(file.recycled) === 1) {
+                    return res.status(409).json({ code: 409, message: 'Cannot update a recycled file' });
+                }
 
                 // 同文件夹下同名检测
                 const { result: siblings } = await obj.libraryService.getFiles({
-                    filters: { folder: file.folder_id || '=null' },
+                    filters: { folder: file.folder_id || '=null', recycled: 0 },
                 });
                 const usedNames = new Set(
                     siblings
@@ -1558,6 +1561,9 @@ export class FileRoutes {
 
                 const file = await obj.libraryService.getFile(parseInt(fileId));
                 if (!file) return res.status(404).json({ code: 404, message: 'File not found' });
+                if (Number(file.recycled) === 1) {
+                    return res.status(409).json({ code: 409, message: 'Cannot update a recycled file' });
+                }
 
                 // 将 camelCase 映射到 snake_case 列名
                 const updateData: Record<string, any> = {};

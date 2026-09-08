@@ -9,6 +9,8 @@ interface FileFormatManager {
       icon?: string
       entry: string
       priority?: number
+      extensions?: string[]
+      mimeTypes?: string[]
       getQuery: (context: any) => Record<string, unknown>
     }>
   }): () => void
@@ -36,6 +38,8 @@ class OfficeViewerPlugin {
         icon: format.icon,
         entry: 'viewer.html',
         priority: 20,
+        extensions: [format.ext],
+        mimeTypes: [format.mime],
         getQuery: ({ file, fileId, fileUrl }: any) => ({
           fileId,
           fileUrl,

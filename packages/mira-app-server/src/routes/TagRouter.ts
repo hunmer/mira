@@ -98,6 +98,15 @@ export class TagRouter extends BaseRouter {
 
                 const { library } = validation;
                 const db = library.libraryService;
+                const file = await db.getFile(parseInt(fileId));
+                if (!file) {
+                    this.sendError(res, 404, 'File not found');
+                    return;
+                }
+                if (Number(file.recycled) === 1) {
+                    this.sendError(res, 409, 'Cannot update a recycled file');
+                    return;
+                }
                 const tagIds = await resolveTagIds(db, tags);
 
                 const result = await db.setFileTags(fileId, tagIds);

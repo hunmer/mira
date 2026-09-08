@@ -96,10 +96,11 @@ export const FileOperations = {
       const trashDir = path.join(libraryPath, '.trash');
       if (!fs.existsSync(trashDir)) fs.mkdirSync(trashDir, { recursive: true });
       const dest = this.getUniquePath(path.join(trashDir, item.name));
+      const destName = path.basename(dest);
 
-      // 先改 DB（path 指向 .trash + recycled=1），再移动磁盘文件。
+      // 先改 DB（name/path 指向 .trash + recycled=1），再移动磁盘文件。
       // 顺序很重要：watcher 的 handleUnlink 按 path 查行，旧路径 unlink 时找不到行就不会误删记录。
-      await this.runSql('UPDATE files SET recycled = 1, path = ? WHERE id = ?', [dest, id]);
+      await this.runSql('UPDATE files SET name = ?, recycled = 1, path = ? WHERE id = ?', [destName, dest, id]);
 
       if (src && fs.existsSync(src) && src !== dest) {
         try {
@@ -111,7 +112,7 @@ export const FileOperations = {
           }
         } catch (e) {
           console.error(`[deleteFile] move to .trash failed (${src} -> ${dest}):`, e);
-          await this.runSql('UPDATE files SET recycled = ?, path = ? WHERE id = ?', [item.recycled ?? 0, item.path ?? null, id]);
+          await this.runSql('UPDATE files SET name = ?, recycled = ?, path = ? WHERE id = ?', [item.name, item.recycled ?? 0, item.path ?? null, id]);
           try { await fs.promises.rm(dest, { force: true }); } catch {}
           return false;
         }
@@ -137,15 +138,18 @@ export const FileOperations = {
     const destDir = await this.getItemPath(item);
     if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
     const dest = this.getUniquePath(path.join(destDir, item.name));
+    const destName = path.basename(dest);
 
-    // 先改 DB（恢复 path 到原位置 + recycled=0），再移动磁盘文件
-    await this.runSql('UPDATE files SET recycled = 0, path = ? WHERE id = ?', [dest, id]);
+    // 先改 DB（恢复 name/path 到原位置 + recycled=0），再移动磁盘文件
+    await this.runSql('UPDATE files SET name = ?, recycled = 0, path = ? WHERE id = ?', [destName, dest, id]);
 
     if (src && fs.existsSync(src) && src !== dest) {
       try {
         fs.renameSync(src, dest);
       } catch (e) {
         console.error(`[recoverFile] move out of .trash failed (${src} -> ${dest}):`, e);
+        await this.runSql('UPDATE files SET name = ?, recycled = ?, path = ? WHERE id = ?', [item.name, item.recycled, item.path, id]);
+        return false;
       }
     }
     return true;

@@ -1,6 +1,6 @@
 # Mira Server API 与 SDK 覆盖报告
 
-生成时间: 2026-09-02T06:59:41.298Z
+生成时间: 2026-09-08T03:32:30.485Z
 
 匹配键: HTTP method + 归一化路径（动态参数统一为 `:param`，query string 不参与匹配）。
 

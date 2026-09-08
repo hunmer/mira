@@ -135,7 +135,7 @@
         <label class="block text-xs font-medium text-muted-foreground mb-1">{{
           $t('business.mediaDetailComponent.fileName') }}</label>
         <Input v-model="editName" type="text"
-          :class="nameError ? 'border-destructive focus-visible:ring-destructive' : ''" :disabled="nameSaving"
+          :class="nameError ? 'border-destructive focus-visible:ring-destructive' : ''" :disabled="nameSaving || isReadOnly"
           @blur="handleNameBlur" @keydown.enter="handleNameBlur" />
         <p v-if="nameError" class="text-xs text-destructive mt-1">{{ nameError }}</p>
       </div>
@@ -145,7 +145,7 @@
         <label class="block text-xs font-medium text-muted-foreground mb-1">{{
           $t('business.mediaDetailComponent.website') }}</label>
         <div class="flex items-center gap-1">
-          <Input v-model="editWebsite" type="text" placeholder="https://" :disabled="websiteSaving"
+          <Input v-model="editWebsite" type="text" placeholder="https://" :disabled="websiteSaving || isReadOnly"
             @blur="handleWebsiteBlur" @keydown.enter="handleWebsiteBlur" />
           <button v-if="editWebsite.trim()" type="button" class="p-1.5 rounded-md hover:bg-muted shrink-0"
             :title="$t('business.mediaDetailComponent.openWebsite')" @click="handleOpenWebsite" @mousedown.prevent>
@@ -159,7 +159,7 @@
         <label class="block text-xs font-medium text-muted-foreground mb-1">{{ $t('business.mediaDetailComponent.notes')
           }}</label>
         <textarea v-model="editNotes" rows="3" :placeholder="$t('business.mediaDetailComponent.notesPlaceholder')"
-          :disabled="notesSaving"
+          :disabled="notesSaving || isReadOnly"
           class="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-xs ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
           @blur="handleNotesBlur"></textarea>
       </div>
@@ -171,14 +171,14 @@
           $t('business.mediaDetailComponent.rating') }}</label>
         <div class="flex items-center gap-0.5">
           <button v-for="n in 5" :key="n" type="button" class="p-0.5 rounded hover:bg-muted transition-colors"
-            :disabled="starsSaving" @click="handleStarsChange(n)" @mouseenter="hoverStars = n"
+            :disabled="starsSaving || isReadOnly" @click="handleStarsChange(n)" @mouseenter="hoverStars = n"
             @mouseleave="hoverStars = 0">
             <span class="material-icons text-xl"
               :class="(hoverStars || editStars) >= n ? 'text-amber-400' : 'text-muted-foreground/40'">{{ (hoverStars ||
                 editStars) >= n ? 'star' : 'star_border' }}</span>
           </button>
           <button v-if="editStars > 0" type="button" class="ml-1 p-0.5 rounded hover:bg-muted text-muted-foreground"
-            :disabled="starsSaving" :title="$t('business.mediaDetailComponent.rating')" @click="handleStarsChange(0)">
+            :disabled="starsSaving || isReadOnly" :title="$t('business.mediaDetailComponent.rating')" @click="handleStarsChange(0)">
             <span class="material-icons text-base">close</span>
           </button>
         </div>
@@ -200,7 +200,7 @@
           <h3 class="font-semibold text-foreground text-sm">{{ $t('business.mediaDetailComponent.tags') }}</h3>
           <Popover v-model:open="tagPopoverOpen">
             <PopoverTrigger as-child>
-              <button class="text-primary text-xs hover:text-primary flex items-center gap-0.5">
+              <button :disabled="isReadOnly" class="text-primary text-xs hover:text-primary flex items-center gap-0.5 disabled:cursor-not-allowed disabled:opacity-50">
                 <span class="material-icons text-sm">{{ hasTags ? 'edit' : 'add' }}</span>
                 <span>{{ hasTags ? $t('business.mediaDetailComponent.editTags') : (isMultiSelect ?
                   $t('business.mediaDetailComponent.batchSetTags') : $t('business.mediaDetailComponent.setTags'))
@@ -218,14 +218,14 @@
             <span v-for="tag in displayItems[0].tags" :key="tag"
               class="bg-primary/10 text-primary text-xs px-2.5 py-1 rounded-full flex items-center">
               {{ getTagName(tag) }}
-              <button class="ml-1 text-primary text-xs hover:text-primary" @click="handleRemoveTag(tag)">×</button>
+              <button :disabled="isReadOnly" class="ml-1 text-primary text-xs hover:text-primary disabled:cursor-not-allowed disabled:opacity-50" @click="handleRemoveTag(tag)">×</button>
             </span>
           </template>
           <template v-else-if="isMultiSelect && mergedInfo && mergedInfo.tags.length > 0">
             <span v-for="tag in mergedInfo.tags" :key="tag"
               class="bg-primary/10 text-primary text-xs px-2.5 py-1 rounded-full flex items-center">
               {{ getTagName(tag) }}
-              <button class="ml-1 text-primary text-xs hover:text-primary" @click="handleRemoveTag(tag)">×</button>
+              <button :disabled="isReadOnly" class="ml-1 text-primary text-xs hover:text-primary disabled:cursor-not-allowed disabled:opacity-50" @click="handleRemoveTag(tag)">×</button>
             </span>
           </template>
           <span v-else class="text-muted-foreground text-xs">{{ $t('business.mediaDetailComponent.noTags') }}</span>
@@ -238,7 +238,7 @@
           <h3 class="font-semibold text-foreground text-sm">{{ $t('business.mediaDetailComponent.folder') }}</h3>
           <Popover v-model:open="folderPopoverOpen">
             <PopoverTrigger as-child>
-              <button class="text-primary text-xs hover:text-primary flex items-center gap-0.5">
+              <button :disabled="isReadOnly" class="text-primary text-xs hover:text-primary flex items-center gap-0.5 disabled:cursor-not-allowed disabled:opacity-50">
                 <span class="material-icons text-sm">{{ displayItems[0]?.folderId ? 'edit' : 'add' }}</span>
                 <span>{{ displayItems[0]?.folderId ? $t('business.mediaDetailComponent.editFolder') : (isMultiSelect ?
                   $t('business.mediaDetailComponent.batchSetFolder') : $t('business.mediaDetailComponent.setFolder'))
@@ -269,7 +269,7 @@
               class="bg-primary/10 text-primary text-xs px-3 py-2 rounded-lg flex items-center">
               <span class="material-icons mr-2 text-primary">folder</span>
               {{ getFolderName(folderId) }}
-              <button class="ml-auto pl-2 text-primary hover:opacity-70" @click="handleRemoveFolder(folderId)">×</button>
+              <button :disabled="isReadOnly" class="ml-auto pl-2 text-primary hover:opacity-70 disabled:cursor-not-allowed disabled:opacity-50" @click="handleRemoveFolder(folderId)">×</button>
             </div>
           </div>
           <div v-else class="bg-muted text-muted-foreground text-xs px-3 py-2 rounded-lg flex items-center">
@@ -334,6 +334,7 @@ import FolderTreeComponent from './FolderTreeComponent/FolderTreeComponent.vue'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useTagStore } from '@renderer/stores/tag'
 import { useFolderStore } from '@renderer/stores/folder'
+import { useMediaStore } from '@renderer/stores/media'
 import { useSettingsStore } from '@renderer/stores/settings'
 import { useTabs } from '@renderer/composables/useTabs'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
@@ -343,6 +344,7 @@ import { Input } from '@/components/ui/input'
 import StatusImage from '@renderer/components/common/StatusImage.vue'
 import { getExtIconUrl } from '@renderer/utils/extIconHelper'
 import { runBatchOperation } from '@renderer/composables/useBatchOperation'
+import { renameLocalFilePath } from '@renderer/utils/localFilePath'
 import OrderedSectionList from '@/renderer/components/common/OrderedSectionList.vue'
 import SortableLayoutDialog from '@/renderer/components/common/SortableLayoutDialog.vue'
 
@@ -389,6 +391,7 @@ const sectionStyle = (id: string) => sectionDisabledItems.value.some(section => 
 const { item, items, libraryId } = toRefs(props)
 const tagStore = useTagStore()
 const folderStore = useFolderStore()
+const mediaStore = useMediaStore()
 const settingsStore = useSettingsStore()
 const { createWebviewTab } = useTabs()
 
@@ -436,6 +439,15 @@ const websiteSaving = ref(false)
 const starsSaving = ref(false)
 const notesSaving = ref(false)
 
+const splitFileName = (name: string) => {
+  const extensionIndex = name.lastIndexOf('.')
+  if (extensionIndex <= 0) return { basename: name, extension: '' }
+  return {
+    basename: name.slice(0, extensionIndex),
+    extension: name.slice(extensionIndex),
+  }
+}
+
 // 计算显示的文件列表（合并 WebSocket 实时更新）
 const displayItems = computed(() => {
   let base: FileInfo[]
@@ -462,6 +474,14 @@ const displayItems = computed(() => {
       thumbnailPath: file.thumbnailPath,
     }
   })
+})
+
+const isReadOnly = computed(() => displayItems.value.some(file => Number(file.recycled) === 1))
+
+watch(isReadOnly, (readOnly) => {
+  if (!readOnly) return
+  tagPopoverOpen.value = false
+  folderPopoverOpen.value = false
 })
 
 watch(() => displayItems.value.map(file => String(file.id)), ids => {
@@ -536,7 +556,7 @@ onUnmounted(() => {
 watch(displayItems, (items) => {
   // 保存期间忽略 WebSocket 回推，避免服务端旧值覆盖用户正在编辑的表单
   if (items.length === 1 && !nameSaving.value && !websiteSaving.value && !starsSaving.value && !notesSaving.value) {
-    editName.value = items[0].name || ''
+    editName.value = splitFileName(items[0].name || '').basename
     editWebsite.value = (items[0] as any).website || ''
     editStars.value = Number((items[0] as any).stars) || 0
     editNotes.value = (items[0] as any).notes || ''
@@ -574,24 +594,42 @@ const setLocalFieldOverride = (fileId: string, patch: Partial<FileInfo>) => {
 
 // 文件名更新（blur/enter 触发）
 const handleNameBlur = async () => {
+  if (isReadOnly.value) return
   const file = displayItems.value[0]
-  if (!file || !editName.value.trim() || editName.value.trim() === file.name) {
-    editName.value = file?.name || ''
+  const originalName = file?.name || ''
+  const { basename, extension } = splitFileName(originalName)
+  const newBasename = editName.value.trim()
+  const newName = `${newBasename}${extension}`
+  if (!file || !newBasename || newName === originalName) {
+    editName.value = basename
     nameError.value = ''
     return
   }
-  const newName = editName.value.trim()
   nameSaving.value = true
   nameError.value = ''
   try {
     const libId = file.libraryId || libraryId?.value || 'default'
-    await miraSDKService.renameFile(libId, file.id, newName)
+    const renamedFile = await miraSDKService.renameFile(libId, file.id, newName)
+    const resolvedName = String(renamedFile?.name || newName)
+    const updatedLocalFile = file.localFile
+      ? renameLocalFilePath(file.localFile, resolvedName)
+      : undefined
+    const patch: Partial<FileInfo> = {
+      name: resolvedName,
+      ...(updatedLocalFile ? { localFile: updatedLocalFile } : {}),
+    }
+    const sourceFile = items.value?.find(candidate => String(candidate.id) === String(file.id))
+      || (String(item.value?.id) === String(file.id) ? item.value : undefined)
+    if (sourceFile) Object.assign(sourceFile, patch)
+    if (updatedLocalFile) mediaStore.setLocalFile(libId, String(file.id), updatedLocalFile)
+    setLocalFieldOverride(String(file.id), patch)
+    editName.value = splitFileName(resolvedName).basename
   } catch (e: any) {
     if (e?.response?.status === 409 || e?.response?.data?.code === 409) {
       nameError.value = t('business.mediaDetailComponent.nameConflict')
     } else {
       nameError.value = t('business.mediaDetailComponent.renameFailed')
-      editName.value = file.name
+      editName.value = basename
     }
   } finally {
     nameSaving.value = false
@@ -600,6 +638,7 @@ const handleNameBlur = async () => {
 
 // website 更新（blur/enter 触发）
 const handleWebsiteBlur = async () => {
+  if (isReadOnly.value) return
   const file = displayItems.value[0]
   if (!file) return
   const newWebsite = editWebsite.value.trim()
@@ -642,6 +681,7 @@ const handleOpenWebsite = async () => {
 
 // 评分更新（点击触发）
 const handleStarsChange = async (value: number) => {
+  if (isReadOnly.value) return
   const file = displayItems.value[0]
   if (!file) return
   const newStars = value
@@ -662,6 +702,7 @@ const handleStarsChange = async (value: number) => {
 
 // 备注更新（blur 触发）
 const handleNotesBlur = async () => {
+  if (isReadOnly.value) return
   const file = displayItems.value[0]
   if (!file) return
   const newNotes = editNotes.value
@@ -826,6 +867,7 @@ const selectedTagKeys = computed(() => {
 })
 
 const handleFolderSelect = async (folderItem: any) => {
+  if (isReadOnly.value) return
   const client = (miraSDKService as any).client
   if (!client) return
   const files = displayItems.value
@@ -837,6 +879,7 @@ const handleFolderSelect = async (folderItem: any) => {
 }
 
 const handleRemoveFolder = async (folderId: string) => {
+  if (isReadOnly.value) return
   const client = (miraSDKService as any).client
   if (!client) return
   const files = displayItems.value.filter(file => String(file.folderId) === String(folderId))
@@ -848,6 +891,7 @@ const handleRemoveFolder = async (folderId: string) => {
 }
 
 const handleTagSelect = async (tagData: any) => {
+  if (isReadOnly.value) return
   const client = (miraSDKService as any).client
   if (!client) return
   const tagName = tagData.title || tagData.name || tagData.label
@@ -867,6 +911,7 @@ const handleTagSelect = async (tagData: any) => {
 }
 
 const handleRemoveTag = async (tag: string) => {
+  if (isReadOnly.value) return
   const client = (miraSDKService as any).client
   if (!client) return
   const files = displayItems.value

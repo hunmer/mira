@@ -69,6 +69,7 @@ export interface FileData {
     created_at: string;
     updated_at: string;
     imported_at: number;
+    recycled?: number;
 }
 
 export interface FileMetadataDimensions {

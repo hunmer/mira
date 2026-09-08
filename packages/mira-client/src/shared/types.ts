@@ -72,6 +72,7 @@ export interface FileInfo {
   website?: string
   stars?: number
   notes?: string
+  recycled?: number
 }
 
 // 收藏夹/库信息
