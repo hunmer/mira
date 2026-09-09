@@ -121,6 +121,20 @@
     "status": "active"
   },
   {
+    "name": "mira_html_format",
+    "enabled": true,
+    "path": "../../../../plugins/plugins/mira_html_format",
+    "version": "1.0.0",
+    "description": "通过服务端 HTTP 页面预览 HTML 和 HTM 文件。",
+    "author": "Mira Team",
+    "main": "dist/index.js",
+    "icon": "html",
+    "title": "HTML 格式支持",
+    "category": "storage",
+    "tags": ["HTML", "HTM", "网页", "预览"],
+    "status": "active"
+  },
+  {
     "name": "mira_eagle_extension",
     "enabled": false,
     "path": "node_modules/mira_eagle_extension",

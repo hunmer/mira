@@ -5,6 +5,13 @@ import { MiraServer } from '..';
 import { LibraryWatcher } from '../LibraryWatcher';
 import { LibraryImportService, ImportSource } from '../services/LibraryImportService';
 
+export function resolveLibraryPath(libraryPath: string, libraryName: string): string {
+    const normalizedPath = path.normalize(libraryPath);
+    return path.basename(normalizedPath) === libraryName
+        ? normalizedPath
+        : path.join(normalizedPath, libraryName);
+}
+
 export class LibraryRoutes {
     private router: Router;
     private backend: MiraServer;
@@ -134,11 +141,13 @@ export class LibraryRoutes {
                     return res.status(400).json({ error: 'Name and path are required' });
                 }
 
+                const resolvedLibraryPath = resolveLibraryPath(libraryPath, name);
+
                 // 检查路径是否已存在
                 for (const [id, libraryObj] of Object.entries(this.backend.libraries!.getLibraries())) {
                     const existingPath = libraryObj.libraryService?.config?.path ||
                         libraryObj.libraryService?.config?.customFields?.path;
-                    if (existingPath === libraryPath) {
+                    if (existingPath === resolvedLibraryPath) {
                         return res.status(400).json({ error: 'Library with this path already exists' });
                     }
                 }
@@ -150,11 +159,11 @@ export class LibraryRoutes {
                 const libraryConfig: any = {
                     id: newId,
                     name,
-                    path: libraryPath,
+                    path: resolvedLibraryPath,
                     description: description || '',
                     icon: icon || 'default',
                     customFields: {
-                        path: libraryPath,
+                        path: resolvedLibraryPath,
                         enableHash: customFields?.enableHash || false,
                         enableAutoSync: customFields?.enableAutoSync ?? true,
                         enableAutoBackup: customFields?.enableAutoBackup ?? true,
@@ -201,7 +210,7 @@ export class LibraryRoutes {
                 const createdLibrary = {
                     id: newId,
                     name,
-                    path: libraryPath,
+                    path: resolvedLibraryPath,
                     status: 'active',
                     fileCount: 0,
                     size: 0,

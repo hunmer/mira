@@ -35,10 +35,12 @@ export interface DragDropHandlers {
   getFolders?: (libraryId?: string) => Promise<Folder[] | null>;
   /** 取当前素材库的标签列表;未连接素材库时返回 null */
   getTags?: (libraryId?: string) => Promise<Tag[] | null>;
-  /** 素材库列表(浮层顶部横向列表,hover 切换下方树);未连接返回 null */
+  /** 素材库列表(浮层底部横向列表,hover 切换上方树);未连接返回 null */
   getLibraries?: () => Promise<Library[] | null>;
-  /** 当前素材库 id;未连接返回 null(浮层树据此加载) */
+  /** 当前素材库 id;未连接返回 null(浮层树据此加载;浮层初始库优先取上次切换过的库) */
   getLibraryId?: () => Promise<string | null>;
+  /** 浮层内切换素材库后持久化(下次打开浮层作为默认库);未提供则不记忆 */
+  saveLibraryId?: (libraryId: string) => void;
   /** 浮层树视图样式(设置「快捷导入样式」);未提供或失败时用 tree */
   getTreeStyle?: () => Promise<LibraryTreeStyle | null>;
   /** 浮层树展示排序(设置「文件夹/标签排序」);未提供或失败时由组件缺省按 id */
@@ -425,7 +427,7 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     return pending;
   }
 
-  /** 懒加载素材库列表(浮层顶部横向列表;同 5 秒缓存策略) */
+  /** 懒加载素材库列表(浮层底部横向列表;同 5 秒缓存策略) */
   function fetchLibraries(): Promise<Library[] | null> {
     if (!handlers.getLibraries) return Promise.resolve(null);
     if (!pendingLibraries) {
@@ -636,6 +638,7 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
       onLibraryChange: (libId: string) => {
         if (overlayLibraryId !== libId) {
           overlayLibraryId = libId;
+          handlers.saveLibraryId?.(libId);
           dbg.log('dragdrop', 'overlay library switched', { libId });
         }
       },

@@ -8,6 +8,7 @@
  *  - 批量动作区(拖拽源元素下含多图时):批量导入 / 批量复制url
  *  - 左右两栏树:文件夹树 | 标签树(mira-plugin-ui 的 LibraryTreeView,
  *    树内拖放默认直接上传,右键「上传到此处」/工具栏上传走 upload.pick = 自定义上传对话框)
+ *  - 底部横向素材库列表:hover/dragover 切换两栏树对应的库(切换经事件持久化,下次打开为默认)
  *  - 未连接素材库时树区域替换为空态 zone,拖入释放打开自定义上传
  * 数据与动作全部经 props 注入(services/upload/回调),组件不直接访问 chrome API。
  */
@@ -21,7 +22,7 @@ const props = defineProps<{
   source: DragSource;
   /** 当前素材库 id(挂载后异步取,树据此加载) */
   getLibraryId: () => Promise<string | null>;
-  /** 素材库列表(挂载后异步取,顶部横向展示;hover 切换 libraryId) */
+  /** 素材库列表(挂载后异步取,底部横向展示;hover 切换 libraryId) */
   getLibraries?: () => Promise<Library[] | null>;
   services: LibraryTreeServices;
   /** 树上传服务:files/urls 直接上传,pick = 自定义上传对话框 */
@@ -104,7 +105,7 @@ onMounted(async () => {
   }
 });
 
-/** 顶部素材库列表切换:树随 libraryId 自动重载,上传落点经事件同步外层。
+/** 底部素材库列表切换:树随 libraryId 自动重载,上传落点经事件同步外层(外层持久化,下次打开为默认)。
  *  拖拽中 mouseenter 不触发,由 dragenter/dragover 驱动;幂等(同库直接返回)。 */
 function switchLibrary(id: string) {
   if (!id || id === libraryId.value) return;
@@ -134,26 +135,6 @@ function onRootDrop(e: DragEvent) {
     </div>
 
     <div class="flex min-h-0 flex-1 flex-col gap-2 p-3">
-      <!-- 顶部横向素材库列表:拖拽/鼠标悬停切换下方两栏树为对应素材库 -->
-      <div v-if="libraries.length" class="flex gap-1.5 overflow-x-auto pb-0.5" aria-label="素材库">
-        <button
-          v-for="lib in libraries"
-          :key="lib.id"
-          type="button"
-          class="flex-shrink-0 rounded-full border px-2.5 py-[3px] text-[11px] leading-[16px] whitespace-nowrap transition-colors"
-          :class="lib.id === libraryId
-            ? 'border-primary bg-primary/15 text-foreground'
-            : 'border-border text-muted-foreground hover:border-muted-foreground hover:text-foreground'"
-          :title="lib.name"
-          @dragenter.prevent="switchLibrary(lib.id)"
-          @dragover.prevent="switchLibrary(lib.id)"
-          @mouseenter="switchLibrary(lib.id)"
-        >
-          <!-- 服务端 icon 占位值为 'default'(非图标名),不渲染 -->
-          <span v-if="lib.icon && lib.icon !== 'default'" class="mr-1">{{ lib.icon }}</span>{{ lib.name }}
-        </button>
-      </div>
-
       <div v-if="showDebugDropZone"
         class="mira-dropzone w-full text-left"
         :class="debugHover && 'mira-hover'"
@@ -239,6 +220,26 @@ function onRootDrop(e: DragEvent) {
             :sort="sortTag"
           />
         </div>
+      </div>
+
+      <!-- 底部横向素材库列表:拖拽/鼠标悬停切换上方两栏树为对应素材库;切换结果持久化,下次打开为默认库 -->
+      <div v-if="libraries.length" class="flex gap-1.5 overflow-x-auto pb-0.5" aria-label="素材库">
+        <button
+          v-for="lib in libraries"
+          :key="lib.id"
+          type="button"
+          class="flex-shrink-0 rounded-full border px-2.5 py-[3px] text-[11px] leading-[16px] whitespace-nowrap transition-colors"
+          :class="lib.id === libraryId
+            ? 'border-primary bg-primary/15 text-foreground'
+            : 'border-border text-muted-foreground hover:border-muted-foreground hover:text-foreground'"
+          :title="lib.name"
+          @dragenter.prevent="switchLibrary(lib.id)"
+          @dragover.prevent="switchLibrary(lib.id)"
+          @mouseenter="switchLibrary(lib.id)"
+        >
+          <!-- 服务端 icon 占位值为 'default'(非图标名),不渲染 -->
+          <span v-if="lib.icon && lib.icon !== 'default'" class="mr-1">{{ lib.icon }}</span>{{ lib.name }}
+        </button>
       </div>
     </div>
   </div>

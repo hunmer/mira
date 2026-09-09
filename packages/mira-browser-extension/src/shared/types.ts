@@ -152,6 +152,8 @@ export interface ExtensionSettings {
   /** @deprecated 迁移兼容 */
   password: string;
   libraryId: string;
+  /** 拖拽浮层上次切换的素材库(浮层打开时作为默认库;空 = 用 libraryId) */
+  dragDropLibraryId?: string;
   folderId?: string;
   tags: string[];
   uiMode: UIMode;

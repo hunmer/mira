@@ -142,6 +142,7 @@
     "mira_epub_format": "link:../../../../plugins/plugins/mira_epub_format",
     "mira_lottie_format": "link:../../../../plugins/plugins/mira_lottie_format",
     "mira_gallery_dl": "link:../../../../plugins/plugins/mira_gallery_dl",
+    "mira_html_format": "link:../../../../plugins/plugins/mira_html_format",
     "mira_swf_format": "link:../../../../plugins/plugins/mira_swf_format",
     "mira_tiptap_format": "link:../../../../plugins/plugins/mira_tiptap_format",
     "mira_zipper_format": "link:../../../../plugins/plugins/mira_zipper_format",

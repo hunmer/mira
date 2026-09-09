@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>HTML 页面预览</title>
+    <style>
+      * { box-sizing: border-box; }
+      html, body, iframe { width: 100%; height: 100%; margin: 0; border: 0; }
+      body { overflow: hidden; background: #fff; color: #333; font: 14px system-ui, sans-serif; }
+      iframe { display: block; }
+      .status { display: grid; height: 100%; place-items: center; padding: 24px; text-align: center; }
+      .error { color: #b42318; }
+    </style>
+  </head>
+  <body>
+    <div id="status" class="status">正在加载 HTML 页面...</div>
+    <iframe
+      id="preview"
+      title="HTML 页面预览"
+      sandbox="allow-forms allow-scripts"
+      referrerpolicy="no-referrer"
+      hidden
+    ></iframe>
+    <script>
+      const params = new URLSearchParams(location.search)
+      const fileUrl = params.get('fileUrl') || ''
+      const fileId = params.get('fileId') || ''
+      const fileName = params.get('fileName') || 'HTML'
+      const status = document.querySelector('#status')
+      const preview = document.querySelector('#preview')
+
+      function fail(message) {
+        status.textContent = message
+        status.classList.add('error')
+        parent.postMessage({ type: 'mira-html-preview-error', fileId }, '*')
+      }
+
+      function addBaseUrl(source, url) {
+        const documentNode = new DOMParser().parseFromString(source, 'text/html')
+        const base = documentNode.createElement('base')
+        const safeBaseUrl = new URL(url)
+        safeBaseUrl.search = ''
+        safeBaseUrl.hash = ''
+        base.href = safeBaseUrl.toString()
+        documentNode.head.prepend(base)
+        return '<!doctype html>\n' + documentNode.documentElement.outerHTML
+      }
+
+      async function start() {
+        if (!/^https?:\/\//i.test(fileUrl)) {
+          fail('预览地址必须是 HTTP(S) URL')
+          return
+        }
+        try {
+          const response = await fetch(fileUrl, { credentials: 'same-origin' })
+          if (!response.ok) throw new Error(`HTTP ${response.status}`)
+          preview.srcdoc = addBaseUrl(await response.text(), fileUrl)
+          preview.hidden = false
+          status.remove()
+          document.title = fileName
+          preview.title = fileName
+          parent.postMessage({ type: 'mira-html-preview-loaded', fileId }, '*')
+        } catch (error) {
+          fail(`无法加载 HTML 页面：${error instanceof Error ? error.message : String(error)}`)
+        }
+      }
+
+      start()
+    </script>
+  </body>
+</html>

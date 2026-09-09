@@ -78,6 +78,165 @@ pluginManager.registerFileFormat('my_plugin', {
 - `fileId` 是素材库内 ID，不能省略 `libraryId`。文件名包含子目录时，客户端应按路径段编码。
 - 插件卸载时由管理器清理注册项；自有资源仍需自行释放。
 
+## 服务端 HTTP Viewer：HTML 格式实战
+
+`.html`、`.htm` 的实现说明了普通文件格式如何提供由 Mira 服务端托管的预览页。
+参考实现：`plugins/plugins/mira_html_format/`。
+
+### 请求链路
+
+```text
+服务端 registerFileFormat(viewers)
+  -> POST /api/files/getPreviewViewers
+  -> ServerPluginManager 校验 web/viewer.html
+  -> 返回 /server-plugins/<library>/<plugin>/viewer.html?... 查询参数
+  -> viewer 通过后端生成的 /api/files/file/<library>/<id>?token=... 拉取素材
+```
+
+这里有两个不同的 HTTP 资源：
+
+- `/server-plugins/.../viewer.html` 是插件代码，由服务端静态托管。
+- `/api/files/file/...` 是素材内容，需要鉴权，URL 由宿主生成。
+
+不要把服务端本地路径放进 viewer query，也不要在客户端把 Windows 路径转换为
+`file://`。这会绕过服务端权限边界，并且远程客户端无法访问服务端磁盘。
+
+### 服务端注册
+
+服务端格式插件只声明格式和 viewer，不需要为已有能力重复增加 HTTP 路由：
+
+```ts
+pluginManager.registerFileFormat('mira_html_format', {
+  id: 'mira_html_format',
+  extensions: ['html', 'htm'],
+  mimeTypes: ['text/html'],
+  viewers: [{
+    viewerId: 'mira-html',
+    title: 'HTML 页面预览',
+    entry: 'viewer.html',
+    priority: 20,
+    getQuery: ({ file, fileId, fileUrl }) => ({
+      fileId,
+      fileName: file?.name || 'HTML',
+      fileUrl,
+    }),
+  }],
+})
+```
+
+`fileUrl` 来自宿主的 `getItemFilePath(..., { isUrlFile: true })`，不是本地路径。
+`web/plugin.json` 必须存在，且 `viewer.html` 必须位于该插件的 `web/` 内；否则
+`ServerPluginManager.getPreviewViewers()` 会跳过该 viewer。
+
+### 为什么 viewer 使用 fetch + srcdoc
+
+主文件下载接口可能返回 `Content-Disposition: attachment`，`.htm` 也可能缺少精确的
+Content-Type。直接把素材 URL 设置为 iframe `src` 可能触发下载而不是渲染。
+
+HTML viewer 可以先通过 HTTP `fetch(fileUrl)` 读取文本，再写入内层 iframe 的
+`srcdoc`。这样预览入口始终是服务端 HTTP 页面，也不需要修改公共下载接口。
+
+```js
+if (!/^https?:\/\//i.test(fileUrl)) throw new Error('HTTP(S) URL required')
+const response = await fetch(fileUrl, { credentials: 'same-origin' })
+if (!response.ok) throw new Error(`HTTP ${response.status}`)
+preview.srcdoc = await response.text()
+```
+
+此方案适合单文件 HTML 或引用网络资源的 HTML。素材旁边的相对 CSS、JS、图片不会
+自动映射为可访问的服务端路径。若格式本质是多文件站点，应将其设计为容器格式，
+通过 `getExtraFileList`、`getExtraFile`、`getExtraFileUrl` 暴露经过白名单校验的资源。
+
+### HTML 预览的安全边界
+
+HTML 素材是不可信代码。素材 URL 的 query 中可能包含 token，不能直接传给素材脚本。
+至少执行以下隔离：
+
+```html
+<iframe
+  sandbox="allow-forms allow-scripts"
+  referrerpolicy="no-referrer"
+></iframe>
+```
+
+- 不添加 `allow-same-origin`，防止素材访问 Mira 页面上下文和存储。
+- 使用 `referrerpolicy="no-referrer"`，防止 viewer query 作为 referrer 泄漏。
+- 注入 `<base>` 支持相对地址时，先删除 URL 的 `search` 和 `hash`，不能把 token 放入
+  素材 DOM。
+- 只开放实际需要的 sandbox 权限；不要默认开放弹窗、导航或下载。
+- 错误日志和 `postMessage` 只传 `fileId`、错误类型等非敏感信息。
+
+安全的 base URL 处理示例：
+
+```js
+const safeBaseUrl = new URL(fileUrl)
+safeBaseUrl.search = ''
+safeBaseUrl.hash = ''
+base.href = safeBaseUrl.toString()
+```
+
+### 客户端降级注册
+
+详情预览优先使用服务端 `/api/files/getPreviewViewers` 返回的 `iframeUrl`。客户端
+`web/index.js` 仍可注册同名格式作为降级，但必须同时验证插件入口和素材地址都是
+HTTP(S)：
+
+```js
+const scriptUrl = document.currentScript?.src || ''
+const pluginBaseUrl = /^https?:\/\//i.test(scriptUrl) ? new URL('.', scriptUrl) : null
+
+function getPreviewUrl(file) {
+  const fileUrl = file?.url || file?.path || ''
+  if (!pluginBaseUrl || !/^https?:\/\//i.test(fileUrl)) return ''
+  const viewerUrl = new URL('viewer.html', pluginBaseUrl)
+  viewerUrl.searchParams.set('fileUrl', fileUrl)
+  return viewerUrl.toString()
+}
+```
+
+不要回退到 `file.localFile`，也不要实现“检测到盘符就补 `file:///`”的逻辑。
+
+### 清单与本地依赖
+
+新增服务端格式插件需要同步三个位置：
+
+1. `plugins/plugins/plugins.json`：源码插件清单。
+2. `packages/mira-app-server/src/plugins/plugins.json`：运行时启用清单。
+3. `packages/mira-app-server/src/plugins/package.json`：本地插件依赖。
+
+本仓库运行时依赖当前使用 `link:` 协议。注意两个实际限制：
+
+- 在 `packages/mira-app-server/src/plugins` 执行 `npm install` 会报
+  `EUNSUPPORTEDPROTOCOL`，因为 npm 不支持 `link:`。
+- 该目录不在根 `pnpm-workspace.yaml` 中；直接执行 `pnpm install` 会提升到根 workspace，
+  不一定创建该目录下预期的插件 Junction。
+
+本地开发时，运行时清单可直接指向 `../../../../plugins/plugins/<plugin>`。部署或模拟
+`node_modules` 安装时应使用项目既有安装流程，并检查最终链接目标，不要只看安装命令
+是否返回成功。
+
+### 最小验收顺序
+
+1. 插件目录执行 `npm test` 或 `pnpm test`，覆盖扩展名、MIME、viewer query 和 cleanup。
+2. 对 `web/index.js` 执行 `node --check`，并扫描是否残留 `file://`。
+3. 用 procm-mcp 重启已有 `mira-app-server-dev`；没有已有服务时不要擅自启动常驻进程。
+4. 用 Mira CLI 执行 `system health`，确认 `status: ok`。
+5. 请求实际 `/server-plugins/<library>/<plugin>/viewer.html`，确认返回 `200 text/html`。
+6. 导入真实 `.html` 和 `.htm` 样本，确认详情页使用 HTTP viewer 且错误状态可见。
+
+仅检查磁盘文件不够。实际静态 URL 返回 200 同时证明目标素材库已加载该服务端插件，
+因为 `/server-plugins` 路由会先调用 `isPluginLoaded(pluginName)`。
+
+### 本次踩坑结论
+
+- 不要因下载接口的 attachment 行为直接修改公共接口；viewer 内 fetch 通常改动更小。
+- `.html` 与 `.htm` 必须都按扩展名注册，不能只依赖 `text/html` MIME。
+- viewer query 中的鉴权 URL 只应由可信 viewer 读取，不能原样注入不可信 HTML。
+- 服务端 viewer 依赖 `web/plugin.json`；只有 `index.ts` 和 `viewer.html` 仍无法被解析。
+- `pluginId`、IIFE 注册 ID、客户端格式 ID、服务端 viewer ID 分属不同契约，命名要稳定，
+  其中 `pluginId` 与 IIFE 注册 ID 必须完全一致。
+- 安装成功不代表运行时链接存在；重启前检查插件最终解析路径。
+
 ### `.spine` ZIP 容器示例
 
 `.spine` 本质是 ZIP，典型内容如下：

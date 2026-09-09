@@ -28,6 +28,22 @@ async function getLibraryId(): Promise<string | null> {
   }
 }
 
+/** 拖拽浮层初始库:优先上次浮层内切换过的库(dragDropLibraryId),回退当前设置库 */
+async function getOverlayLibraryId(): Promise<string | null> {
+  try {
+    const settings: any = await chrome.runtime.sendMessage({ type: 'CONFIG_GET' });
+    return settings?.dragDropLibraryId || settings?.libraryId || null;
+  } catch {
+    return null;
+  }
+}
+
+/** 持久化浮层内切换的素材库,下次打开浮层作为默认库 */
+function saveOverlayLibraryId(libraryId: string) {
+  chrome.runtime.sendMessage({ type: 'CONFIG_SET', payload: { dragDropLibraryId: libraryId } })
+    .catch(e => dbg.warn('content', 'save dragDropLibraryId failed', e));
+}
+
 // 拖拽浮层不依赖 popup 生命周期:首次请求列表时主动触发后台认证。
 // AUTH_VERIFY 由 background.withAuth 处理,无有效 token 时会按保存凭据自动重登。
 let pendingConnection: Promise<boolean> | null = null;
@@ -162,7 +178,8 @@ const dragdrop = createDragDrop({
   getFolders: fetchFolders,
   getTags: fetchTags,
   getLibraries: fetchLibraries,
-  getLibraryId,
+  getLibraryId: getOverlayLibraryId,
+  saveLibraryId: saveOverlayLibraryId,
   // 浮层树视图样式:设置「快捷导入样式」(CONFIG_GET 返回完整 settings)
   async getTreeStyle() {
     try {

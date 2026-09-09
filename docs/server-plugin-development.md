@@ -79,6 +79,9 @@ export function init(inst: any) {
 
 ## 自定义文件格式处理
 
+格式插件的完整前后端边界、HTTP viewer、安全处理、清单安装与验收经验，参见
+[文件格式扩展插件指南](./format-extension-plugin-ai-guide.md)。
+
 插件可以注册格式处理器。宿主按扩展名或 MIME 类型匹配，并把服务端本地文件路径传给 `process`；路径只在回调期间使用，不应写入响应或日志。
 
 ```typescript

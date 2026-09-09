@@ -1,0 +1,24 @@
+{
+  "name": "mira_html_format",
+  "version": "1.0.0",
+  "description": "HTTP-based HTML and HTM preview support for Mira",
+  "author": "Mira Team",
+  "license": "ISC",
+  "main": "dist/index.js",
+  "files": ["dist/**/*", "web/**/*", "package.json", "README.md"],
+  "mira": {
+    "id": "mira_html_format",
+    "title": "HTML 格式支持",
+    "icon": "html",
+    "category": "storage",
+    "tags": ["HTML", "HTM", "预览"]
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "npm run build && node test.js"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.7.0"
+  }
+}

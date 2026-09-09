@@ -1,0 +1,17 @@
+{
+  "pluginName": "HTML 格式支持",
+  "pluginId": "7436113a-2cf4-4c28-b821-32764b480cd5",
+  "serverPluginName": "mira_html_format",
+  "priority": 20,
+  "version": "1.0.0",
+  "index": "index.js",
+  "tags": ["HTML", "HTM", "网页", "预览"],
+  "category": "productivity",
+  "description": "通过 Mira 服务端 HTTP 页面预览 .html 和 .htm 文件。",
+  "author": "Mira Team",
+  "enable": true,
+  "config": {},
+  "permissions": ["ui", "dom"],
+  "dependencies": [],
+  "platform": ["win32", "darwin", "linux"]
+}
