@@ -1,0 +1,19 @@
+{
+  "pluginName": "字体操作",
+  "pluginId": "6c444c09-b708-4fa6-a597-47e7aa2b5e5c",
+  "priority": 1,
+  "version": "1.0.0",
+  "index": "index.js",
+  "tags": ["字体", "激活", "Photoshop", "Illustrator", "InDesign"],
+  "category": "productivity",
+  "description": "激活 TTF、OTF、TTC 字体，并应用到 Adobe 应用中的当前文字对象。",
+  "author": "Mira Team",
+  "enable": true,
+  "config": {},
+  "hotkey": {},
+  "events": [],
+  "dependencies": [],
+  "permissions": ["ui", "media", "font"],
+  "minAppVersion": "3.0.2",
+  "platform": ["win32", "darwin", "linux"]
+}

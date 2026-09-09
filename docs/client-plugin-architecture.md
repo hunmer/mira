@@ -526,6 +526,7 @@ ctx.openPluginWindow({ pluginId, entry?, title?, width?, height?, query? })
 - 插件窗口的 preload（`plugin-window-preload.js`）暴露两套 API：
   - `electronAPI.pluginWindow.*`：窗口通信最小白名单（open/close/send/onMessage/setMenu/onMenuAction 等）；
   - `window.mira`（别名 `window.eagle`，Eagle 兼容）：受控宿主能力——`app`（版本/平台/主题/语言快照）、`onThemeChanged`/`onLocaleChanged` 事件、窗口控制、剪贴板、`item.getSelected`（query 注入的选中素材）、白名单 `exec`、只读 `fs` 原语、`log`/`shell`/`network`。不暴露任意文件写入或插件管理能力。
+  - 字体管理插件额外使用 `mira.font.activate(fontPath)` 与 `mira.font.applyToAdobe(fontPath, app)`；主进程只允许固定插件 ID 调用，并将目标应用限制为 `photoshop`、`illustrator`、`indesign`。
 - `query` 通过 `document.location.search` 传递，插件 SPA 可据此区分不同实例（如 whiteboard 按 `projectId`）。
 
 ### 插件窗口间消息

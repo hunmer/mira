@@ -78,6 +78,10 @@ async function main() {
   assert.deepEqual([...image.toJPEG(100)], [2])
   await mira.item.addFromURL('https://example.com/result.jpg', { name: 'result.jpg' })
   assert.equal(invokes.at(-1)[0], 'plugin-window:mira-item-add-from-url')
+  await mira.font.activate('C:\\Fonts\\demo.ttf')
+  assert.equal(JSON.stringify(invokes.at(-1)), JSON.stringify(['plugin-window:font-action', 'activate', { fontPath: 'C:\\Fonts\\demo.ttf' }]))
+  await mira.font.applyToAdobe('C:\\Fonts\\demo.ttf', 'photoshop')
+  assert.equal(JSON.stringify(invokes.at(-1)), JSON.stringify(['plugin-window:font-action', 'apply-adobe', { fontPath: 'C:\\Fonts\\demo.ttf', app: 'photoshop' }]))
   assert.equal(JSON.stringify(await mira.network.getProxy()), JSON.stringify({ enabled: true, url: 'http://127.0.0.1:7890' }))
   console.log('plugin-window Eagle compatibility: ok')
 }

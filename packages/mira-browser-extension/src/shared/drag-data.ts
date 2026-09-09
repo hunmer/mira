@@ -37,21 +37,25 @@ function parseUriList(raw: string): string[] {
  */
 function extractUrlsFromHtml(html: string): string[] {
   const imageUrls = new Set<string>();
-  // Pinterest 等站点可能只写 data-src/data-original，或用 srcset 提供多张候选图。
-  const imgRe = /<img\b[^>]*?(?:src|data-src|data-original|data-lazy-src|data-image-url)=["']([^"']+)["'][^>]*>/gi;
-  let m: RegExpExecArray | null;
-  while ((m = imgRe.exec(html))) imageUrls.add(m[1]);
-  const srcsetRe = /<img\b[^>]*?srcset=["']([^"']+)["'][^>]*>/gi;
-  while ((m = srcsetRe.exec(html))) {
-    const candidates = m[1].split(',').map(candidate => candidate.trim().split(/\s+/)[0]).filter(Boolean);
+  // 用 HTML 解析器读取属性，确保百度等站点序列化出的 &amp; 被还原为 URL 中的 &。
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  for (const img of doc.querySelectorAll('img')) {
+    const src = ['src', 'data-src', 'data-original', 'data-lazy-src', 'data-image-url']
+      .map(name => img.getAttribute(name)?.trim())
+      .find(Boolean);
+    if (src) imageUrls.add(src);
+    const candidates = (img.getAttribute('srcset') ?? '')
+      .split(',').map(candidate => candidate.trim().split(/\s+/)[0]).filter(Boolean);
     if (candidates.length) imageUrls.add(candidates[candidates.length - 1]);
   }
   // 图片被 <a> 包裹时，href 通常是图片所在页面，不是待上传资源。
   if (imageUrls.size) return [...imageUrls];
 
   const linkUrls = new Set<string>();
-  const aRe = /<a[^>]+href=["']([^"']+)["']/gi;
-  while ((m = aRe.exec(html))) linkUrls.add(m[1]);
+  for (const link of doc.querySelectorAll('a[href]')) {
+    const href = link.getAttribute('href')?.trim();
+    if (href) linkUrls.add(href);
+  }
   return [...linkUrls];
 }
 

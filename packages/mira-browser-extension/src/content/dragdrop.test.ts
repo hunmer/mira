@@ -2,6 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { calculateOverlayPosition, clampOverlayTop, collectImagesUnder, createDragDrop, folderEmptyMessage, resolveDragSource } from './dragdrop';
 import type { DragDropHandlers } from './dragdrop';
+import type { Library } from 'mira-app-core/shared/sdk';
 
 describe('resolveDragSource', () => {
   it('识别普通链接并按 URL 推断类型', () => {
@@ -229,6 +230,79 @@ describe('createDragDrop lifecycle', () => {
     img.remove();
   });
 
+  it('浮层未 hover 切换库时,上传落点用初始库(记忆的上次库)而不是回退全局默认库', async () => {
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation(callback => {
+      callback(0);
+      return 1;
+    });
+    const openCustomUpload = vi.fn();
+    createDragDrop({
+      onUpload: vi.fn(),
+      getFolders: async () => [],
+      getLibraryId: async () => 'lib-remembered',
+      createFolder: async () => 42,
+      openCustomUpload,
+    });
+    const img = document.createElement('img');
+    img.src = 'https://example.com/image.jpg';
+    document.body.appendChild(img);
+
+    img.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0, clientX: 10, clientY: 10 }));
+    img.dispatchEvent(new MouseEvent('dragstart', { bubbles: true, clientX: 10, clientY: 10 }));
+    document.dispatchEvent(new MouseEvent('dragover', { bubbles: true, clientX: 100, clientY: 10 }));
+    const customUpload = overlayQuery<HTMLElement>('.mira-custom-upload');
+    expect(customUpload?.textContent).toContain('自定义上传');
+    // 初始库异步就位(与组件 getLibraryId 共用同一次请求)
+    await new Promise(r => setTimeout(r, 0));
+    customUpload?.dispatchEvent(new MouseEvent('drop', { bubbles: true }));
+
+    expect(openCustomUpload).toHaveBeenCalledOnce();
+    expect(openCustomUpload).toHaveBeenCalledWith({ url: img.src, kind: 'image' }, 'lib-remembered');
+    img.remove();
+  });
+
+  it('浮层 hover 切换素材库后,上传落点跟随切换值并持久化 saveLibraryId', async () => {
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation(callback => {
+      callback(0);
+      return 1;
+    });
+    const openCustomUpload = vi.fn();
+    const saveLibraryId = vi.fn();
+    createDragDrop({
+      onUpload: vi.fn(),
+      getFolders: async () => [],
+      getLibraryId: async () => 'lib-a',
+      getLibraries: async () => [
+        { id: 'lib-a', name: 'A 库' },
+        { id: 'lib-b', name: 'B 库' },
+      ] as unknown as Library[],
+      createFolder: async () => 42,
+      openCustomUpload,
+      saveLibraryId,
+    });
+    const img = document.createElement('img');
+    img.src = 'https://example.com/image.jpg';
+    document.body.appendChild(img);
+
+    img.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0, clientX: 10, clientY: 10 }));
+    img.dispatchEvent(new MouseEvent('dragstart', { bubbles: true, clientX: 10, clientY: 10 }));
+    document.dispatchEvent(new MouseEvent('dragover', { bubbles: true, clientX: 100, clientY: 10 }));
+    // 等初始库 + 素材库列表加载,底部按钮渲染完成
+    await new Promise(r => setTimeout(r, 0));
+    const libButton = overlayQueryAll<HTMLButtonElement>('[aria-label="素材库"] button')
+      .find(btn => btn.textContent?.includes('B 库'));
+    expect(libButton).toBeDefined();
+    libButton!.dispatchEvent(new MouseEvent('mouseenter'));
+    await new Promise(r => setTimeout(r, 0));
+
+    const customUpload = overlayQuery<HTMLElement>('.mira-custom-upload');
+    customUpload?.dispatchEvent(new MouseEvent('drop', { bubbles: true }));
+
+    expect(openCustomUpload).toHaveBeenCalledWith({ url: img.src, kind: 'image' }, 'lib-b');
+    expect(saveLibraryId).toHaveBeenCalledWith('lib-b');
+    img.remove();
+  });
+
   it('普通拖拽仍显示网页目标浮层', () => {
     vi.spyOn(window, 'requestAnimationFrame').mockImplementation(callback => {
       callback(0);
@@ -268,6 +342,7 @@ describe('createDragDrop lifecycle', () => {
     expect(baseCss).toContain(':host');
     expect(baseCss).toContain('--spacing: 4px');
     expect(baseCss).toContain('--text-sm: 14px');
+    expect(baseCss).toContain('--text-4xl: 36px');
     img.remove();
   });
 

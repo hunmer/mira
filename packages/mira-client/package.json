@@ -74,6 +74,7 @@
     "filepond": "^4.32.8",
     "filepond-plugin-file-validate-size": "^2.2.8",
     "filepond-plugin-file-validate-type": "^1.2.9",
+    "fontkit": "^2.0.4",
     "hls.js": "^1.6.17",
     "lodash-es": "^4.17.21",
     "lucide-vue-next": "^1.0.0",

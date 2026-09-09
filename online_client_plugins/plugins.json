@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-08-24T11:21:06.379Z",
+  "generatedAt": "2026-09-09T03:21:57.412Z",
   "plugins": [
     {
       "pluginId": "7c1f9e2a-4b3d-4c8e-9f6a-2d5b8e7c1a04",
@@ -24,8 +24,8 @@
       "directory": "plugins/image-search",
       "icon": "icon.png",
       "readme": "README.md",
-      "size": 1219911,
-      "checksum": "sha256:1d99e110f2d24fa2e3f98160ae9ce5d5404013fbe04df6779972140193f946e3",
+      "size": 1219856,
+      "checksum": "sha256:4e5fb87e7e5bf91eeae088c7c68e3d17da0d4e3512aeef779a2931a2365bf8ab",
       "files": [
         {
           "path": "README.md",
@@ -44,8 +44,8 @@
         },
         {
           "path": "index.js",
-          "size": 3163,
-          "checksum": "sha256:948df9129bfb427c7fcf65b5ccae8fe9b01ccae270377507ea6e487f02a0c95a"
+          "size": 3108,
+          "checksum": "sha256:c2047ee8e48aedfdb8afd3a763330983d4c69ed613862f101c0de2e59df48e6e"
         },
         {
           "path": "icon.png",
@@ -111,6 +111,54 @@
       ]
     },
     {
+      "pluginId": "6c444c09-b708-4fa6-a597-47e7aa2b5e5c",
+      "pluginName": "字体操作",
+      "version": "1.0.0",
+      "description": "激活 TTF、OTF、TTC 字体，并应用到 Adobe 应用中的当前文字对象。",
+      "author": "Mira Team",
+      "category": "productivity",
+      "tags": [
+        "字体",
+        "激活",
+        "Photoshop",
+        "Illustrator",
+        "InDesign"
+      ],
+      "minAppVersion": "3.0.2",
+      "platform": [
+        "win32",
+        "darwin",
+        "linux"
+      ],
+      "directory": "plugins/mira-font-actions",
+      "icon": null,
+      "readme": null,
+      "size": 14361,
+      "checksum": "sha256:3950d6ed4f37689daa4cd74ccfcc1a11e332932bf40ddbd1f0668ae0eafea810",
+      "files": [
+        {
+          "path": "test.cjs",
+          "size": 1865,
+          "checksum": "sha256:21c232e61b8caa734e41b3db310856cad750374b7b6fa2fe82050438edaa2e55"
+        },
+        {
+          "path": "plugin.json",
+          "size": 585,
+          "checksum": "sha256:502d1720ac4d696cbe686e68d7c0916175c8701f3d9dcd6a01107bacfcba1c4b"
+        },
+        {
+          "path": "index.js",
+          "size": 2264,
+          "checksum": "sha256:934b70a6b7c773b7df092264413996f9e5aaaa491d94f7481af0bbe2684da607"
+        },
+        {
+          "path": "dist/index.html",
+          "size": 9647,
+          "checksum": "sha256:542e446cb4108ba4aa12b9f63c3b30a30a2f5c0715c06486b42d7accaaa1678c"
+        }
+      ]
+    },
+    {
       "pluginId": "8de28d11-49d2-455e-ae21-bb77edab23a6",
       "pluginName": "视频剪辑器",
       "version": "1.0.0",
@@ -132,8 +180,8 @@
       "directory": "plugins/mira-video-editor",
       "icon": "icon.png",
       "readme": "README.md",
-      "size": 957458,
-      "checksum": "sha256:2a0246ec1463cf6a54bb6717eced5df57e7113b2ef6f979674447cbbe348924f",
+      "size": 957398,
+      "checksum": "sha256:172896bc6728253bafa6a308a48a354ae13fd5f298f1e7f7d32cc86f47c6730b",
       "files": [
         {
           "path": "README.md",
@@ -152,8 +200,8 @@
         },
         {
           "path": "index.js",
-          "size": 3945,
-          "checksum": "sha256:2840b59ae364c3cbf06a553f246db841a24b86d2f756ff76066f735487a2f7b2"
+          "size": 3885,
+          "checksum": "sha256:a2a2f5792207507206c26949e84cad08e6c458feeb73374231781c9f2e032c78"
         },
         {
           "path": "icon.png",

@@ -151,6 +151,10 @@ export function createRouter(deps: RouterDeps): RequestHandler {
       }
       case 'UPLOAD_FROM_URL': {
         const settings = await getSettings();
+        dbg.warn('upload', 'UPLOAD_FROM_URL final URL', {
+          url: req.payload.url,
+          containsHtmlEntity: /&(?:amp|#0*38|#x0*26);/i.test(req.payload.url),
+        });
         // 读取来源站点 Cookie/Referer 后 fetch → Blob → File(规避 content script CORS)
         const { response: res, url } = await fetchResourceWithFallback(req.payload.url, req.payload.referrer);
         if (!res.ok) {

@@ -165,6 +165,10 @@ const mira = {
     get: async (options = {}) => options.isSelected ? parseSelectedItems() : [],
     addFromURL: (url, options = {}) => ipcRenderer.invoke('plugin-window:mira-item-add-from-url', url, options),
   },
+  font: {
+    activate: (fontPath) => ipcRenderer.invoke('plugin-window:font-action', 'activate', { fontPath }),
+    applyToAdobe: (fontPath, app) => ipcRenderer.invoke('plugin-window:font-action', 'apply-adobe', { fontPath, app }),
+  },
   // 受控外部命令执行（白名单 ffmpeg/ffprobe/scenedetect，见 PluginExecHandlers）
   exec: {
     run: (name, args, options = {}) =>

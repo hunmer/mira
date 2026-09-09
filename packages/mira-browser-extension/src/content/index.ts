@@ -248,22 +248,19 @@ const dragdrop = createDragDrop({
   },
   onUpload(payload: DragDropPayload) {
     const libId = payload.libraryId || '';
+    dbg.warn('content', 'drag upload payload', {
+      hasFile: !!payload.file,
+      file: payload.file ? { name: payload.file.name, type: payload.file.type, size: payload.file.size } : undefined,
+      sourceUrl: payload.sourceUrl,
+      url: payload.url,
+      kind: payload.kind,
+    });
     if (payload.file) {
       if (payload.sourceUrl) {
-        uploadUrl(payload.sourceUrl, payload.kind, payload.folderId, payload.tags, libId);
+        void uploadDraggedFile(payload.file, payload.sourceUrl, payload.kind, payload.folderId, payload.tags, libId);
         return;
       }
-      fileToStaged(payload.file).then(staged => {
-        chrome.runtime.sendMessage({
-          type: 'UPLOAD_FILES',
-          payload: {
-            files: [staged],
-            libraryId: libId,
-            folderId: payload.folderId != null ? String(payload.folderId) : undefined,
-            tags: payload.tags,
-          },
-        }).catch(e => dbg.error('content', 'UPLOAD_FILES send failed', e));
-      });
+      uploadFile(payload.file, payload.folderId, payload.tags, libId);
     } else if (payload.url) {
       uploadUrl(payload.url, payload.kind, payload.folderId, payload.tags, libId);
     }
@@ -299,10 +296,38 @@ async function upgradeBest(url: string): Promise<string> {
 /** 网页图片上传:先升级到高清原图,再发 service worker 下载入库(libraryId 空 = 当前设置库) */
 async function uploadUrl(url: string, kind: ResourceKind, folderId?: number, tags?: string[], libraryId?: string) {
   const best = await upgradeBest(url);
+  sendUploadUrl(best, kind, folderId, tags, libraryId);
+}
+
+/** 拖拽已携带图片数据时，仅在确有大图 URL 时重新请求；否则直接上传现有 File。 */
+async function uploadDraggedFile(file: File, sourceUrl: string, kind: ResourceKind, folderId?: number, tags?: string[], libraryId?: string) {
+  const best = await upgradeBest(sourceUrl);
+  if (best !== sourceUrl) {
+    dbg.warn('content', 'drag upload uses upgraded url', { sourceUrl, best });
+    sendUploadUrl(best, kind, folderId, tags, libraryId);
+    return;
+  }
+  dbg.warn('content', 'drag upload uses transferred file', { sourceUrl, name: file.name, size: file.size });
+  uploadFile(file, folderId, tags, libraryId);
+}
+
+function sendUploadUrl(url: string, kind: ResourceKind, folderId?: number, tags?: string[], libraryId?: string) {
   chrome.runtime.sendMessage({
     type: 'UPLOAD_FROM_URL',
-    payload: { url: best, kind, libraryId: libraryId || '', folderId, tags, referrer: location.href },
+    payload: { url, kind, libraryId: libraryId || '', folderId, tags, referrer: location.href },
   }).catch(e => dbg.error('content', 'UPLOAD_FROM_URL send failed', e));
+}
+
+function uploadFile(file: File, folderId?: number, tags?: string[], libraryId?: string) {
+  fileToStaged(file).then(staged => chrome.runtime.sendMessage({
+    type: 'UPLOAD_FILES',
+    payload: {
+      files: [staged],
+      libraryId: libraryId || '',
+      folderId: folderId != null ? String(folderId) : undefined,
+      tags,
+    },
+  })).catch(e => dbg.error('content', 'UPLOAD_FILES send failed', e));
 }
 
 /** 批量导入多张 URL:走 UPLOAD_FROM_URL(逐条),共用同一 folderId / tags。 */

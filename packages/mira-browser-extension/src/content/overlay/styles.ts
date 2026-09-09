@@ -37,7 +37,7 @@ export const OVERLAY_BASE_CSS = `
 }
 .mira-dragdrop {
   --spacing: 4px;
-  --text-xs: 12px; --text-sm: 14px; --text-base: 16px;
+  --text-xs: 12px; --text-sm: 14px; --text-base: 16px; --text-4xl: 36px;
   --radius: 10px;
   --background: oklch(.145 0 0); --foreground: oklch(.985 0 0);
   --card: oklch(.205 0 0); --card-foreground: oklch(.985 0 0);

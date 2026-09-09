@@ -19,6 +19,11 @@ export function defaultDropUpload(
     upload.pick(target, files, urls)
     return
   }
-  if (files.length) upload.files(files, target)
+  // 网页图片拖拽可能同时携带当前图片 File 与其 URL，它们是同一资源。
+  // 优先使用 File，避免随后再按 URL 下载一次而造成重复上传或防盗链 400。
+  if (files.length) {
+    upload.files(files, target)
+    return
+  }
   if (urls.length) upload.urls(urls, target)
 }

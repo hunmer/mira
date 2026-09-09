@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest';
 import { parseDrop, canAcceptDrop, urlKind } from './drag-data';
 
@@ -67,6 +68,16 @@ describe('parseDrop', () => {
       }),
     );
     expect(urls).toEqual(['https://cdn.site.com/img.webp']);
+  });
+
+  it('text/html:解码图片 URL 查询参数中的 HTML 实体', () => {
+    const { urls } = parseDrop(makeEvent({
+      types: ['text/html'],
+      data: {
+        'text/html': '<img src="https://img1.baidu.com/it/u=1&amp;fmt=auto&amp;w=800&amp;h=1422">',
+      },
+    }));
+    expect(urls).toEqual(['https://img1.baidu.com/it/u=1&fmt=auto&w=800&h=1422']);
   });
 
   it('text/html:提取 Pinterest 常见 data-src 和 srcset 中的多张图片', () => {

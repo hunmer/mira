@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>字体操作</title>
+    <style>
+      * { box-sizing: border-box; }
+      :root { color-scheme: light; --bg: #f4f4f5; --panel: #fff; --text: #18181b; --muted: #71717a; --line: #d4d4d8; --accent: #b42318; --success: #16794a; }
+      :root.dark { color-scheme: dark; --bg: #18181b; --panel: #27272a; --text: #fafafa; --muted: #a1a1aa; --line: #52525b; --accent: #fb7185; --success: #4ade80; }
+      html, body { width: 100%; min-height: 100%; margin: 0; }
+      body { background: var(--bg); color: var(--text); font: 14px system-ui, sans-serif; }
+      button { color: inherit; font: inherit; }
+      .shell { display: grid; min-height: 100vh; grid-template-rows: auto 1fr auto; }
+      header { display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--line); background: var(--panel); }
+      h1 { margin: 0; font-size: 18px; letter-spacing: 0; }
+      .count { color: var(--muted); }
+      main { display: grid; grid-template-columns: minmax(260px, .9fr) minmax(340px, 1.1fr); min-height: 0; }
+      .fonts { min-width: 0; padding: 16px; border-right: 1px solid var(--line); }
+      .drop { display: grid; min-height: 92px; place-items: center; margin-bottom: 12px; border: 1px dashed var(--line); border-radius: 6px; color: var(--muted); background: var(--panel); }
+      .drop.active { border-color: var(--accent); color: var(--accent); }
+      .font-list { display: grid; gap: 8px; max-height: calc(100vh - 180px); overflow: auto; }
+      .font-row { display: flex; width: 100%; min-height: 58px; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); text-align: left; cursor: pointer; }
+      .font-row.selected { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+      .font-mark { display: grid; width: 34px; height: 34px; flex: 0 0 auto; place-items: center; border-radius: 4px; background: var(--text); color: var(--panel); font: 700 18px Georgia, serif; }
+      .font-info { min-width: 0; }
+      .font-name { overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+      .font-path { overflow: hidden; margin-top: 3px; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+      .actions { padding: 20px; }
+      .section + .section { margin-top: 28px; }
+      h2 { margin: 0 0 10px; font-size: 13px; letter-spacing: 0; }
+      .primary { display: flex; width: 100%; min-height: 44px; align-items: center; justify-content: center; gap: 10px; border: 0; border-radius: 6px; background: var(--text); color: var(--panel); cursor: pointer; }
+      .primary:disabled, .app-button:disabled { cursor: not-allowed; opacity: .45; }
+      .app-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+      .app-button { display: grid; min-height: 90px; place-items: center; gap: 5px; padding: 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); cursor: pointer; }
+      .app-mark { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 5px; color: white; font-weight: 700; }
+      .ps { background: #145da0; } .ai { background: #a34f00; } .id { background: #a61b50; }
+      footer { min-height: 52px; padding: 14px 20px; border-top: 1px solid var(--line); background: var(--panel); color: var(--muted); }
+      footer.success { color: var(--success); } footer.error { color: var(--accent); }
+      @media (max-width: 680px) { main { grid-template-columns: 1fr; } .fonts { border-right: 0; border-bottom: 1px solid var(--line); } .font-list { max-height: 220px; } .app-grid { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header><h1>字体操作</h1><span id="count" class="count">0 个字体</span></header>
+      <main>
+        <section class="fonts">
+          <div id="drop" class="drop">拖入字体文件</div>
+          <div id="fontList" class="font-list"></div>
+        </section>
+        <section class="actions">
+          <div class="section">
+            <h2>系统</h2>
+            <button id="activate" class="primary" type="button" disabled><span class="font-mark">A</span><span>激活所选字体</span></button>
+          </div>
+          <div class="section">
+            <h2>Adobe 当前文字对象</h2>
+            <div class="app-grid">
+              <button class="app-button" type="button" data-app="photoshop" disabled><span class="app-mark ps">Ps</span><span>Photoshop</span></button>
+              <button class="app-button" type="button" data-app="illustrator" disabled><span class="app-mark ai">Ai</span><span>Illustrator</span></button>
+              <button class="app-button" type="button" data-app="indesign" disabled><span class="app-mark id">Id</span><span>InDesign</span></button>
+            </div>
+          </div>
+        </section>
+      </main>
+      <footer id="status">请选择一个本地字体</footer>
+    </div>
+    <script>
+      const FONT_EXTENSIONS = new Set(['ttf', 'otf', 'ttc'])
+      const state = { fonts: [], selected: -1, busy: false }
+      const list = document.querySelector('#fontList')
+      const count = document.querySelector('#count')
+      const status = document.querySelector('#status')
+      const activate = document.querySelector('#activate')
+      const appButtons = Array.from(document.querySelectorAll('[data-app]'))
+
+      function localPath(item) {
+        const candidates = [item?.localFile, item?.localPath, item?.filePath, item?.path]
+        return String(candidates.find((value) => /^(?:[a-z]:[\\/]|\/)/i.test(String(value || ''))) || '')
+      }
+
+      function extension(item) {
+        return String(item?.extension || item?.ext || item?.name?.split('.').pop() || '').replace(/^\./, '').toLowerCase()
+      }
+
+      function normalize(items) {
+        return (items || []).map((item) => ({ name: item.name || localPath(item).split(/[\\/]/).pop() || 'Font', path: localPath(item), extension: extension(item) }))
+          .filter((item) => item.path && FONT_EXTENSIONS.has(item.extension))
+      }
+
+      function addFonts(items) {
+        const merged = [...state.fonts]
+        for (const font of normalize(items)) if (!merged.some((item) => item.path.toLowerCase() === font.path.toLowerCase())) merged.push(font)
+        state.fonts = merged
+        if (state.selected < 0 && merged.length) state.selected = 0
+        render()
+      }
+
+      function render() {
+        count.textContent = `${state.fonts.length} 个字体`
+        list.replaceChildren(...state.fonts.map((font, index) => {
+          const button = document.createElement('button')
+          button.type = 'button'
+          button.className = `font-row${index === state.selected ? ' selected' : ''}`
+          const mark = document.createElement('span'); mark.className = 'font-mark'; mark.textContent = 'Aa'
+          const info = document.createElement('span'); info.className = 'font-info'
+          const name = document.createElement('div'); name.className = 'font-name'; name.textContent = font.name
+          const path = document.createElement('div'); path.className = 'font-path'; path.textContent = font.path
+          info.append(name, path); button.append(mark, info)
+          button.addEventListener('click', () => { state.selected = index; render() })
+          return button
+        }))
+        const disabled = state.selected < 0 || state.busy
+        activate.disabled = disabled
+        appButtons.forEach((button) => { button.disabled = disabled })
+      }
+
+      function setStatus(message, type = '') {
+        status.textContent = message
+        status.className = type
+      }
+
+      async function run(action) {
+        const font = state.fonts[state.selected]
+        if (!font || state.busy) return
+        state.busy = true; render(); setStatus('正在处理...')
+        try {
+          const result = action === 'activate'
+            ? await window.mira.font.activate(font.path)
+            : await window.mira.font.applyToAdobe(font.path, action)
+          setStatus(result?.message || '操作完成', 'success')
+        } catch (error) {
+          setStatus(error instanceof Error ? error.message : String(error), 'error')
+        } finally {
+          state.busy = false; render()
+        }
+      }
+
+      activate.addEventListener('click', () => run('activate'))
+      appButtons.forEach((button) => button.addEventListener('click', () => run(button.dataset.app)))
+      window.mira?.onThemeChanged?.((theme) => document.documentElement.classList.toggle('dark', theme === 'DARK'))
+      document.documentElement.classList.toggle('dark', window.mira?.app?.isDarkColors?.() || window.mira?.app?.theme === 'DARK')
+      window.electronAPI?.pluginWindow?.onMessage?.((channel, data) => { if (channel === 'media:add') addFonts(data) })
+
+      const drop = document.querySelector('#drop')
+      for (const eventName of ['dragenter', 'dragover']) drop.addEventListener(eventName, (event) => { event.preventDefault(); drop.classList.add('active') })
+      for (const eventName of ['dragleave', 'drop']) drop.addEventListener(eventName, (event) => { event.preventDefault(); drop.classList.remove('active') })
+      drop.addEventListener('drop', (event) => addFonts(Array.from(event.dataTransfer.files).map((file) => ({ name: file.name, path: window.mira.fs.getPathForFile(file) }))))
+
+      window.mira.item.getSelected().then(addFonts)
+      render()
+    </script>
+  </body>
+</html>

@@ -7,6 +7,9 @@ import { randomUUID } from 'node:crypto'
 import { logger } from '../utils/Logger'
 import type { PluginHandler } from '../handlers/PluginHandler'
 import { downloadService } from '../services/DownloadService'
+import { FontActionService, type AdobeAppType } from '../services/FontActionService'
+
+const FONT_ACTIONS_PLUGIN_ID = '6c444c09-b708-4fa6-a597-47e7aa2b5e5c'
 
 /**
  * 打开插件窗口的参数（与 shared/types.ts 的 PluginWindowOpenOptions 对齐）
@@ -59,6 +62,7 @@ export class PluginWindowHandlers {
   private importRequests = new Map<string, { resolve: (value: any) => void; reject: (reason: Error) => void; timer: ReturnType<typeof setTimeout> }>()
   /** 注入的 PluginHandler，用于读取 pluginsDirectory 与插件实际目录 */
   private pluginHandler: PluginHandler
+  private fontActions = new FontActionService()
 
   constructor(pluginHandler: PluginHandler) {
     this.pluginHandler = pluginHandler
@@ -85,8 +89,20 @@ export class PluginWindowHandlers {
     ipcMain.on('plugin-window:mira-clipboard', this.handleMiraClipboard.bind(this))
     ipcMain.on('plugin-window:mira-log', this.handleMiraLog.bind(this))
     ipcMain.handle('plugin-window:mira-item-add-from-url', this.handleMiraItemAddFromUrl.bind(this))
+    ipcMain.handle('plugin-window:font-action', this.handleFontAction.bind(this))
     ipcMain.on('plugin-window:mira-item-add-from-url-result', this.handleMiraItemAddFromUrlResult.bind(this))
     logger.info('PluginWindowHandlers', 'Plugin window IPC handlers registered')
+  }
+
+  private async handleFontAction(event: Electron.IpcMainInvokeEvent, action: string, payload: any): Promise<any> {
+    const sourceWindow = Array.from(this.windows.entries())
+      .find(([, win]) => !win.isDestroyed() && win.webContents.id === event.sender.id)
+    if (!sourceWindow?.[0].startsWith(`${FONT_ACTIONS_PLUGIN_ID}:`)) throw new Error('当前插件无权调用字体操作')
+    if (action === 'activate') return this.fontActions.activate(String(payload?.fontPath || ''))
+    if (action === 'apply-adobe') {
+      return this.fontActions.applyToAdobe(String(payload?.fontPath || ''), String(payload?.app || '') as AdobeAppType)
+    }
+    throw new Error('不支持的字体操作')
   }
 
   /**
@@ -679,6 +695,7 @@ export class PluginWindowHandlers {
     ipcMain.removeHandler('plugin-window:mira-window')
     ipcMain.removeHandler('plugin-window:mira-shell')
     ipcMain.removeHandler('plugin-window:mira-item-add-from-url')
+    ipcMain.removeHandler('plugin-window:font-action')
     ipcMain.removeAllListeners('plugin-window:mira-item-add-from-url-result')
     for (const request of this.importRequests.values()) {
       clearTimeout(request.timer)

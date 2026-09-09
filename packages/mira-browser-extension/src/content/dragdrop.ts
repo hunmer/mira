@@ -245,6 +245,9 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
   let pointerOrigin: { x: number; y: number; source: DragSource; target: Element | null } | null = null;
   // 浮层内当前选中的素材库 id(组件 hover 切换时经 onLibraryChange 同步;'' = 当前设置库)
   let overlayLibraryId = '';
+  // 浮层初始库(hover 切换前的上传落点;与组件 getLibraryId 同源,记忆上次切换过的库)
+  let initialLibraryId = '';
+  let pendingLibraryId: Promise<string | null> | null = null;
 
   function sourceFromEvent(e: Event): DragSource | null {
     const target = e.target instanceof Element ? e.target : null;
@@ -444,6 +447,22 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     return pendingLibraries;
   }
 
+  /** 懒加载浮层初始库(组件挂载与上传落点共用一次请求;同 5 秒缓存策略) */
+  function fetchLibraryId(): Promise<string | null> {
+    if (!handlers.getLibraryId) return Promise.resolve(null);
+    if (!pendingLibraryId) {
+      pendingLibraryId = handlers.getLibraryId().then(id => {
+        dbg.log('dragdrop', 'fetchLibraryId ok', { id: id ?? '(none)' });
+        return id ?? null;
+      }).catch(e => {
+        dbg.error('dragdrop', 'fetchLibraryId failed', e);
+        return null;
+      });
+      setTimeout(() => { pendingLibraryId = null; }, 5000);
+    }
+    return pendingLibraryId;
+  }
+
   function startAutoScroll(dir: -1 | 1) {
     stopAutoScroll();
     scrollTimer = setInterval(() => window.scrollBy(0, dir * SCROLL_STEP), 16);
@@ -495,12 +514,22 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     moveNode: handlers.moveNode,
   };
 
+  /** 浮层当前上传落点库:hover 切换值优先,未切换时用初始库(上次的记忆库/设置库);都空 = 全局默认库 */
+  function currentLibraryId(): string {
+    return overlayLibraryId || initialLibraryId;
+  }
+
   /** 浮层树上传服务:拖到节点释放 → 直接上传(direct),携带浮层当前选中库;pick(右键「上传到此处」/工具栏) → 自定义上传对话框 */
   function makeUploadAdapter(source: DragSource, getLibraryId: () => string): LibraryTreeUpload {
     return {
       files(files, target) {
-        // 必须先取 libraryId 再 hideOverlay:hideOverlay 会重置 overlayLibraryId
         const libraryId = getLibraryId() || undefined;
+        dbg.warn('dragdrop', 'drop routed as files', {
+          count: files.length,
+          files: files.map(file => ({ name: file.name, type: file.type, size: file.size })),
+          sourceUrl: source.url,
+          target,
+        });
         hideOverlay();
         for (const file of files) {
           handlers.onUpload({ file, sourceUrl: source.url, kind: source.kind, libraryId, folderId: target?.folderId, tags: target?.tags });
@@ -508,6 +537,7 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
       },
       urls(urls, target) {
         const libraryId = getLibraryId() || undefined;
+        dbg.warn('dragdrop', 'drop routed as urls', { count: urls.length, urls, target });
         hideOverlay();
         for (const url of urls) {
           handlers.onUpload({ url, kind: urlKind(url), libraryId, folderId: target?.folderId, tags: target?.tags });
@@ -595,6 +625,10 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
 
   function showOverlay(source: DragSource, target: Element | null, x: number, y: number, dx: number, dy: number) {
     hideOverlay();
+    // 落点库只在浮层会话开启时重置:drop 流程里组件先调 onDropped(hideOverlay)再调
+    // onCustomUpload/onUploadPayload 读取落点,hideOverlay 若清空会把库变成全局默认库(bug)
+    overlayLibraryId = '';
+    initialLibraryId = '';
     dbg.info('dragdrop', 'showOverlay', { source, hasGetFolders: !!handlers.getFolders, hasGetTags: !!handlers.getTags, x, y, dx, dy });
 
     // 挂载在 Shadow DOM 内,隔离 Tailwind utilities / 主题变量与宿主页面
@@ -632,17 +666,17 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
 
     vueApp = createApp(DragDropOverlay, {
       source,
-      getLibraryId: handlers.getLibraryId ?? (async () => null),
+      getLibraryId: fetchLibraryId,
       getLibraries: handlers.getLibraries ?? (async () => null),
       services: treeServices,
-      upload: makeUploadAdapter(source, () => overlayLibraryId),
+      upload: makeUploadAdapter(source, currentLibraryId),
       view: treeStyle,
       sortFolder: treeSorts?.folder,
       sortTag: treeSorts?.tag,
       showCustomUpload: !!handlers.openCustomUpload,
       onUploadPayload: handlers.onUpload,
       onCustomUpload: () => {
-        if (handlers.openCustomUpload) void handlers.openCustomUpload(source, overlayLibraryId || undefined);
+        if (handlers.openCustomUpload) void handlers.openCustomUpload(source, currentLibraryId() || undefined);
       },
       onLibraryChange: (libId: string) => {
         if (overlayLibraryId !== libId) {
@@ -657,6 +691,9 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
       onDropped: hideOverlay,
     });
     vueApp.mount(shadow);
+    // 初始库异步就位:浮层打开后未 hover 切换库之前,树上传/自定义上传落点也用初始库
+    // (记忆的上次库;否则落点为空回退全局默认库,与浮层显示不一致)
+    void fetchLibraryId().then(id => { initialLibraryId = id ?? ''; });
 
     overlayHost = mount;
     overlayRoot = shadow.querySelector<HTMLElement>('.mira-overlay');
@@ -669,7 +706,8 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
   function hideOverlay() {
     stopAutoScroll();
     resizeObserver?.disconnect();
-    overlayLibraryId = '';
+    // 不清空 overlayLibraryId/initialLibraryId:drop 后 onCustomUpload 等仍要读取落点库;
+    // 由下一次 showOverlay 开头重置
     if (vueApp) {
       vueApp.unmount();
       vueApp = null;
