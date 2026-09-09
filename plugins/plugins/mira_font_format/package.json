@@ -1,0 +1,28 @@
+{
+  "name": "mira_font_format",
+  "version": "1.0.0",
+  "description": "TTF, OTF, WOFF, WOFF2 and TTC metadata, thumbnail and interactive preview support for Mira",
+  "author": "Mira Team",
+  "license": "ISC",
+  "main": "dist/index.js",
+  "files": ["dist/**/*", "web/**/*", "package.json", "README.md"],
+  "mira": {
+    "id": "mira_font_format",
+    "title": "字体格式支持",
+    "icon": "text_fields",
+    "category": "storage",
+    "tags": ["TTF", "OTF", "WOFF", "WOFF2", "TTC", "字体", "预览"]
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "npm run build && node test.js"
+  },
+  "dependencies": {
+    "fontkit": "^2.0.4",
+    "sharp": "^0.35.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.7.0"
+  }
+}

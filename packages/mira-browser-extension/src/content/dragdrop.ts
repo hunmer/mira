@@ -600,6 +600,15 @@ export function createDragDrop(handlers: DragDropHandlers): DragDropController {
     // 挂载在 Shadow DOM 内,隔离 Tailwind utilities / 主题变量与宿主页面
     const mount = document.createElement('div');
     mount.id = 'mira-dragdrop-host';
+    // Shadow DOM 会隔离内部选择器，但宿主网页仍可命中 host 并通过 transform/display 等
+    // 属性改变内部 fixed 浮层的定位。内联 important 保证 host 本身也不受页面 CSS 污染。
+    mount.style.setProperty('all', 'initial', 'important');
+    mount.style.setProperty('display', 'block', 'important');
+    mount.style.setProperty('visibility', 'visible', 'important');
+    mount.style.setProperty('opacity', '1', 'important');
+    mount.style.setProperty('transform', 'none', 'important');
+    mount.style.setProperty('filter', 'none', 'important');
+    mount.style.setProperty('direction', 'ltr', 'important');
     document.documentElement.appendChild(mount);
     const shadow = mount.attachShadow({ mode: 'open' });
     const baseStyle = document.createElement('style');

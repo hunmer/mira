@@ -86,5 +86,19 @@
     "category": "storage",
     "tags": ["HTML", "HTM", "网页", "预览"],
     "status": "active"
+  },
+  {
+    "name": "mira_font_format",
+    "enabled": true,
+    "path": "mira_font_format",
+    "version": "1.0.0",
+    "description": "支持 TTF、OTF、WOFF、WOFF2 和 TTC 字体的元数据、缩略图与交互预览。",
+    "author": "Mira Team",
+    "main": "dist/index.js",
+    "icon": "text_fields",
+    "title": "字体格式支持",
+    "category": "storage",
+    "tags": ["TTF", "OTF", "WOFF", "WOFF2", "TTC", "字体", "预览"],
+    "status": "active"
   }
 ]

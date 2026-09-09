@@ -11,6 +11,15 @@ export const OVERLAY_Z = 2147483646; // 仅次于选区覆盖层
 
 /** 浮层基础样式文本(.mira-overlay / .mira-dropzone 等);document 注入与 dragdrop 浮层 shadow 注入共用。 */
 export const OVERLAY_BASE_CSS = `
+:host {
+  all: initial !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  transform: none !important;
+  filter: none !important;
+  direction: ltr !important;
+}
 .mira-overlay {
   position: fixed; left: 0; top: 0;
   z-index: ${OVERLAY_Z};
@@ -27,7 +36,9 @@ export const OVERLAY_BASE_CSS = `
   transition: opacity .16s ease-out, transform .16s ease-out;
 }
 .mira-dragdrop {
-  --radius: .625rem;
+  --spacing: 4px;
+  --text-xs: 12px; --text-sm: 14px; --text-base: 16px;
+  --radius: 10px;
   --background: oklch(.145 0 0); --foreground: oklch(.985 0 0);
   --card: oklch(.205 0 0); --card-foreground: oklch(.985 0 0);
   --popover: oklch(.205 0 0); --popover-foreground: oklch(.985 0 0);

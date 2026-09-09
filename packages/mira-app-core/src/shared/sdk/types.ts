@@ -472,6 +472,26 @@ export interface FileData {
     recycled?: number;
 }
 
+export interface RelocateLibraryResponse {
+    relocationId: string;
+}
+
+export interface LibraryRelocationProgress {
+    id: string;
+    libraryId: string;
+    sourcePath: string;
+    destinationPath: string;
+    status: 'preparing' | 'moving' | 'completed' | 'error';
+    totalFiles: number;
+    movedFiles: number;
+    totalBytes: number;
+    movedBytes: number;
+    current: string;
+    error?: string;
+    startedAt: number;
+    finishedAt?: number;
+}
+
 // 数据库类型
 export interface DatabaseTable {
     name: string;

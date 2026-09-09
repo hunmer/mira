@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-09-08T03:33:36.969Z",
-  "scannedFiles": 3294,
+  "generatedAt": "2026-09-09T02:36:44.613Z",
+  "scannedFiles": 3297,
   "results": [
     {
       "method": "GET",
@@ -1904,7 +1904,7 @@
         "mira-client"
       ],
       "sites": [
-        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:158",
+        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:173",
         "packages/mira-app-server/web/assets/js/main-CleWDgEk.js:95",
         "packages/mira-client/dist-renderer/assets/js/main-DmyTmBkE.js:95"
       ],
@@ -1925,7 +1925,7 @@
         "mira-client"
       ],
       "sites": [
-        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:167",
+        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:182",
         "packages/mira-app-server/web/assets/js/main-CleWDgEk.js:95",
         "packages/mira-client/dist-renderer/assets/js/main-DmyTmBkE.js:95"
       ],
@@ -1946,11 +1946,47 @@
         "mira-client"
       ],
       "sites": [
-        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:175",
+        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:190",
         "packages/mira-app-server/web/assets/js/main-CleWDgEk.js:95",
         "packages/mira-client/dist-renderer/assets/js/main-DmyTmBkE.js:95"
       ],
       "frequency": "F2"
+    },
+    {
+      "method": "POST",
+      "path": "/api/libraries/:param/relocate",
+      "domain": "libraries",
+      "category": "covered",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-app-core"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:64"
+      ],
+      "frequency": "F1"
+    },
+    {
+      "method": "GET",
+      "path": "/api/libraries/:param/relocate/:param",
+      "domain": "libraries",
+      "category": "covered",
+      "totalSites": 1,
+      "prodSites": 1,
+      "testSites": 0,
+      "sdkModuleSites": 0,
+      "pkgCount": 1,
+      "packages": [
+        "mira-app-core"
+      ],
+      "sites": [
+        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:71"
+      ],
+      "frequency": "F1"
     },
     {
       "method": "GET",
@@ -1968,8 +2004,8 @@
       ],
       "sites": [
         "packages/mira-app-core/src/shared/sdk/client/HttpClient.contract.test.ts:79 [test]",
-        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:24",
-        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:47",
+        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:26",
+        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:49",
         "packages/mira-app-server/src/HttpServer.ts:351",
         "packages/mira-app-server/web/assets/js/main-CleWDgEk.js:95",
         "packages/mira-client/dist-main/main.js:19646",
@@ -1996,8 +2032,8 @@
       ],
       "sites": [
         "packages/mira-app-core/src/shared/sdk/client/HttpClient.contract.test.ts:79 [test]",
-        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:24",
-        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:47",
+        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:26",
+        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:49",
         "packages/mira-app-server/src/HttpServer.ts:351",
         "packages/mira-app-server/web/assets/js/main-CleWDgEk.js:95",
         "packages/mira-client/dist-main/main.js:19646",
@@ -2023,9 +2059,9 @@
         "mira-client"
       ],
       "sites": [
-        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:57",
-        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:66",
-        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:158",
+        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:59",
+        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:81",
+        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:173",
         "packages/mira-app-server/web/assets/js/main-CleWDgEk.js:95",
         "packages/mira-client/dist-renderer/assets/js/main-DmyTmBkE.js:95"
       ],
@@ -2047,7 +2083,7 @@
       ],
       "sites": [
         "packages/mira-app-core/src/shared/sdk/LibraryModule.contract.test.ts:12 [test]",
-        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:72",
+        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:87",
         "packages/mira-app-server/web/assets/js/main-CleWDgEk.js:95",
         "packages/mira-client/dist-renderer/assets/js/main-DmyTmBkE.js:95"
       ],
@@ -2068,7 +2104,7 @@
         "mira-client"
       ],
       "sites": [
-        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:79",
+        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:94",
         "packages/mira-app-server/web/assets/js/main-CleWDgEk.js:95",
         "packages/mira-client/dist-renderer/assets/js/main-DmyTmBkE.js:95"
       ],
@@ -2145,9 +2181,9 @@
         "mira-client"
       ],
       "sites": [
-        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:57",
-        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:66",
-        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:158",
+        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:59",
+        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:81",
+        "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts:173",
         "packages/mira-app-server/web/assets/js/main-CleWDgEk.js:95",
         "packages/mira-client/dist-renderer/assets/js/main-DmyTmBkE.js:95"
       ],
@@ -3266,9 +3302,9 @@
       "path": "/",
       "domain": "http-server-direct",
       "category": "excluded",
-      "totalSites": 62900,
-      "prodSites": 61552,
-      "testSites": 474,
+      "totalSites": 62923,
+      "prodSites": 61565,
+      "testSites": 480,
       "sdkModuleSites": 0,
       "pkgCount": 13,
       "packages": [

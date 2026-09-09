@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-08T03:32:15.162Z",
+  "generatedAt": "2026-09-09T02:36:20.400Z",
   "entries": [
     {
       "module": "Admin",
@@ -810,7 +810,7 @@
       "httpMethod": "GET",
       "path": "/api/libraries",
       "file": "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts",
-      "line": 24,
+      "line": 26,
       "hasQuery": true,
       "hasBody": false,
       "returnType": "Library[]"
@@ -821,7 +821,7 @@
       "httpMethod": "POST",
       "path": "/api/libraries",
       "file": "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts",
-      "line": 47,
+      "line": 49,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "BaseResponse"
@@ -832,10 +832,32 @@
       "httpMethod": "PUT",
       "path": "/api/libraries/:param",
       "file": "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts",
-      "line": 57,
+      "line": 59,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "BaseResponse"
+    },
+    {
+      "module": "Library",
+      "method": "relocate",
+      "httpMethod": "POST",
+      "path": "/api/libraries/:param/relocate",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts",
+      "line": 63,
+      "hasQuery": false,
+      "hasBody": true,
+      "returnType": "RelocateLibraryResponse"
+    },
+    {
+      "module": "Library",
+      "method": "getRelocationProgress",
+      "httpMethod": "GET",
+      "path": "/api/libraries/:param/relocate/:param",
+      "file": "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts",
+      "line": 70,
+      "hasQuery": true,
+      "hasBody": false,
+      "returnType": "LibraryRelocationProgress"
     },
     {
       "module": "Library",
@@ -843,7 +865,7 @@
       "httpMethod": "DELETE",
       "path": "/api/libraries/:param",
       "file": "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts",
-      "line": 66,
+      "line": 81,
       "hasQuery": true,
       "hasBody": false,
       "returnType": "BaseResponse"
@@ -854,7 +876,7 @@
       "httpMethod": "PATCH",
       "path": "/api/libraries/:param/status",
       "file": "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts",
-      "line": 71,
+      "line": 86,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "{ message: string; status: 'active' | 'inactive' }"
@@ -865,7 +887,7 @@
       "httpMethod": "GET",
       "path": "/api/libraries/:param/stats",
       "file": "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts",
-      "line": 79,
+      "line": 94,
       "hasQuery": true,
       "hasBody": false,
       "returnType": null
@@ -876,7 +898,7 @@
       "httpMethod": "POST",
       "path": "/api/libraries/:param/start",
       "file": "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts",
-      "line": 88,
+      "line": 103,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "BaseResponse"
@@ -887,7 +909,7 @@
       "httpMethod": "POST",
       "path": "/api/libraries/:param/stop",
       "file": "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts",
-      "line": 97,
+      "line": 112,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "BaseResponse"
@@ -898,7 +920,7 @@
       "httpMethod": "POST",
       "path": "/api/libraries/import",
       "file": "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts",
-      "line": 158,
+      "line": 173,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "ImportLibraryResponse"
@@ -909,7 +931,7 @@
       "httpMethod": "GET",
       "path": "/api/libraries/import/:param",
       "file": "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts",
-      "line": 167,
+      "line": 182,
       "hasQuery": true,
       "hasBody": false,
       "returnType": "LibraryImportProgress"
@@ -920,7 +942,7 @@
       "httpMethod": "POST",
       "path": "/api/libraries/import/:param/cancel",
       "file": "packages/mira-app-core/src/shared/sdk/modules/LibraryModule.ts",
-      "line": 175,
+      "line": 190,
       "hasQuery": false,
       "hasBody": true,
       "returnType": "{ message: string }"

@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="no-referrer">
+    <title>字体预览</title>
+    <style>
+      * { box-sizing: border-box; }
+      :root { color-scheme: light; --bg: #f4f4f5; --surface: #fff; --text: #18181b; --muted: #71717a; --line: #d4d4d8; --accent: #b42318; }
+      :root[data-theme="dark"] { color-scheme: dark; --bg: #18181b; --surface: #27272a; --text: #fafafa; --muted: #a1a1aa; --line: #52525b; --accent: #fb7185; }
+      html, body { min-height: 100%; margin: 0; }
+      body { background: var(--bg); color: var(--text); font: 14px system-ui, sans-serif; }
+      button, input { font: inherit; }
+      button { color: inherit; }
+      .shell { min-height: 100vh; }
+      .toolbar { position: sticky; top: 0; z-index: 2; display: flex; min-height: 58px; align-items: center; gap: 16px; padding: 10px 20px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(10px); }
+      .identity { min-width: 0; margin-right: auto; }
+      .name { overflow: hidden; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+      .meta { margin-top: 2px; color: var(--muted); font-size: 12px; }
+      .size-control { display: flex; align-items: center; gap: 8px; color: var(--muted); }
+      .size-control input { width: min(22vw, 180px); accent-color: var(--accent); }
+      .size-value { width: 42px; color: var(--text); text-align: right; font-variant-numeric: tabular-nums; }
+      .segments { display: inline-flex; padding: 2px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); }
+      .segments button { width: 34px; height: 30px; padding: 0; border: 0; border-radius: 4px; background: transparent; cursor: pointer; }
+      .segments button[aria-pressed="true"] { background: var(--surface); color: var(--accent); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+      main { width: min(100%, 1200px); margin: 0 auto; padding: 22px; }
+      .status { display: grid; min-height: 55vh; place-items: center; color: var(--muted); text-align: center; }
+      .status.error { color: var(--accent); }
+      .specimens { display: grid; gap: 14px; }
+      .specimen { min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+      .specimen-label { padding: 10px 14px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 12px; text-transform: uppercase; }
+      .sample { min-height: 130px; padding: 22px; outline: none; font-family: MiraFontPreview, sans-serif; font-size: var(--preview-size, 64px); line-height: 1.25; overflow-wrap: anywhere; }
+      .sample:focus { box-shadow: inset 3px 0 0 var(--accent); }
+      .glyphs { font-size: clamp(28px, var(--preview-size, 64px), 92px); letter-spacing: 0; }
+      [hidden] { display: none !important; }
+      @media (max-width: 680px) {
+        .toolbar { align-items: flex-start; flex-wrap: wrap; padding: 10px 14px; }
+        .identity { flex-basis: calc(100% - 88px); }
+        .size-control { order: 3; width: 100%; }
+        .size-control input { flex: 1; width: auto; }
+        main { padding: 14px; }
+        .sample { padding: 16px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header class="toolbar">
+        <div class="identity">
+          <div id="fileName" class="name">字体预览</div>
+          <div id="format" class="meta">FONT</div>
+        </div>
+        <label class="size-control">
+          <span>字号</span>
+          <input id="fontSize" type="range" min="20" max="120" value="64" aria-label="预览字号">
+          <span id="fontSizeValue" class="size-value">64 px</span>
+        </label>
+        <div class="segments" aria-label="预览主题">
+          <button type="button" data-theme-value="light" aria-label="浅色主题" aria-pressed="true">☀</button>
+          <button type="button" data-theme-value="dark" aria-label="深色主题" aria-pressed="false">◐</button>
+        </div>
+      </header>
+      <main>
+        <div id="status" class="status">正在加载字体...</div>
+        <section id="specimens" class="specimens" hidden>
+          <article class="specimen">
+            <div class="specimen-label">Sample</div>
+            <div class="sample" contenteditable="true" spellcheck="false">设计始于清晰的文字 Typography shapes ideas.</div>
+          </article>
+          <article class="specimen">
+            <div class="specimen-label">Characters</div>
+            <div class="sample glyphs" contenteditable="true" spellcheck="false">Aa Bb Cc 0123456789<br>天地玄黄 ABC xyz !?&amp;@</div>
+          </article>
+        </section>
+      </main>
+    </div>
+    <script>
+      const params = new URLSearchParams(location.search)
+      const fileUrl = params.get('fileUrl') || ''
+      const fileId = params.get('fileId') || ''
+      const fileName = params.get('fileName') || 'Font'
+      const format = params.get('format') || fileName.split('.').pop()?.toUpperCase() || 'FONT'
+      const status = document.querySelector('#status')
+      const specimens = document.querySelector('#specimens')
+      const sizeInput = document.querySelector('#fontSize')
+      const sizeValue = document.querySelector('#fontSizeValue')
+
+      document.querySelector('#fileName').textContent = fileName
+      document.querySelector('#format').textContent = format
+      document.title = fileName
+
+      function fail(message) {
+        status.textContent = message
+        status.classList.add('error')
+        parent.postMessage({ type: 'mira-font-preview-error', fileId }, '*')
+      }
+
+      sizeInput.addEventListener('input', () => {
+        document.documentElement.style.setProperty('--preview-size', `${sizeInput.value}px`)
+        sizeValue.textContent = `${sizeInput.value} px`
+      })
+
+      document.querySelectorAll('[data-theme-value]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const theme = button.dataset.themeValue
+          document.documentElement.dataset.theme = theme
+          document.querySelectorAll('[data-theme-value]').forEach((item) => item.setAttribute('aria-pressed', String(item === button)))
+        })
+      })
+
+      async function start() {
+        if (!/^https?:\/\//i.test(fileUrl)) {
+          fail('预览地址必须是 HTTP(S) URL')
+          return
+        }
+        try {
+          const response = await fetch(fileUrl, { credentials: 'same-origin' })
+          if (!response.ok) throw new Error(`HTTP ${response.status}`)
+          const font = new FontFace('MiraFontPreview', await response.arrayBuffer())
+          await font.load()
+          document.fonts.add(font)
+          document.documentElement.style.setProperty('--preview-size', `${sizeInput.value}px`)
+          status.remove()
+          specimens.hidden = false
+          parent.postMessage({ type: 'mira-font-preview-loaded', fileId }, '*')
+        } catch (error) {
+          fail(`无法加载字体：${error instanceof Error ? error.message : String(error)}`)
+        }
+      }
+
+      start()
+    </script>
+  </body>
+</html>

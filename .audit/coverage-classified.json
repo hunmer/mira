@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-09-08T03:32:30.483Z",
+  "generatedAt": "2026-09-09T02:36:20.719Z",
   "summary": {
-    "covered": 126,
+    "covered": 128,
     "missing": 13,
     "excluded": 13,
     "dynamic": 7
@@ -960,7 +960,7 @@
       "path": "/api/libraries/import",
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 23,
+      "line": 33,
       "category": "covered",
       "sdkMethods": [
         "Library.importFrom"
@@ -971,7 +971,7 @@
       "path": "/api/libraries/import/:param",
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 42,
+      "line": 52,
       "category": "covered",
       "sdkMethods": [
         "Library.getImportProgress"
@@ -982,10 +982,32 @@
       "path": "/api/libraries/import/:param/cancel",
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 51,
+      "line": 61,
       "category": "covered",
       "sdkMethods": [
         "Library.cancelImport"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/libraries/:param/relocate",
+      "domain": "libraries",
+      "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
+      "line": 69,
+      "category": "covered",
+      "sdkMethods": [
+        "Library.relocate"
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/libraries/:param/relocate/:param",
+      "domain": "libraries",
+      "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
+      "line": 79,
+      "category": "covered",
+      "sdkMethods": [
+        "Library.getRelocationProgress"
       ]
     },
     {
@@ -993,7 +1015,7 @@
       "path": "/api/libraries",
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 60,
+      "line": 88,
       "category": "covered",
       "sdkMethods": [
         "Library.getAll"
@@ -1004,7 +1026,7 @@
       "path": "/api/libraries",
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 121,
+      "line": 149,
       "category": "covered",
       "sdkMethods": [
         "Library.create"
@@ -1015,7 +1037,7 @@
       "path": "/api/libraries/:param",
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 225,
+      "line": 255,
       "category": "covered",
       "sdkMethods": [
         "Library.update"
@@ -1026,7 +1048,7 @@
       "path": "/api/libraries/:param/status",
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 375,
+      "line": 405,
       "category": "covered",
       "sdkMethods": [
         "Library.setStatus"
@@ -1037,7 +1059,7 @@
       "path": "/api/libraries/:param/stats",
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 438,
+      "line": 468,
       "category": "covered",
       "sdkMethods": [
         "Library.stats"
@@ -1048,7 +1070,7 @@
       "path": "/api/libraries/:param/query",
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 534,
+      "line": 564,
       "category": "missing",
       "sdkMethods": []
     },
@@ -1057,7 +1079,7 @@
       "path": "/api/libraries/:param/execute",
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 574,
+      "line": 604,
       "category": "missing",
       "sdkMethods": []
     },
@@ -1066,7 +1088,7 @@
       "path": "/api/libraries/:param/schema/:param",
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 618,
+      "line": 648,
       "category": "missing",
       "sdkMethods": []
     },
@@ -1075,7 +1097,7 @@
       "path": "/api/libraries/:param/record/:param/:param",
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 655,
+      "line": 685,
       "category": "missing",
       "sdkMethods": []
     },
@@ -1084,7 +1106,7 @@
       "path": "/api/libraries/:param",
       "domain": "libraries",
       "file": "packages/mira-app-server/src/routes/LibraryRoutes.ts",
-      "line": 701,
+      "line": 731,
       "category": "covered",
       "sdkMethods": [
         "Library.delete"

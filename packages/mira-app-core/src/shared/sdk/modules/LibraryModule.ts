@@ -7,6 +7,8 @@ import {
     ImportLibraryRequest,
     ImportLibraryResponse,
     LibraryImportProgress,
+    LibraryRelocationProgress,
+    RelocateLibraryResponse,
 } from '../types';
 
 /**
@@ -55,6 +57,19 @@ export class LibraryModule {
      */
     async update(id: string, updateData: UpdateLibraryRequest): Promise<BaseResponse> {
         return await this.httpClient.put<BaseResponse>(`/api/libraries/${id}`, updateData);
+    }
+
+    async relocate(id: string, destinationPath: string): Promise<RelocateLibraryResponse> {
+        return await this.httpClient.post<RelocateLibraryResponse>(
+            `/api/libraries/${encodeURIComponent(id)}/relocate`,
+            { destinationPath }
+        );
+    }
+
+    async getRelocationProgress(id: string, relocationId: string): Promise<LibraryRelocationProgress> {
+        return await this.httpClient.get<LibraryRelocationProgress>(
+            `/api/libraries/${encodeURIComponent(id)}/relocate/${encodeURIComponent(relocationId)}`
+        );
     }
 
     /**

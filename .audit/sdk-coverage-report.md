@@ -1,6 +1,6 @@
 # Mira Server API 与 SDK 覆盖报告
 
-生成时间: 2026-09-08T03:32:30.485Z
+生成时间: 2026-09-09T02:36:20.721Z
 
 匹配键: HTTP method + 归一化路径（动态参数统一为 `:param`，query string 不参与匹配）。
 
@@ -8,13 +8,13 @@
 
 | 分类 | 数量 | 说明 |
 |------|------|------|
-| covered | 126 | SDK 有等价 method+path |
+| covered | 128 | SDK 有等价 method+path |
 | partial | undefined | path 匹配但 method 不匹配 |
 | missing | 13 | SDK 无对应方法 |
 | excluded | 13 | 资源/流式/SPA/通配, 不生成普通 CRUD |
 | dynamic | 7 | 插件运行时注册/正则路由 |
 
-固定 JSON API 共 139 条, 已 100% 分类（covered 126 / partial undefined / missing 13）。
+固定 JSON API 共 141 条, 已 100% 分类（covered 128 / partial undefined / missing 13）。
 
 ## Missing (SDK 无对应方法)
 
@@ -24,10 +24,10 @@
 | POST | `/api/devices/:param/test` | devices | packages/mira-app-server/src/routes/DeviceRoutes.ts:91 | - |  |
 | GET | `/api/devices/:param/messages` | devices | packages/mira-app-server/src/routes/DeviceRoutes.ts:92 | - |  |
 | GET | `/api/devices/share/:param` | devices | packages/mira-app-server/src/routes/DeviceRoutes.ts:96 | - |  |
-| POST | `/api/libraries/:param/query` | libraries | packages/mira-app-server/src/routes/LibraryRoutes.ts:534 | - |  |
-| POST | `/api/libraries/:param/execute` | libraries | packages/mira-app-server/src/routes/LibraryRoutes.ts:574 | - |  |
-| GET | `/api/libraries/:param/schema/:param` | libraries | packages/mira-app-server/src/routes/LibraryRoutes.ts:618 | - |  |
-| PUT | `/api/libraries/:param/record/:param/:param` | libraries | packages/mira-app-server/src/routes/LibraryRoutes.ts:655 | - |  |
+| POST | `/api/libraries/:param/query` | libraries | packages/mira-app-server/src/routes/LibraryRoutes.ts:564 | - |  |
+| POST | `/api/libraries/:param/execute` | libraries | packages/mira-app-server/src/routes/LibraryRoutes.ts:604 | - |  |
+| GET | `/api/libraries/:param/schema/:param` | libraries | packages/mira-app-server/src/routes/LibraryRoutes.ts:648 | - |  |
+| PUT | `/api/libraries/:param/record/:param/:param` | libraries | packages/mira-app-server/src/routes/LibraryRoutes.ts:685 | - |  |
 | GET | `/api/plugins/store` | plugins | packages/mira-app-server/src/routes/PluginRoutes.ts:167 | - |  |
 | POST | `/api/plugins/:param/start` | plugins | packages/mira-app-server/src/routes/PluginRoutes.ts:824 | - |  |
 | POST | `/api/plugins/:param/stop` | plugins | packages/mira-app-server/src/routes/PluginRoutes.ts:872 | - |  |
@@ -142,6 +142,8 @@
 | POST | `/api/libraries/import` | libraries | Library.importFrom |
 | GET | `/api/libraries/import/:param` | libraries | Library.getImportProgress |
 | POST | `/api/libraries/import/:param/cancel` | libraries | Library.cancelImport |
+| POST | `/api/libraries/:param/relocate` | libraries | Library.relocate |
+| GET | `/api/libraries/:param/relocate/:param` | libraries | Library.getRelocationProgress |
 | GET | `/api/libraries` | libraries | Library.getAll |
 | POST | `/api/libraries` | libraries | Library.create |
 | PUT | `/api/libraries/:param` | libraries | Library.update |

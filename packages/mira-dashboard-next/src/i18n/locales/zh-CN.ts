@@ -172,6 +172,9 @@ export default {
     importSkippedCount: '已跳过',
     importFailedCount: '失败',
     importRunningHint: '导入在后台执行，可关闭页面等待完成',
+    relocating: '正在移动素材库',
+    relocationFiles: '个文件',
+    relocationCompleted: '素材库移动完成',
   },
   plugin: {
     title: '插件管理',

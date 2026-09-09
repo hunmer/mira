@@ -4,6 +4,7 @@ import * as path from 'path';
 import { MiraServer } from '..';
 import { LibraryWatcher } from '../LibraryWatcher';
 import { LibraryImportService, ImportSource } from '../services/LibraryImportService';
+import { LibraryRelocationService } from '../services/LibraryRelocationService';
 
 export function resolveLibraryPath(libraryPath: string, libraryName: string): string {
     const normalizedPath = path.normalize(libraryPath);
@@ -16,11 +17,13 @@ export class LibraryRoutes {
     private router: Router;
     private backend: MiraServer;
     private importService: LibraryImportService;
+    private relocationService: LibraryRelocationService;
 
     constructor(backend: MiraServer) {
         this.backend = backend;
         this.router = Router();
         this.importService = new LibraryImportService(backend);
+        this.relocationService = new LibraryRelocationService(backend);
         this.setupRoutes();
     }
 
@@ -61,6 +64,24 @@ export class LibraryRoutes {
                 return res.status(400).json({ error: 'Import task not running' });
             }
             res.json({ message: 'Import cancel requested' });
+        });
+
+        this.router.post('/:id/relocate', async (req: Request, res: Response) => {
+            try {
+                const destinationPath = String(req.body?.destinationPath || '').trim();
+                if (!destinationPath) return res.status(400).json({ error: 'destinationPath is required' });
+                res.status(202).json(await this.relocationService.start(req.params.id, destinationPath));
+            } catch (error: any) {
+                res.status(400).json({ error: error?.message || 'Failed to start library relocation' });
+            }
+        });
+
+        this.router.get('/:id/relocate/:relocationId', (req: Request, res: Response) => {
+            const progress = this.relocationService.getProgress(req.params.relocationId);
+            if (!progress || progress.libraryId !== req.params.id) {
+                return res.status(404).json({ error: 'Relocation task not found' });
+            }
+            res.json(progress);
         });
 
         // 获取资源库列表

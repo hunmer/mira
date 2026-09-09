@@ -172,6 +172,9 @@ export default {
     importSkippedCount: 'Skipped',
     importFailedCount: 'Failed',
     importRunningHint: 'Import runs in the background, you can close this page',
+    relocating: 'Moving library',
+    relocationFiles: 'files',
+    relocationCompleted: 'Library moved successfully',
   },
   plugin: {
     title: 'Plugin Management',

@@ -246,6 +246,31 @@ describe('createDragDrop lifecycle', () => {
     img.remove();
   });
 
+  it('host 使用高优先级重置隔离宿主网页样式', () => {
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation(callback => {
+      callback(0);
+      return 1;
+    });
+    createDragDrop({ onUpload: vi.fn(), getLibraryId: async () => 'lib-1' });
+    const img = document.createElement('img');
+    img.src = 'https://example.com/image.jpg';
+    document.body.appendChild(img);
+
+    img.dispatchEvent(new MouseEvent('dragstart', { bubbles: true, clientX: 10, clientY: 10 }));
+    document.dispatchEvent(new MouseEvent('dragover', { bubbles: true, clientX: 100, clientY: 10 }));
+
+    const host = document.getElementById('mira-dragdrop-host');
+    expect(host?.style.getPropertyValue('all')).toBe('initial');
+    expect(host?.style.getPropertyPriority('all')).toBe('important');
+    expect(host?.style.getPropertyValue('transform')).toBe('none');
+    expect(host?.style.getPropertyPriority('transform')).toBe('important');
+    const baseCss = host?.shadowRoot?.querySelector('style')?.textContent;
+    expect(baseCss).toContain(':host');
+    expect(baseCss).toContain('--spacing: 4px');
+    expect(baseCss).toContain('--text-sm: 14px');
+    img.remove();
+  });
+
   it('拖拽含多图的容器时显示批量操作区,释放后触发批量回调', () => {
     vi.spyOn(window, 'requestAnimationFrame').mockImplementation(callback => {
       callback(0);

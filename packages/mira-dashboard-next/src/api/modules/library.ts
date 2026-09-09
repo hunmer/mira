@@ -5,6 +5,8 @@ import type {
   ImportLibraryRequest,
   ImportLibraryResponse,
   LibraryImportProgress,
+  LibraryRelocationProgress,
+  RelocateLibraryResponse,
   Library,
   UpdateLibraryRequest,
 } from 'mira-app-core/shared/sdk'
@@ -14,6 +16,10 @@ export const libraryApi = {
   get: (id: string): Promise<Library> => getMiraClient().libraries().getById(id),
   create: (data: CreateLibraryRequest): Promise<BaseResponse> => getMiraClient().libraries().create(data),
   update: (id: string, data: UpdateLibraryRequest): Promise<BaseResponse> => getMiraClient().libraries().update(id, data),
+  relocate: (id: string, destinationPath: string): Promise<RelocateLibraryResponse> =>
+    getMiraClient().libraries().relocate(id, destinationPath),
+  getRelocationProgress: (id: string, relocationId: string): Promise<LibraryRelocationProgress> =>
+    getMiraClient().libraries().getRelocationProgress(id, relocationId),
   delete: (id: string): Promise<BaseResponse> => getMiraClient().libraries().delete(id),
   toggleStatus: (id: string, status: 'active' | 'inactive') =>
     getMiraClient().libraries().setStatus(id, status),

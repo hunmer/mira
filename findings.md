@@ -1,5 +1,13 @@
 # Findings
 
+## 素材库路径迁移
+
+- 原 `PUT /api/libraries/:id` 在路径变化时只关闭旧库并从新路径重连，不迁移旧文件。
+- 新迁移流程按字节流式复制并轮询进度，完整复制后更新 `librarys.json`，再删除旧目录和恢复原启用状态。
+- SDK 覆盖审计结果为 covered 128 / missing 13 / excluded 13 / dynamic 7；新增两个路由均为 covered。
+- 定向迁移测试、SDK 契约测试、Server TypeScript 和 Dashboard Vue 类型检查通过。
+- core 全量测试 95/96；既有 `FileOperations.recycle.test.ts:115` 在隔离复跑时仍失败，与本任务无调用关系。
+
 - `@he-tree/vue` 将可见节点扁平渲染为 `.tree-node`，tree 模式用 `padding-left = indent * (level - 1)`。
 - 旧实现由 `useBranchLines.ts` 计算逐行规则，`FolderTreeNode.vue` 用多个绝对定位 div 绘制线段。
 - 节点 DOM 已有 `data-folder-tree-node-id`，可由父容器统一测量可见行。

@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import type { Library } from '@/types/mira'
+import type { LibraryRelocationProgress, UpdateLibraryRequest } from 'mira-app-core/shared/sdk'
 import { libraryApi } from '@/api'
 import { useLibrary } from '@/composables/useLibrary'
 import { Button } from '@/components/ui/button'
@@ -33,6 +34,10 @@ const loading = ref(false)
 const searchQuery = ref('')
 const dialogOpen = ref(false)
 const editingLib = ref<(LibraryFormData & { _id?: string }) | null>(null)
+const editingOriginalPath = ref('')
+const saving = ref(false)
+const relocationProgress = ref<LibraryRelocationProgress | null>(null)
+let relocationTimer: ReturnType<typeof setTimeout> | null = null
 const shareOpen = ref(false)
 const sharingLib = ref<Library | null>(null)
 const importOpen = ref(false)
@@ -53,7 +58,7 @@ async function loadLibraries() {
   loading.value = true
   try {
     libraries.value = await libraryApi.list()
-    refreshGlobalLibs()
+    await refreshGlobalLibs()
   } catch {
     toast.error(t('common.failed'))
   } finally {
@@ -75,6 +80,8 @@ function getDefaultForm(): LibraryFormData {
 }
 
 function openCreate() {
+  editingOriginalPath.value = ''
+  relocationProgress.value = null
   editingLib.value = { ...getDefaultForm() }
   dialogOpen.value = true
 }
@@ -85,6 +92,8 @@ function openShare(lib: Library) {
 }
 
 function openEdit(lib: Library) {
+  editingOriginalPath.value = lib.path
+  relocationProgress.value = null
   editingLib.value = {
     ...getDefaultForm(),
     name: lib.name,
@@ -109,7 +118,8 @@ function openEdit(lib: Library) {
 }
 
 async function handleSave() {
-  if (!editingLib.value) return
+  if (!editingLib.value || saving.value) return
+  saving.value = true
   try {
     const {
       _id, enableHash, skipSameName, enableAutoSync, enableThumbScan, enableAutoBackup, enableDbMirror, importType,
@@ -123,7 +133,24 @@ async function handleSave() {
         syncFilterMode, syncBlacklist, syncWhitelist,
       },
     }
-    if (_id) {
+    if (_id && data.path !== editingOriginalPath.value) {
+      const result = await libraryApi.relocate(_id, data.path)
+      relocationProgress.value = {
+        id: result.relocationId,
+        libraryId: _id,
+        sourcePath: editingOriginalPath.value,
+        destinationPath: data.path,
+        status: 'preparing',
+        totalFiles: 0,
+        movedFiles: 0,
+        totalBytes: 0,
+        movedBytes: 0,
+        current: '',
+        startedAt: Date.now(),
+      }
+      pollRelocation(_id, result.relocationId, data)
+      return
+    } else if (_id) {
       await libraryApi.update(_id, data)
     } else {
       await libraryApi.create(data)
@@ -131,10 +158,52 @@ async function handleSave() {
     toast.success(t('common.success'))
     dialogOpen.value = false
     await loadLibraries()
-  } catch {
-    toast.error(t('common.failed'))
+  } catch (error: any) {
+    toast.error(error?.response?.data?.error || error?.message || t('common.failed'))
+  } finally {
+    if (!relocationTimer) saving.value = false
   }
 }
+
+function stopRelocationPolling() {
+  if (relocationTimer) clearTimeout(relocationTimer)
+  relocationTimer = null
+}
+
+function pollRelocation(id: string, relocationId: string, data: UpdateLibraryRequest) {
+  stopRelocationPolling()
+  const poll = async () => {
+    try {
+      const progress = await libraryApi.getRelocationProgress(id, relocationId)
+      relocationProgress.value = progress
+      if (progress.status === 'completed') {
+        stopRelocationPolling()
+        editingOriginalPath.value = progress.destinationPath
+        await libraryApi.update(id, data)
+        toast.success(t('library.relocationCompleted'))
+        dialogOpen.value = false
+        await loadLibraries()
+        saving.value = false
+        return
+      }
+      if (progress.status === 'error') {
+        stopRelocationPolling()
+        toast.error(`${t('common.failed')}: ${progress.error ?? ''}`)
+        await loadLibraries()
+        saving.value = false
+        return
+      }
+      relocationTimer = setTimeout(poll, 500)
+    } catch (error: any) {
+      stopRelocationPolling()
+      toast.error(error?.response?.data?.error || error?.message || t('common.failed'))
+      saving.value = false
+    }
+  }
+  relocationTimer = setTimeout(poll, 200)
+}
+
+onBeforeUnmount(stopRelocationPolling)
 
 async function handleDelete(id: string) {
   if (!(await requireConfirm({
@@ -260,6 +329,8 @@ if (requestedLibId) {
       v-model="editingLib"
       :open="dialogOpen"
       :is-edit="!!editingLib?._id"
+      :saving="saving"
+      :relocation-progress="relocationProgress"
       @update:open="dialogOpen = $event"
       @save="handleSave"
     />

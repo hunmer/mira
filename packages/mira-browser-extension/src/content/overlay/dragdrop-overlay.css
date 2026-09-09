@@ -43,7 +43,12 @@
 }
 
 .mira-dragdrop {
-  --radius: 0.625rem;
+  /* 固定尺寸基准，避免宿主页 html font-size 改变 Tailwind 的 rem 尺寸。 */
+  --spacing: 4px;
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --radius: 10px;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);

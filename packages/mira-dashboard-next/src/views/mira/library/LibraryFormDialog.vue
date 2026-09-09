@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import type { LibraryRelocationProgress } from 'mira-app-core/shared/sdk'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Progress } from '@/components/ui/progress'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import PathTreeSelect from '@/components/PathTreeSelect.vue'
@@ -39,6 +42,8 @@ export interface LibraryFormData {
 const props = defineProps<{
   open: boolean
   isEdit: boolean
+  saving?: boolean
+  relocationProgress?: LibraryRelocationProgress | null
 }>()
 
 const emit = defineEmits<{
@@ -51,6 +56,21 @@ const { t } = useI18n()
 const form = defineModel<LibraryFormData | null>({ required: true })
 
 const ROLES = ['super', 'admin', 'user'] as const
+const relocating = computed(() => ['preparing', 'moving'].includes(props.relocationProgress?.status ?? ''))
+const busy = computed(() => Boolean(props.saving) || relocating.value)
+const relocationPercent = computed(() => {
+  const progress = props.relocationProgress
+  if (!progress) return 0
+  if (progress.status === 'completed') return 100
+  if (progress.totalBytes > 0) return Math.floor(progress.movedBytes / progress.totalBytes * 100)
+  if (progress.totalFiles > 0) return Math.floor(progress.movedFiles / progress.totalFiles * 100)
+  return 0
+})
+
+const handleOpenChange = (open: boolean) => {
+  if (!open && busy.value) return
+  emit('update:open', open)
+}
 
 const toggleRole = (role: string) => {
   if (!form.value) return
@@ -62,12 +82,12 @@ const toggleRole = (role: string) => {
 </script>
 
 <template>
-  <Dialog :open="props.open" @update:open="emit('update:open', $event)">
+  <Dialog :open="props.open" @update:open="handleOpenChange">
     <DialogContent class="max-h-[85vh] overflow-y-auto sm:max-w-lg">
       <DialogHeader>
         <DialogTitle>{{ isEdit ? t('library.editLibrary') : t('library.createLibrary') }}</DialogTitle>
       </DialogHeader>
-      <div v-if="form" class="space-y-4">
+      <div v-if="form" class="space-y-4" :class="{ 'pointer-events-none opacity-70': busy }">
         <div class="space-y-2">
           <Label>{{ t('common.name') }}</Label>
           <Input v-model="form.name" :placeholder="t('library.namePlaceholder')" />
@@ -173,10 +193,26 @@ const toggleRole = (role: string) => {
             </label>
           </div>
         </div>
+        <div v-if="relocationProgress" class="space-y-2 border-t pt-4">
+          <div class="flex items-center justify-between text-sm">
+            <span>{{ t('library.relocating') }}</span>
+            <span class="text-muted-foreground">{{ relocationPercent }}%</span>
+          </div>
+          <Progress :model-value="relocationPercent" />
+          <div class="flex justify-between text-xs text-muted-foreground">
+            <span>{{ relocationProgress.movedFiles }} / {{ relocationProgress.totalFiles }} {{ t('library.relocationFiles') }}</span>
+            <span v-if="relocationProgress.current" class="max-w-[55%] truncate">{{ relocationProgress.current }}</span>
+          </div>
+          <p v-if="relocationProgress.status === 'error'" class="text-sm text-destructive">
+            {{ relocationProgress.error }}
+          </p>
+        </div>
       </div>
       <DialogFooter>
-        <Button variant="outline" @click="emit('update:open', false)">{{ t('common.cancel') }}</Button>
-        <Button @click="emit('save')">{{ t('common.save') }}</Button>
+        <Button variant="outline" :disabled="busy" @click="emit('update:open', false)">{{ t('common.cancel') }}</Button>
+        <Button :disabled="saving" @click="emit('save')">
+          {{ relocating ? t('library.relocating') : t('common.save') }}
+        </Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>

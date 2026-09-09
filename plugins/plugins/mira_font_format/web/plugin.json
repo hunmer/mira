@@ -1,0 +1,14 @@
+{
+  "pluginName": "字体格式支持",
+  "pluginId": "39e18010-2cca-420b-a923-9e51180b4077",
+  "version": "1.0.0",
+  "index": "index.js",
+  "priority": 1,
+  "category": "productivity",
+  "tags": ["字体", "TTF", "OTF", "WOFF", "WOFF2", "TTC"],
+  "description": "预览常用桌面字体与 Web 字体",
+  "author": "Mira Team",
+  "enable": true,
+  "dependencies": [],
+  "permissions": ["media"]
+}
