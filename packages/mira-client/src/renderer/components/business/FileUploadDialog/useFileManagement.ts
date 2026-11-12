@@ -216,20 +216,26 @@ export function useFileManagement() {
   }
 
   async function generatePreviews(files: File[], newFiles: PendingFile[]) {
+    // Electron 下带 localPath 的文件跳过全量预览生成：网格按页通过 fs:getThumbnail 懒加载系统缩略图，
+    // 避免一次拖入大量图片时批量创建 objectURL（指向原图）并解码导致卡顿。与 addLocalFiles 的跳过策略对齐。
+    const useNativeThumbnail = !!window.electronAPI?.fs
+    const tasks = files
+      .map((file, i) => ({ file, pending: newFiles[i] }))
+      .filter((task) => !(useNativeThumbnail && task.pending?.localPath))
     const PREVIEW_CONCURRENCY = 4
     let cursor = 0
     const run = async () => {
-      while (cursor < files.length) {
-        const i = cursor++
+      while (cursor < tasks.length) {
+        const task = tasks[cursor++]
         try {
-          const preview = await createPreviewUrl(files[i])
-          if (preview) schedulePreviewUpdate(newFiles[i], preview)
+          const preview = await createPreviewUrl(task.file)
+          if (preview) schedulePreviewUpdate(task.pending, preview)
         } catch (error) {
-          console.warn(`生成文件 ${files[i].name} 预览失败:`, error)
+          console.warn(`生成文件 ${task.file.name} 预览失败:`, error)
         }
       }
     }
-    await Promise.all(Array.from({ length: Math.min(PREVIEW_CONCURRENCY, files.length) }, run))
+    await Promise.all(Array.from({ length: Math.min(PREVIEW_CONCURRENCY, tasks.length) }, run))
   }
 
   async function createPreviewUrl(file: File): Promise<string | undefined> {

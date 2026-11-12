@@ -612,9 +612,9 @@ const pageSize = 200
 const currentPage = ref(1)
 const pageCount = computed(() => Math.max(1, Math.ceil(displayFiles.value.length / pageSize)))
 const pagedDisplayFiles = computed(() => displayFiles.value.slice((currentPage.value - 1) * pageSize, currentPage.value * pageSize))
-watch(displayFiles, () => {
+watch(() => displayFiles.value.length, () => {
   if (currentPage.value > pageCount.value) currentPage.value = pageCount.value
-}, { deep: true })
+})
 
 // 当前匹配过滤条件的文件数（用于计数提示）
 const matchedCount = computed(
@@ -645,8 +645,9 @@ const approxColumns = computed(() => {
   return typeof cols === 'object' ? (cols.xl ?? 9) : cols
 })
 
-// 复用 WaterfallComponent 的真实比例预加载能力（等 preview 就绪后读取 naturalWidth/Height）
-const { ratios, getRatio } = useFileRatios(pendingFiles, approxColumns.value)
+// 复用 WaterfallComponent 的真实比例预加载能力（等 preview 就绪后读取 naturalWidth/Height）。
+// 输入收窄为当前页：万级文件时比例解码只对可见页发生，切页经跨实例缓存复用。
+const { ratios, getRatio } = useFileRatios(pagedDisplayFiles, approxColumns.value)
 
 // Electron 下优先使用系统 nativeImage 缩略图，避免读取完整文件字节；失败时保留原有预览回退。
 const nativeThumbnailRequests = new Set<string>()
