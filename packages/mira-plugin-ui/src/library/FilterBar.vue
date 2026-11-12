@@ -277,6 +277,8 @@ function hasActiveFilters(filter: FilterRule) {
       return !!filter.selectedCategory
     case 'metadata':
       return !!(filter.metaDimMin || filter.metaDimMax || filter.metaDurMin || filter.metaDurMax)
+    case 'date':
+      return !!(filter.dateStart || filter.dateEnd)
     default:
       return false
   }
@@ -296,6 +298,8 @@ function getActiveFilterCount(filter: FilterRule) {
       return filter.selectedCategory ? 1 : 0
     case 'metadata':
       return (filter.metaDimMin || filter.metaDimMax || filter.metaDurMin || filter.metaDurMax) ? 1 : 0
+    case 'date':
+      return (filter.dateStart || filter.dateEnd) ? 1 : 0
     default:
       return 0
   }
@@ -423,6 +427,19 @@ function updateCustomMetaRange(filter: FilterRule) {
     filter.active = !!(filter.metaDimMin || filter.metaDimMax || filter.metaDurMin || filter.metaDurMax)
     emit('filterChange', filter)
   }
+}
+
+/** 日期区间输入变化('YYYY-MM-DD',清空为 '';起止可只填一端) */
+function handleDateRangeChange(filter: FilterRule, field: 'dateStart' | 'dateEnd', value: string) {
+  if (filter[field] === value) return
+  filter[field] = value
+  // 起止倒置时自动纠正(后填的一端以先填的一端为界)
+  if (filter.dateStart && filter.dateEnd && filter.dateStart > filter.dateEnd) {
+    if (field === 'dateStart') filter.dateStart = filter.dateEnd
+    else filter.dateEnd = filter.dateStart
+  }
+  filter.active = !!(filter.dateStart || filter.dateEnd)
+  emit('filterChange', filter)
 }
 
 function clearFilter(filter: FilterRule) {
@@ -840,6 +857,30 @@ defineExpose({
                 </div>
               </div>
             </div>
+          </div>
+
+          <!-- 日期区间筛选器(导入时间) -->
+          <div v-else-if="filter.type === 'date'" class="p-3">
+            <h3 class="mb-3 font-medium text-foreground">{{ tt('filterBar.dateTitle') }}</h3>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <Label class="mb-1 block text-xs text-muted-foreground">{{ tt('filterBar.dateStart') }}</Label>
+                <Input
+                  type="date"
+                  :model-value="filter.dateStart || ''"
+                  @update:model-value="(val) => handleDateRangeChange(filter, 'dateStart', val || '')"
+                />
+              </div>
+              <div>
+                <Label class="mb-1 block text-xs text-muted-foreground">{{ tt('filterBar.dateEnd') }}</Label>
+                <Input
+                  type="date"
+                  :model-value="filter.dateEnd || ''"
+                  @update:model-value="(val) => handleDateRangeChange(filter, 'dateEnd', val || '')"
+                />
+              </div>
+            </div>
+            <p class="mt-2 text-xs text-muted-foreground">{{ tt('filterBar.dateHint') }}</p>
           </div>
 
           <!-- 面板底部:清除 / 确定 -->

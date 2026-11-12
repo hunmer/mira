@@ -96,6 +96,11 @@ function summarizeRule(rule: FilterRule): { type: FilterRule['type'], text: stri
         return { type: rule.type, text: rule.label }
       }
       return null
+    case 'date':
+      if (rule.dateStart || rule.dateEnd) {
+        return { type: rule.type, text: `${rule.label}: ${rule.dateStart || '…'} ~ ${rule.dateEnd || '…'}` }
+      }
+      return null
     default:
       return null
   }

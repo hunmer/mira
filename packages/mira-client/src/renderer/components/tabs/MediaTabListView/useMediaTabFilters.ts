@@ -126,6 +126,19 @@ export function useMediaTabFilters(deps: {
         }
         break
       }
+      case 'date': {
+        if (filter.dateStart || filter.dateEnd) {
+          mergedFilters.date = {
+            id: 'date',
+            dateStart: filter.dateStart || '',
+            dateEnd: filter.dateEnd || '',
+            label: t('business.filterBar.dateTitle')
+          }
+        } else {
+          delete mergedFilters.date
+        }
+        break
+      }
     }
   }
 
@@ -194,6 +207,8 @@ export function useMediaTabFilters(deps: {
         delete mergedFilters.size
       } else if (filter.id === 'metadata') {
         delete mergedFilters.metadata
+      } else if (filter.id === 'date') {
+        delete mergedFilters.date
       }
     }
 
@@ -238,6 +253,8 @@ export function useMediaTabFilters(deps: {
     rule.customDimMax = snapshot?.customDimMax
     rule.customDurMin = snapshot?.customDurMin
     rule.customDurMax = snapshot?.customDurMax
+    rule.dateStart = snapshot?.dateStart || ''
+    rule.dateEnd = snapshot?.dateEnd || ''
     rule.active = snapshot?.active || false
   }
 

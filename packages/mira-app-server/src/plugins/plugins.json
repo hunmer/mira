@@ -283,7 +283,7 @@
   },
   {
     "name": "mira_semantic_search",
-    "enabled": true,
+    "enabled": false,
     "path": "../../../../plugins/plugins/mira_semantic_search",
     "version": "1.0.0",
     "description": "语义搜索：基于 Ollama embedding 模型（embeddinggemma-2）为素材文本信息建立向量索引，支持自然语言语义检索与以图搜图。",
@@ -299,6 +299,6 @@
       "ollama",
       "向量检索"
     ],
-    "status": "active"
+    "status": "inactive"
   }
 ]

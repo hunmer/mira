@@ -202,7 +202,11 @@
     "semanticTitle": "语义搜索",
     "semanticHint": "回车开始搜索，结果按语义相似度排序",
     "semanticNoResults": "没有匹配的素材",
-    "semanticSearching": "搜索中..."
+    "semanticSearching": "搜索中...",
+    "dateTitle": "日期区间（导入时间）",
+    "dateStartLabel": "开始日期",
+    "dateEndLabel": "结束日期",
+    "dateHint": "可只填一端；按素材导入时间过滤"
   },
   "folderEditDialog": {
     "editTitle": "编辑文件夹",

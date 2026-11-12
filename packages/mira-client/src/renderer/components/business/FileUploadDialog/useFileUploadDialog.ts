@@ -71,7 +71,14 @@ export function useFileUploadDialog(props: Props, emit: Emits) {
       localTree.setLocalTree(props.initialLocalTree.rootPath, props.initialLocalTree.tree)
       // 移除上一批本地来源的待上传文件（保留手动添加的非本地文件）
       fileManagement.pendingFiles.value = fileManagement.pendingFiles.value.filter((f) => !f.localPath)
-      fileManagement.addLocalFiles(props.initialLocalTree.tree)
+      // 与对话框内 importFolderIntoDialog 的入列保持一致：把初始目标（来源菜单对象）写到每个待上传文件上，
+      // 否则上传时 metadata 不带 folderId/tags，文件会导入到库根而非右键的来源文件夹/标签
+      fileManagement.addLocalFiles(
+        props.initialLocalTree.tree,
+        undefined,
+        folderTagPanel.selectedTargetFolderId.value,
+        folderTagPanel.selectedTargetTagIds.value
+      )
     } else {
       // 未传入本地树：清空本地树状态并移除残留的本地来源文件
       localTree.clearLocalTree()

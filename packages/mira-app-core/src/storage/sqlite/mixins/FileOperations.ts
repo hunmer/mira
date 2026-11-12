@@ -277,6 +277,30 @@ export const FileOperations = {
       params.push(startTime, endTime);
     }
 
+    // created_at 范围过滤（ISO 字符串或毫秒时间戳；SDK getFilesByDateRange / FilterBar 日期区间）
+    const toCreatedMs = (v: any): number | null => {
+      if (typeof v === 'number' && Number.isFinite(v)) return v;
+      if (typeof v === 'string' && v.trim()) {
+        const ms = Date.parse(v);
+        if (!Number.isNaN(ms)) return ms;
+      }
+      return null;
+    };
+    if (filters.created_after !== undefined) {
+      const ms = toCreatedMs(filters.created_after);
+      if (ms !== null) {
+        whereClauses.push('created_at >= ?');
+        params.push(ms);
+      }
+    }
+    if (filters.created_before !== undefined) {
+      const ms = toCreatedMs(filters.created_before);
+      if (ms !== null) {
+        whereClauses.push('created_at <= ?');
+        params.push(ms);
+      }
+    }
+
     const sizeMin = filters.size_min ?? filters.minSize;
     if (sizeMin !== undefined) {
       whereClauses.push('size >= ?');

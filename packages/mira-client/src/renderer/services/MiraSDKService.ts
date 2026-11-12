@@ -765,9 +765,13 @@ export class MiraSDKService {
   /**
    * 本地素材库内文件直接按绝对路径导入，避免把文件字节再次传到本机服务端。
    */
-  async importLocalFilePath(libraryId: string, filePath: string): Promise<BaseResponse> {
+  async importLocalFilePath(
+    libraryId: string,
+    filePath: string,
+    options?: { folderId?: string; tags?: string[] }
+  ): Promise<BaseResponse> {
     if (!this.client) throw new Error('Not connected to Mira server')
-    const result = await (this.client.files() as any).importFilePath(libraryId, filePath)
+    const result = await (this.client.files() as any).importFilePath(libraryId, filePath, options)
     // HttpClient.post 会自动解包顶层 data，因此这里通常直接得到文件对象。
     const file = result?.data ?? result
     if (!file || result?.success === false) {

@@ -109,6 +109,11 @@ const summarizeRule = (rule: FilterRule): { icon: string, text: string } | null 
         return { icon: rule.icon, text: rule.label }
       }
       return null
+    case 'date':
+      if (rule.dateStart || rule.dateEnd) {
+        return { icon: rule.icon, text: `${rule.label}: ${rule.dateStart || '…'} ~ ${rule.dateEnd || '…'}` }
+      }
+      return null
     default:
       return null
   }

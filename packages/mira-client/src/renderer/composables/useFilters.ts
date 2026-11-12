@@ -60,6 +60,14 @@ export function useFilters() {
       icon: 'photo_size_select_large',
       metaField: 'dimension',
       selectedMetaPreset: ''
+    },
+    {
+      id: 'date',
+      type: 'date',
+      label: i18n.global.t('composables.useFilters.filterDate'),
+      icon: 'calendar_today',
+      dateStart: '',
+      dateEnd: ''
     }
   ])
 
@@ -200,6 +208,8 @@ export function useFilters() {
         rule.customDimMax = savedFilter.customDimMax
         rule.customDurMin = savedFilter.customDurMin
         rule.customDurMax = savedFilter.customDurMax
+        rule.dateStart = savedFilter.dateStart || ''
+        rule.dateEnd = savedFilter.dateEnd || ''
         rule.active = savedFilter.active || false
       }
     })
@@ -226,6 +236,8 @@ export function useFilters() {
       rule.customDimMax = undefined
       rule.customDurMin = undefined
       rule.customDurMax = undefined
+      rule.dateStart = ''
+      rule.dateEnd = ''
       rule.active = false
     })
   }

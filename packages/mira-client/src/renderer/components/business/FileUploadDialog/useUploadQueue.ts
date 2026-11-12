@@ -137,7 +137,8 @@ export function useUploadQueue() {
           isPathInsideLibrary(pendingFile.localPath, library?.path) || Boolean(library?.path)
         )
         if (canImportByPath) {
-          const result = await miraSDKService.importLocalFilePath(libraryId, pendingFile.localPath!)
+          // 快速导入同样带上 folderId/tags（服务端 /api/files/import-path 已支持），否则本地路径导入会丢失目标
+          const result = await miraSDKService.importLocalFilePath(libraryId, pendingFile.localPath!, metadata)
           clearInterval(progressInterval)
           uploadProgressMap.value.set(pendingFile.id, 100)
           onFileRemoved(pendingFile.id)

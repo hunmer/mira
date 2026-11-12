@@ -47,6 +47,8 @@ interface LibraryPrefsData {
   confirmAfterImport: boolean
   /** FilterBar 区块显示顺序（启用的区块 id；不在列表中的区块隐藏） */
   filterBarLayout: string[]
+  /** v3.x 新增 date 筛选区块后是否已对旧布局做过一次性补入（避免用户主动隐藏的区块被复活） */
+  filterBarDateMigrated: boolean
   /** 媒体标签页区块显示顺序（全部区块 id；`!` 前缀表示隐藏；空数组表示全部按默认顺序显示） */
   mediaTabLayout: string[]
 }
@@ -69,6 +71,7 @@ const state = reactive<LibraryPrefsData>({
   skipDeleteConfirm: false,
   confirmAfterImport: true,
   filterBarLayout: [],
+  filterBarDateMigrated: false,
   mediaTabLayout: []
 })
 
@@ -94,6 +97,7 @@ const persist = async () => {
     skipDeleteConfirm: state.skipDeleteConfirm,
     confirmAfterImport: state.confirmAfterImport,
     filterBarLayout: state.filterBarLayout,
+    filterBarDateMigrated: state.filterBarDateMigrated,
     mediaTabLayout: state.mediaTabLayout
   }))
 }
@@ -152,6 +156,15 @@ export async function loadLibraryPrefs(): Promise<void> {
     const legacyShowFoldersInTab = (parsed as Record<string, any> | null)?.showFoldersInTab
     if (legacyShowFoldersInTab === false && state.mediaTabLayout.length === 0) {
       state.mediaTabLayout = ['media', '!folders']
+    }
+    // v3.x 新增 date（导入时间）筛选区块：filterBarLayout 语义为「不在列表=隐藏」，
+    // 已保存过自定义布局的库一次性补入 date，避免新区块不可见；空布局本就全显无需处理
+    if (parsed?.filterBarDateMigrated !== true) {
+      state.filterBarDateMigrated = true
+      if (state.filterBarLayout.length > 0 && !state.filterBarLayout.includes('date')) {
+        state.filterBarLayout = [...state.filterBarLayout, 'date']
+        await persist()
+      }
     }
   } catch (error) {
     console.error('Failed to load library prefs:', error)

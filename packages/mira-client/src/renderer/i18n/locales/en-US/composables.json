@@ -48,7 +48,8 @@
     "filterUrls": "URL",
     "filterTitle": "Title",
     "filterSize": "Size",
-    "filterMetadata": "Metadata"
+    "filterMetadata": "Metadata",
+    "filterDate": "Date"
   },
   "useViewModeConfig": {
     "gridView": "Grid view",

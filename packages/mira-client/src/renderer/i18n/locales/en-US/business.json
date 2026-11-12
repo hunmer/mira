@@ -202,7 +202,11 @@
     "semanticTitle": "Semantic Search",
     "semanticHint": "Press Enter to search; results are ranked by semantic similarity",
     "semanticNoResults": "No matching items",
-    "semanticSearching": "Searching..."
+    "semanticSearching": "Searching...",
+    "dateTitle": "Date Range (Import Time)",
+    "dateStartLabel": "Start date",
+    "dateEndLabel": "End date",
+    "dateHint": "Either side can be left empty; filters by import time."
   },
   "folderEditDialog": {
     "editTitle": "Edit Folder",

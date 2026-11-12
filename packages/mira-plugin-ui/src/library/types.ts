@@ -198,7 +198,7 @@ export type LibraryTreeT = (key: string, params?: Record<string, unknown>) => st
  */
 export interface FilterRule {
   id: string
-  type: 'folders' | 'tags' | 'urls' | 'title' | 'size' | 'category' | 'metadata'
+  type: 'folders' | 'tags' | 'urls' | 'title' | 'size' | 'category' | 'metadata' | 'date'
   label: string
   /** 预留桌面端 material icons 图标名;组件库按 type 内置 lucide 图标,不消费该字段 */
   icon?: string
@@ -226,6 +226,9 @@ export interface FilterRule {
   /** 自定义输入框值(秒) */
   customDurMin?: number
   customDurMax?: number
+  // date 过滤(type === 'date'):导入时间区间,'YYYY-MM-DD',可只填一端
+  dateStart?: string
+  dateEnd?: string
   [key: string]: any
 }
 
@@ -316,6 +319,9 @@ export interface MediaBrowserFilters {
   /** 时长范围(秒) */
   metaDurMin?: number
   metaDurMax?: number
+  /** 创建/导入时间区间('YYYY-MM-DD',可只填一端;宿主转 API 的 created_after/created_before) */
+  dateStart?: string
+  dateEnd?: string
   sort?: MediaBrowserSortField
   order?: 'asc' | 'desc'
   /** 分页:每页条数(MediaBrowser 固定传 500) */

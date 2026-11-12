@@ -6,7 +6,7 @@
  */
 export interface FilterRule {
   id: string
-  type: 'folders' | 'tags' | 'urls' | 'title' | 'size' | 'category' | 'metadata' | 'semantic'
+  type: 'folders' | 'tags' | 'urls' | 'title' | 'size' | 'category' | 'metadata' | 'date' | 'semantic'
   label: string
   icon: string
   active?: boolean
@@ -33,5 +33,8 @@ export interface FilterRule {
   /** 自定义输入框值（秒） */
   customDurMin?: number
   customDurMax?: number
+  // date 过滤（type === 'date'）：导入时间区间，'YYYY-MM-DD'，可只填一端
+  dateStart?: string
+  dateEnd?: string
   [key: string]: any
 }

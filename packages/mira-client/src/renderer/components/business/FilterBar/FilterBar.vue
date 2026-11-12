@@ -223,6 +223,30 @@
                   <Button size="sm" @click="close()">{{ $t('business.filterBar.confirm') }}</Button>
                 </div>
               </div>
+              <!-- 日期筛选器（导入时间区间） -->
+              <div v-else-if="filter.type === 'date'">
+                <div class="p-3">
+                  <h3 class="font-medium text-foreground mb-3">{{ $t('business.filterBar.dateTitle') }}</h3>
+                  <div class="grid grid-cols-2 gap-2 mb-2">
+                    <div>
+                      <Label class="block text-xs text-muted-foreground mb-1">{{ $t('business.filterBar.dateStartLabel') }}</Label>
+                      <Input type="date" :model-value="filter.dateStart || ''"
+                        @update:model-value="(val) => handleDateRangeChange(filter, 'dateStart', val as string)" />
+                    </div>
+                    <div>
+                      <Label class="block text-xs text-muted-foreground mb-1">{{ $t('business.filterBar.dateEndLabel') }}</Label>
+                      <Input type="date" :model-value="filter.dateEnd || ''"
+                        @update:model-value="(val) => handleDateRangeChange(filter, 'dateEnd', val as string)" />
+                    </div>
+                  </div>
+                  <p class="text-xs text-muted-foreground">{{ $t('business.filterBar.dateHint') }}</p>
+                </div>
+                <div class="p-3 border-t border-border flex justify-end space-x-2">
+                  <Button variant="ghost" size="sm" @click="clearFilter(filter); close()">{{ $t('business.filterBar.clear') }}</Button>
+                  <Button size="sm" @click="close()">{{ $t('business.filterBar.confirm') }}</Button>
+                </div>
+              </div>
+
               <!-- 插件语义搜索筛选器 -->
               <div v-else-if="filter.type === 'semantic'">
                 <div class="p-3">
@@ -693,6 +717,8 @@ const hasActiveFilters = (filter: FilterRule) => {
       return filter.selectedCategory && filter.selectedCategory !== ''
     case 'metadata':
       return !!(filter.metaDimMin || filter.metaDimMax || filter.metaDurMin || filter.metaDurMax)
+    case 'date':
+      return !!(filter.dateStart || filter.dateEnd)
     case 'semantic':
       // 激活态由搜索结果写入（active + 查询词展示），不参与 badge 计数
       return false
@@ -715,6 +741,8 @@ const getActiveFilterCount = (filter: FilterRule) => {
       return filter.selectedCategory && filter.selectedCategory !== '' ? 1 : 0
     case 'metadata':
       return (filter.metaDimMin || filter.metaDimMax || filter.metaDurMin || filter.metaDurMax) ? 1 : 0
+    case 'date':
+      return (filter.dateStart || filter.dateEnd) ? 1 : 0
     default:
       return 0
   }
@@ -836,6 +864,18 @@ const updateCustomMetaRange = (filter: FilterRule) => {
   }
 }
 
+// 日期区间输入变化（起止倒置时自动纠正：后填端贴齐先填端）
+const handleDateRangeChange = (filter: FilterRule, field: 'dateStart' | 'dateEnd', value: string) => {
+  const val = (value || '').trim()
+  filter[field] = val
+  if (val) {
+    if (field === 'dateStart' && filter.dateEnd && val > filter.dateEnd) filter.dateEnd = val
+    if (field === 'dateEnd' && filter.dateStart && val < filter.dateStart) filter.dateStart = val
+  }
+  filter.active = !!(filter.dateStart || filter.dateEnd)
+  emit('filter-change', filter)
+}
+
 const clearFilter = (filter: FilterRule) => {
   filter.selectedValues = []
   filter.value = ''
@@ -855,6 +895,8 @@ const clearFilter = (filter: FilterRule) => {
   filter.customDimMax = undefined
   filter.customDurMin = undefined
   filter.customDurMax = undefined
+  filter.dateStart = ''
+  filter.dateEnd = ''
   filter.active = false
   emit('filter-clear', filter)
 }

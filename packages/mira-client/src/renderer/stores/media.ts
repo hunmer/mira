@@ -393,6 +393,14 @@ export const useMediaStore = defineStore('media', () => {
             if (filterRule.metaDurMin !== undefined) filters.metadata_duration_min = filterRule.metaDurMin
             if (filterRule.metaDurMax !== undefined) filters.metadata_duration_max = filterRule.metaDurMax
             break
+          case 'date':
+            if (filterRule.dateStart) {
+              filters.created_after = new Date(`${filterRule.dateStart}T00:00:00`).toISOString()
+            }
+            if (filterRule.dateEnd) {
+              filters.created_before = new Date(`${filterRule.dateEnd}T23:59:59.999`).toISOString()
+            }
+            break
         }
       })
     }
