@@ -277,7 +277,8 @@ export const FileOperations = {
       params.push(startTime, endTime);
     }
 
-    // created_at 范围过滤（ISO 字符串或毫秒时间戳；SDK getFilesByDateRange / FilterBar 日期区间）
+    // 导入时间范围过滤（ISO 字符串或毫秒时间戳；SDK created_after/created_before / FilterBar 日期区间）。
+    // 按 imported_at 过滤：导入素材的 created_at 保留文件原始时间，与 UI「导入时间」文案及默认排序 imported_at 一致
     const toCreatedMs = (v: any): number | null => {
       if (typeof v === 'number' && Number.isFinite(v)) return v;
       if (typeof v === 'string' && v.trim()) {
@@ -289,14 +290,14 @@ export const FileOperations = {
     if (filters.created_after !== undefined) {
       const ms = toCreatedMs(filters.created_after);
       if (ms !== null) {
-        whereClauses.push('created_at >= ?');
+        whereClauses.push('imported_at >= ?');
         params.push(ms);
       }
     }
     if (filters.created_before !== undefined) {
       const ms = toCreatedMs(filters.created_before);
       if (ms !== null) {
-        whereClauses.push('created_at <= ?');
+        whereClauses.push('imported_at <= ?');
         params.push(ms);
       }
     }

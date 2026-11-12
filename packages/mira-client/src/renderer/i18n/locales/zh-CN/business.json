@@ -206,7 +206,10 @@
     "dateTitle": "日期区间（导入时间）",
     "dateStartLabel": "开始日期",
     "dateEndLabel": "结束日期",
-    "dateHint": "可只填一端；按素材导入时间过滤"
+    "dateHint": "可只填一端；按素材导入时间过滤",
+    "datePresetToday": "今天",
+    "datePresetLast7": "近7天",
+    "datePresetLast30": "近30天"
   },
   "folderEditDialog": {
     "editTitle": "编辑文件夹",

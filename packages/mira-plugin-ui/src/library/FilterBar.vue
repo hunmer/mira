@@ -429,6 +429,31 @@ function updateCustomMetaRange(filter: FilterRule) {
   }
 }
 
+/** 本地时区日期串(YYYY-MM-DD,避免 toISOString 的时区偏移) */
+function toLocalDateString(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+/** 日期快捷预设:今天 / 近 N 天(含今天) */
+const datePresets = computed(() => [
+  { id: 'today', label: tt('filterBar.datePresetToday'), days: 1 },
+  { id: 'last7', label: tt('filterBar.datePresetLast7'), days: 7 },
+  { id: 'last30', label: tt('filterBar.datePresetLast30'), days: 30 }
+])
+
+function applyDatePreset(filter: FilterRule, preset: { days: number }) {
+  const end = new Date()
+  const start = new Date()
+  start.setDate(start.getDate() - (preset.days - 1))
+  filter.dateStart = toLocalDateString(start)
+  filter.dateEnd = toLocalDateString(end)
+  filter.active = true
+  emit('filterChange', filter)
+}
+
 /** 日期区间输入变化('YYYY-MM-DD',清空为 '';起止可只填一端) */
 function handleDateRangeChange(filter: FilterRule, field: 'dateStart' | 'dateEnd', value: string) {
   if (filter[field] === value) return
@@ -862,6 +887,18 @@ defineExpose({
           <!-- 日期区间筛选器(导入时间) -->
           <div v-else-if="filter.type === 'date'" class="p-3">
             <h3 class="mb-3 font-medium text-foreground">{{ tt('filterBar.dateTitle') }}</h3>
+            <div class="mb-3 flex flex-wrap gap-1.5">
+              <Button
+                v-for="preset in datePresets"
+                :key="preset.id"
+                variant="outline"
+                size="sm"
+                class="h-7 px-2.5 text-xs"
+                @click="applyDatePreset(filter, preset)"
+              >
+                {{ preset.label }}
+              </Button>
+            </div>
             <div class="grid grid-cols-2 gap-2">
               <div>
                 <Label class="mb-1 block text-xs text-muted-foreground">{{ tt('filterBar.dateStart') }}</Label>

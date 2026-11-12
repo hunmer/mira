@@ -206,7 +206,10 @@
     "dateTitle": "Date Range (Import Time)",
     "dateStartLabel": "Start date",
     "dateEndLabel": "End date",
-    "dateHint": "Either side can be left empty; filters by import time."
+    "dateHint": "Either side can be left empty; filters by import time.",
+    "datePresetToday": "Today",
+    "datePresetLast7": "Last 7 days",
+    "datePresetLast30": "Last 30 days"
   },
   "folderEditDialog": {
     "editTitle": "Edit Folder",

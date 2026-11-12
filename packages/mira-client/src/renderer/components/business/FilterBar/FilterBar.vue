@@ -227,6 +227,18 @@
               <div v-else-if="filter.type === 'date'">
                 <div class="p-3">
                   <h3 class="font-medium text-foreground mb-3">{{ $t('business.filterBar.dateTitle') }}</h3>
+                  <div class="flex flex-wrap gap-1.5 mb-3">
+                    <Button
+                      v-for="preset in datePresets"
+                      :key="preset.id"
+                      variant="outline"
+                      size="sm"
+                      class="h-7 px-2.5 text-xs"
+                      @click="applyDatePreset(filter, preset)"
+                    >
+                      {{ preset.label }}
+                    </Button>
+                  </div>
                   <div class="grid grid-cols-2 gap-2 mb-2">
                     <div>
                       <Label class="block text-xs text-muted-foreground mb-1">{{ $t('business.filterBar.dateStartLabel') }}</Label>
@@ -862,6 +874,31 @@ const updateCustomMetaRange = (filter: FilterRule) => {
     filter.active = !!(filter.metaDimMin || filter.metaDimMax || filter.metaDurMin || filter.metaDurMax)
     emit('filter-change', filter)
   }
+}
+
+// 本地时区日期串（YYYY-MM-DD，避免 toISOString 的时区偏移）
+const toLocalDateString = (d: Date): string => {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+// 日期快捷预设：今天 / 近 N 天（含今天）
+const datePresets = computed(() => [
+  { id: 'today', label: t('business.filterBar.datePresetToday'), days: 1 },
+  { id: 'last7', label: t('business.filterBar.datePresetLast7'), days: 7 },
+  { id: 'last30', label: t('business.filterBar.datePresetLast30'), days: 30 }
+])
+
+const applyDatePreset = (filter: FilterRule, preset: { days: number }) => {
+  const end = new Date()
+  const start = new Date()
+  start.setDate(start.getDate() - (preset.days - 1))
+  filter.dateStart = toLocalDateString(start)
+  filter.dateEnd = toLocalDateString(end)
+  filter.active = true
+  emit('filter-change', filter)
 }
 
 // 日期区间输入变化（起止倒置时自动纠正：后填端贴齐先填端）
