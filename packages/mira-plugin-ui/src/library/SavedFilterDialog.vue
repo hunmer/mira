@@ -98,7 +98,10 @@ function summarizeRule(rule: FilterRule): { type: FilterRule['type'], text: stri
       return null
     case 'date':
       if (rule.dateStart || rule.dateEnd) {
-        return { type: rule.type, text: `${rule.label}: ${rule.dateStart || '…'} ~ ${rule.dateEnd || '…'}` }
+        const mode = rule.dateMode === 'fileCreated'
+          ? t('filterBar.dateModeFileCreated')
+          : t('filterBar.dateModeImported')
+        return { type: rule.type, text: `${rule.label}(${mode}): ${rule.dateStart || '…'} ~ ${rule.dateEnd || '…'}` }
       }
       return null
     default:

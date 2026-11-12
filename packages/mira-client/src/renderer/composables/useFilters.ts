@@ -67,7 +67,8 @@ export function useFilters() {
       label: i18n.global.t('composables.useFilters.filterDate'),
       icon: 'calendar_today',
       dateStart: '',
-      dateEnd: ''
+      dateEnd: '',
+      dateMode: 'imported'
     }
   ])
 
@@ -210,6 +211,7 @@ export function useFilters() {
         rule.customDurMax = savedFilter.customDurMax
         rule.dateStart = savedFilter.dateStart || ''
         rule.dateEnd = savedFilter.dateEnd || ''
+        rule.dateMode = savedFilter.dateMode || 'imported'
         rule.active = savedFilter.active || false
       }
     })
@@ -238,6 +240,7 @@ export function useFilters() {
       rule.customDurMax = undefined
       rule.dateStart = ''
       rule.dateEnd = ''
+      rule.dateMode = 'imported'
       rule.active = false
     })
   }

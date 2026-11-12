@@ -181,6 +181,8 @@ export const useMediaStore = defineStore('media', () => {
       size_max?: number
       created_after?: string
       created_before?: string
+      imported_after?: string
+      imported_before?: string
       recycled?: number
       sort?: string
       order?: 'asc' | 'desc'
@@ -393,14 +395,17 @@ export const useMediaStore = defineStore('media', () => {
             if (filterRule.metaDurMin !== undefined) filters.metadata_duration_min = filterRule.metaDurMin
             if (filterRule.metaDurMax !== undefined) filters.metadata_duration_max = filterRule.metaDurMax
             break
-          case 'date':
+          case 'date': {
+            // dateMode: imported=导入时间(imported_after/before) / fileCreated=文件创建时间(created_after/before)
+            const datePrefix = filterRule.dateMode === 'fileCreated' ? 'created' : 'imported'
             if (filterRule.dateStart) {
-              filters.created_after = new Date(`${filterRule.dateStart}T00:00:00`).toISOString()
+              filters[`${datePrefix}_after`] = new Date(`${filterRule.dateStart}T00:00:00`).toISOString()
             }
             if (filterRule.dateEnd) {
-              filters.created_before = new Date(`${filterRule.dateEnd}T23:59:59.999`).toISOString()
+              filters[`${datePrefix}_before`] = new Date(`${filterRule.dateEnd}T23:59:59.999`).toISOString()
             }
             break
+          }
         }
       })
     }

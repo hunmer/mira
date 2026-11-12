@@ -515,6 +515,8 @@ export class MiraSDKService {
       size_max?: number;
       created_after?: string;
       created_before?: string;
+      imported_after?: string;
+      imported_before?: string;
       recycled?: number;
       sort?: string;
       order?: 'asc' | 'desc';

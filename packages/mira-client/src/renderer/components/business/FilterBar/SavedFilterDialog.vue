@@ -111,7 +111,10 @@ const summarizeRule = (rule: FilterRule): { icon: string, text: string } | null 
       return null
     case 'date':
       if (rule.dateStart || rule.dateEnd) {
-        return { icon: rule.icon, text: `${rule.label}: ${rule.dateStart || '…'} ~ ${rule.dateEnd || '…'}` }
+        const mode = rule.dateMode === 'fileCreated'
+          ? t('business.filterBar.dateModeFileCreated')
+          : t('business.filterBar.dateModeImported')
+        return { icon: rule.icon, text: `${rule.label}(${mode}): ${rule.dateStart || '…'} ~ ${rule.dateEnd || '…'}` }
       }
       return null
     default:

@@ -40,7 +40,7 @@ export function createDefaultFilterRules(t: LibraryTreeT): FilterRule[] {
     { id: 'title', type: 'title', label: t('filterBar.title'), icon: 'title', value: '' },
     { id: 'size', type: 'size', label: t('filterBar.size'), icon: 'aspect_ratio', selectedPreset: '' },
     { id: 'metadata', type: 'metadata', label: t('filterBar.metadata'), icon: 'photo_size_select_large', metaField: 'dimension', selectedMetaPreset: '' },
-    { id: 'date', type: 'date', label: t('filterBar.date'), icon: 'calendar', dateStart: '', dateEnd: '' },
+    { id: 'date', type: 'date', label: t('filterBar.date'), icon: 'calendar', dateStart: '', dateEnd: '', dateMode: 'imported' },
   ]
 }
 
@@ -66,6 +66,7 @@ export function resetFilterRule(rule: FilterRule): void {
   rule.customDurMax = undefined
   rule.dateStart = ''
   rule.dateEnd = ''
+  rule.dateMode = 'imported'
   rule.active = false
 }
 
@@ -95,6 +96,7 @@ export function applySnapshotToRule(rule: FilterRule, snapshot: FilterRule | nul
   rule.customDurMax = snapshot.customDurMax
   rule.dateStart = snapshot.dateStart || ''
   rule.dateEnd = snapshot.dateEnd || ''
+  rule.dateMode = snapshot.dateMode || 'imported'
   rule.active = snapshot.active || false
 }
 
@@ -131,6 +133,7 @@ export function rulesToFilters(rules: FilterRule[], extra: MediaBrowserFilters =
       case 'date':
         if (rule.dateStart) filters.dateStart = rule.dateStart
         if (rule.dateEnd) filters.dateEnd = rule.dateEnd
+        if (rule.dateStart || rule.dateEnd) filters.dateMode = rule.dateMode || 'imported'
         break
     }
   }
@@ -150,7 +153,7 @@ export function hasActiveFilterConditions(rules: FilterRule[]): boolean {
  * - tags 原样(id 数组), url -> website 模糊匹配
  * - sizeMin/Max -> size_min/max(后端按 KB 语义 *1024,与桌面端一致原样透传)
  * - metaDim 与 metaDur 范围 -> metadata_dim 与 metadata_duration 的 min/max
- * - dateStart/dateEnd -> created_after/created_before(ISO;起始 00:00:00.000,结束 23:59:59.999)
+ * - dateStart/dateEnd -> imported_after/imported_before 或 created_after/created_before(按 dateMode,默认导入时间;ISO;起始 00:00:00.000,结束 23:59:59.999)
  * - sort/order 后端直接 ORDER BY 字段名
  */
 export function toApiFilters(filters: MediaBrowserFilters): Record<string, unknown> {
@@ -171,9 +174,10 @@ export function toApiFilters(filters: MediaBrowserFilters): Record<string, unkno
   if (filters.metaDimMax !== undefined) out.metadata_dim_max = filters.metaDimMax
   if (filters.metaDurMin !== undefined) out.metadata_duration_min = filters.metaDurMin
   if (filters.metaDurMax !== undefined) out.metadata_duration_max = filters.metaDurMax
-  // 日期区间 -> created_at 范围(ISO 字符串;起始取当天 00:00:00.000,结束取当天 23:59:59.999)
-  if (filters.dateStart) out.created_after = new Date(`${filters.dateStart}T00:00:00`).toISOString()
-  if (filters.dateEnd) out.created_before = new Date(`${filters.dateEnd}T23:59:59.999`).toISOString()
+  // 日期区间 -> imported_at 或 created_at 范围(按 dateMode;ISO 字符串;起始取当天 00:00:00.000,结束取当天 23:59:59.999)
+  const datePrefix = filters.dateMode === 'fileCreated' ? 'created' : 'imported'
+  if (filters.dateStart) out[`${datePrefix}_after`] = new Date(`${filters.dateStart}T00:00:00`).toISOString()
+  if (filters.dateEnd) out[`${datePrefix}_before`] = new Date(`${filters.dateEnd}T23:59:59.999`).toISOString()
   if (filters.sort) out.sort = filters.sort
   if (filters.order) out.order = filters.order
   if (filters.limit !== undefined) out.limit = filters.limit

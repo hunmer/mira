@@ -226,9 +226,10 @@ export interface FilterRule {
   /** 自定义输入框值(秒) */
   customDurMin?: number
   customDurMax?: number
-  // date 过滤(type === 'date'):导入时间区间,'YYYY-MM-DD',可只填一端
+  // date 过滤(type === 'date'):日期区间,'YYYY-MM-DD',可只填一端;dateMode 选择按导入时间或文件创建时间
   dateStart?: string
   dateEnd?: string
+  dateMode?: 'imported' | 'fileCreated'
   [key: string]: any
 }
 
@@ -319,9 +320,11 @@ export interface MediaBrowserFilters {
   /** 时长范围(秒) */
   metaDurMin?: number
   metaDurMax?: number
-  /** 创建/导入时间区间('YYYY-MM-DD',可只填一端;宿主转 API 的 created_after/created_before) */
+  /** 日期区间('YYYY-MM-DD',可只填一端;宿主按 dateMode 转 API 的 imported_after/before 或 created_after/before) */
   dateStart?: string
   dateEnd?: string
+  /** 日期过滤模式:imported=导入时间(默认) / fileCreated=文件创建时间 */
+  dateMode?: 'imported' | 'fileCreated'
   sort?: MediaBrowserSortField
   order?: 'asc' | 'desc'
   /** 分页:每页条数(MediaBrowser 固定传 500) */

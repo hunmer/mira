@@ -33,8 +33,9 @@ export interface FilterRule {
   /** 自定义输入框值（秒） */
   customDurMin?: number
   customDurMax?: number
-  // date 过滤（type === 'date'）：导入时间区间，'YYYY-MM-DD'，可只填一端
+  // date 过滤（type === 'date'）：日期区间，'YYYY-MM-DD'，可只填一端；dateMode 选择按导入时间或文件创建时间
   dateStart?: string
   dateEnd?: string
+  dateMode?: 'imported' | 'fileCreated'
   [key: string]: any
 }

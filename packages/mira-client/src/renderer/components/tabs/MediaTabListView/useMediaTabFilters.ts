@@ -132,6 +132,7 @@ export function useMediaTabFilters(deps: {
             id: 'date',
             dateStart: filter.dateStart || '',
             dateEnd: filter.dateEnd || '',
+            dateMode: filter.dateMode || 'imported',
             label: t('business.filterBar.dateTitle')
           }
         } else {
@@ -255,6 +256,7 @@ export function useMediaTabFilters(deps: {
     rule.customDurMax = snapshot?.customDurMax
     rule.dateStart = snapshot?.dateStart || ''
     rule.dateEnd = snapshot?.dateEnd || ''
+    rule.dateMode = snapshot?.dateMode || 'imported'
     rule.active = snapshot?.active || false
   }
 

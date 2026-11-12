@@ -36,8 +36,12 @@ export interface FileFilters {
     /** metadata 过滤：按时长 duration 过滤，单位秒 */
     metadata_duration_min?: number;
     metadata_duration_max?: number;
+    /** 文件创建时间范围（created_at，导入素材保留文件原始时间），ISO 字符串 */
     created_after?: string;
     created_before?: string;
+    /** 导入时间范围（imported_at），ISO 字符串 */
+    imported_after?: string;
+    imported_before?: string;
     limit?: number;
     offset?: number;
 }

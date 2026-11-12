@@ -444,6 +444,18 @@ const datePresets = computed(() => [
   { id: 'last30', label: tt('filterBar.datePresetLast30'), days: 30 }
 ])
 
+/** 日期类型:导入日期(imported_at,默认) / 文件创建日期(created_at,保留文件原始时间) */
+const dateModes = computed(() => [
+  { id: 'imported', label: tt('filterBar.dateModeImported') },
+  { id: 'fileCreated', label: tt('filterBar.dateModeFileCreated') }
+])
+
+function handleDateModeChange(filter: FilterRule, mode: 'imported' | 'fileCreated') {
+  if ((filter.dateMode || 'imported') === mode) return
+  filter.dateMode = mode
+  if (filter.dateStart || filter.dateEnd) emit('filterChange', filter)
+}
+
 function applyDatePreset(filter: FilterRule, preset: { days: number }) {
   const end = new Date()
   const start = new Date()
@@ -887,6 +899,19 @@ defineExpose({
           <!-- 日期区间筛选器(导入时间) -->
           <div v-else-if="filter.type === 'date'" class="p-3">
             <h3 class="mb-3 font-medium text-foreground">{{ tt('filterBar.dateTitle') }}</h3>
+            <!-- 日期类型切换:导入日期 / 文件创建日期 -->
+            <div class="mb-3 flex flex-wrap gap-1.5">
+              <Button
+                v-for="mode in dateModes"
+                :key="mode.id"
+                size="sm"
+                class="h-7 px-2.5 text-xs"
+                :variant="(filter.dateMode || 'imported') === mode.id ? 'default' : 'outline'"
+                @click="handleDateModeChange(filter, mode.id)"
+              >
+                {{ mode.label }}
+              </Button>
+            </div>
             <div class="mb-3 flex flex-wrap gap-1.5">
               <Button
                 v-for="preset in datePresets"

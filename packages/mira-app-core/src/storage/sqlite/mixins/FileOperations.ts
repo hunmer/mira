@@ -277,9 +277,10 @@ export const FileOperations = {
       params.push(startTime, endTime);
     }
 
-    // 导入时间范围过滤（ISO 字符串或毫秒时间戳；SDK created_after/created_before / FilterBar 日期区间）。
-    // 按 imported_at 过滤：导入素材的 created_at 保留文件原始时间，与 UI「导入时间」文案及默认排序 imported_at 一致
-    const toCreatedMs = (v: any): number | null => {
+    // 日期范围过滤（ISO 字符串或毫秒时间戳；SDK / FilterBar 日期区间）。
+    // created_after/created_before -> created_at（文件创建时间,导入素材保留文件原始时间）
+    // imported_after/imported_before -> imported_at（导入时间,与 UI 默认排序一致）
+    const toDateMs = (v: any): number | null => {
       if (typeof v === 'number' && Number.isFinite(v)) return v;
       if (typeof v === 'string' && v.trim()) {
         const ms = Date.parse(v);
@@ -288,14 +289,28 @@ export const FileOperations = {
       return null;
     };
     if (filters.created_after !== undefined) {
-      const ms = toCreatedMs(filters.created_after);
+      const ms = toDateMs(filters.created_after);
+      if (ms !== null) {
+        whereClauses.push('created_at >= ?');
+        params.push(ms);
+      }
+    }
+    if (filters.created_before !== undefined) {
+      const ms = toDateMs(filters.created_before);
+      if (ms !== null) {
+        whereClauses.push('created_at <= ?');
+        params.push(ms);
+      }
+    }
+    if (filters.imported_after !== undefined) {
+      const ms = toDateMs(filters.imported_after);
       if (ms !== null) {
         whereClauses.push('imported_at >= ?');
         params.push(ms);
       }
     }
-    if (filters.created_before !== undefined) {
-      const ms = toCreatedMs(filters.created_before);
+    if (filters.imported_before !== undefined) {
+      const ms = toDateMs(filters.imported_before);
       if (ms !== null) {
         whereClauses.push('imported_at <= ?');
         params.push(ms);
