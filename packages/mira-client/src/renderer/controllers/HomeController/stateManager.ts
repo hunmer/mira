@@ -59,6 +59,12 @@ export class HomeStateManager {
         }
         filterConditions.value.sizePreset = filterRule.selectedPreset
         break
+      case 'semantic':
+        // 插件搜索提供者：fileIds 由 FilterBar 调 provider.search 后写入 filter 附加字段
+        filterConditions.value.semantic = filterRule.semanticFileIds?.length
+          ? { providerId: filterRule.id, query: filterRule.value || '', fileIds: filterRule.semanticFileIds }
+          : null
+        break
     }
 
     if (onPageReset) {
@@ -90,6 +96,9 @@ export class HomeStateManager {
         filterConditions.value.sizeMin = undefined
         filterConditions.value.sizeMax = undefined
         filterConditions.value.sizePreset = ''
+        break
+      case 'semantic':
+        filterConditions.value.semantic = null
         break
     }
 
@@ -124,6 +133,12 @@ export class HomeStateManager {
 
     // 应用新的筛选条件
     for (const [filterType, filterRule] of Object.entries(filters)) {
+      // 语义搜索为即时交互（FilterBar 搜索提供者），不跨 tab 持久化：
+      // 切 tab 时从 tab.filters 移除，避免列表被过滤而 FilterBar 无激活指示
+      if (filterRule && typeof filterRule === 'object' && filterRule.type === 'semantic') {
+        delete filters[filterType]
+        continue
+      }
       switch (filterType) {
         case 'folders':
           filterConditions.value.folders = filterRule.selectedValues || []

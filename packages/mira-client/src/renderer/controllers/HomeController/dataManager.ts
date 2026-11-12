@@ -29,7 +29,8 @@ export class HomeDataManager {
     title: '',
     sizeMin: undefined,
     sizeMax: undefined,
-    sizePreset: ''
+    sizePreset: '',
+    semantic: null
   })
 
   public searchQuery = ref('')
@@ -196,6 +197,9 @@ export class HomeDataManager {
         return minValid && maxValid
       })
     }
+
+    // 语义搜索结果（filterConditions.semantic）不再前端本地过滤：
+    // 命中 id 集合随 getFiles 的 filters.ids 由服务端统一过滤并按相似度排序
 
     // 应用旧的过滤器（保持向后兼容）
     for (const filter of this.activeFilters.value) {

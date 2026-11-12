@@ -728,6 +728,16 @@ export class PluginService {
    * 创建插件上下文
    * 提供插件运行时需要的API和服务
    */
+  /** 读取当前登录 token（动态 import 避免 store 循环依赖，未登录返回 undefined） */
+  private static async getAuthToken(): Promise<string | undefined> {
+    try {
+      const { useAuthStore } = await import('../stores/auth')
+      return useAuthStore().token ?? undefined
+    } catch {
+      return undefined
+    }
+  }
+
   public createPluginContext(config: LocalPluginConfig): PluginContext {
     const customTabs = new Map<string, PluginCustomTabDefinition>()
 
@@ -899,10 +909,25 @@ export class PluginService {
           return response.json()
         },
         post: async (url: string, data?: any, options?: RequestInit) => {
-          const response = await fetch(url, { 
-            ...options, 
+          const response = await fetch(url, {
+            ...options,
             method: 'POST',
             headers: { 'Content-Type': 'application/json', ...options?.headers },
+            body: data ? JSON.stringify(data) : undefined
+          })
+          return response.json()
+        },
+        // 带当前登录态的 POST：自动附加 Authorization 头，供插件调用宿主 /api 接口
+        authPost: async (url: string, data?: any, options?: RequestInit) => {
+          const token = await PluginService.getAuthToken()
+          const response = await fetch(url, {
+            ...options,
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+              ...options?.headers
+            },
             body: data ? JSON.stringify(data) : undefined
           })
           return response.json()

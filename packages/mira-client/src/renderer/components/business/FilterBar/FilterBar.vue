@@ -16,6 +16,15 @@
                   {{ getActiveFilterCount(filter) }}
                 </span>
               </span>
+              <!-- 语义搜索激活：显示查询词与清除入口 -->
+              <span v-if="filter.type === 'semantic' && filter.active" class="text-sm max-w-32 truncate"
+                :title="filter.value">{{ filter.value }}</span>
+              <span v-if="filter.type === 'semantic' && filter.active"
+                class="shrink-0 p-0.5 rounded-full text-muted-foreground/70 hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                :title="$t('business.filterBar.clear')"
+                @click.stop="clearSemantic(filter)">
+                <span class="material-icons text-sm leading-none">close</span>
+              </span>
             </Button>
           </template>
 
@@ -214,6 +223,27 @@
                   <Button size="sm" @click="close()">{{ $t('business.filterBar.confirm') }}</Button>
                 </div>
               </div>
+              <!-- 插件语义搜索筛选器 -->
+              <div v-else-if="filter.type === 'semantic'">
+                <div class="p-3">
+                  <h3 class="font-medium text-foreground mb-3">{{ filter.label || $t('business.filterBar.semanticTitle') }}</h3>
+                  <form @submit.prevent="handleSemanticSearch(filter)">
+                    <Input v-model="semanticInput[filter.id]" :placeholder="filter.placeholder || ''"
+                      :disabled="semanticSearching[filter.id]" class="w-full" />
+                  </form>
+                  <p v-if="semanticError[filter.id]" class="mt-2 text-xs text-destructive break-all">{{ semanticError[filter.id] }}</p>
+                  <p v-else-if="semanticHint[filter.id]" class="mt-2 text-xs text-muted-foreground">{{ semanticHint[filter.id] }}</p>
+                  <p class="mt-2 text-xs text-muted-foreground">{{ $t('business.filterBar.semanticHint') }}</p>
+                </div>
+                <div class="p-3 border-t border-border flex justify-end space-x-2">
+                  <Button variant="ghost" size="sm" @click="clearSemantic(filter); close()">{{ $t('business.filterBar.clear') }}</Button>
+                  <Button size="sm"
+                    :disabled="semanticSearching[filter.id] || !(semanticInput[filter.id] || '').trim()"
+                    @click="handleSemanticSearchAndClose(filter, close)">
+                    {{ semanticSearching[filter.id] ? $t('business.filterBar.semanticSearching') : $t('business.filterBar.confirm') }}
+                  </Button>
+                </div>
+              </div>
             </div>
           </template>
         </Dropdown>
@@ -356,7 +386,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, reactive, watch, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Dropdown } from '@/renderer/components/common/Dropdown'
 import OrderedSectionList from '@/renderer/components/common/OrderedSectionList.vue'
@@ -432,6 +462,81 @@ const toast = useToast()
 const savedFilters = computed(() => getLibraryPrefs().savedFilters)
 
 // ============================================
+// 插件语义搜索提供者（window.pluginSystem.filterSearchProviders）
+// 插件注册搜索入口；回车触发 provider.search，命中 id 集合经现有
+// filter-change / filter-clear 链路写入 filterConditions.semantic
+// ============================================
+const semanticFilters = ref<FilterRule[]>([])
+const semanticProviders = ref<any[]>([])
+const semanticInput = reactive<Record<string, string>>({})
+const semanticSearching = reactive<Record<string, boolean>>({})
+const semanticError = reactive<Record<string, string>>({})
+const semanticHint = reactive<Record<string, string>>({})
+let unsubscribeProviders: (() => void) | null = null
+
+onMounted(() => {
+  const registry = (window as any).pluginSystem?.filterSearchProviders
+  if (registry?.subscribe) {
+    unsubscribeProviders = registry.subscribe((providers: any[]) => {
+      semanticProviders.value = providers
+      // 保留已有输入/激活状态（provider 重新注册时不丢失）
+      const byId = new Map(semanticFilters.value.map(f => [f.id, f]))
+      semanticFilters.value = providers.map(p => byId.get(p.id) || ({
+        id: p.id,
+        type: 'semantic' as const,
+        label: p.label || p.id,
+        icon: p.icon || 'manage_search',
+        placeholder: p.placeholder || '',
+        value: '',
+        active: false,
+        semanticFileIds: [] as (string | number)[]
+      } as FilterRule))
+    })
+  }
+})
+
+onBeforeUnmount(() => { unsubscribeProviders?.() })
+
+/** @returns 是否成功（失败时保持面板打开以显示错误） */
+const handleSemanticSearch = async (filter: FilterRule): Promise<boolean> => {
+  const provider = semanticProviders.value.find(p => p.id === filter.id)
+  const query = (semanticInput[filter.id] || '').trim()
+  if (!provider || !query || semanticSearching[filter.id]) return false
+  semanticSearching[filter.id] = true
+  semanticError[filter.id] = ''
+  semanticHint[filter.id] = ''
+  try {
+    const result = await provider.search(query)
+    const fileIds = (result?.fileIds || []) as (string | number)[]
+    filter.value = query
+    filter.semanticFileIds = fileIds
+    filter.active = fileIds.length > 0
+    if (!fileIds.length) semanticHint[filter.id] = result?.message || t('business.filterBar.semanticNoResults')
+    emit('filter-change', filter)
+    return true
+  } catch (error) {
+    semanticError[filter.id] = error instanceof Error ? error.message : String(error)
+    return false
+  } finally {
+    semanticSearching[filter.id] = false
+  }
+}
+
+/** 底部「确定」：执行搜索，成功后关闭面板（回车提交走同一入口） */
+const handleSemanticSearchAndClose = async (filter: FilterRule, close: () => void) => {
+  if (await handleSemanticSearch(filter)) close()
+}
+
+const clearSemantic = (filter: FilterRule) => {
+  semanticError[filter.id] = ''
+  semanticHint[filter.id] = ''
+  filter.value = ''
+  filter.semanticFileIds = []
+  filter.active = false
+  emit('filter-clear', filter)
+}
+
+// ============================================
 // 筛选栏区块：自定义排序 / 隐藏（按当前素材库隔离）
 // ============================================
 interface BarSection { id: string; title: string; icon: string }
@@ -442,9 +547,14 @@ const builtinBarSections = computed<BarSection[]>(() => [
 ])
 const allBarSections = computed<BarSection[]>(() => [
   ...props.filters.map(f => ({ id: f.id, title: f.label, icon: f.icon || 'filter_list' })),
+  ...semanticFilters.value.map(f => ({ id: f.id, title: f.label, icon: f.icon || 'manage_search' })),
   ...builtinBarSections.value
 ])
-const filterById = computed(() => Object.fromEntries(props.filters.map(f => [f.id, f])) as Record<string, FilterRule>)
+const filterById = computed(() => {
+  const map = Object.fromEntries(props.filters.map(f => [f.id, f])) as Record<string, FilterRule>
+  for (const f of semanticFilters.value) map[f.id] = f
+  return map
+})
 // 空布局 = 全部按默认顺序显示
 const enabledSections = computed<BarSection[]>(() => {
   const order = getLibraryPrefs().filterBarLayout
@@ -562,7 +672,7 @@ const categoryOptions = computed<CategoryOption[]>(() => [
 ])
 
 const getFilterButtonClass = (filter: FilterRule, isOpen: boolean) => {
-  const hasActive = hasActiveFilters(filter)
+  const hasActive = filter.type === 'semantic' ? Boolean(filter.active) : hasActiveFilters(filter)
 
   if (isOpen) return 'text-primary bg-primary/10 rounded-lg'
   if (hasActive) return 'text-primary bg-primary/10 rounded-lg'
@@ -583,6 +693,9 @@ const hasActiveFilters = (filter: FilterRule) => {
       return filter.selectedCategory && filter.selectedCategory !== ''
     case 'metadata':
       return !!(filter.metaDimMin || filter.metaDimMax || filter.metaDurMin || filter.metaDurMax)
+    case 'semantic':
+      // 激活态由搜索结果写入（active + 查询词展示），不参与 badge 计数
+      return false
     default:
       return false
   }

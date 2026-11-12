@@ -214,6 +214,51 @@ export const initializeGlobalPluginSystem = () => {
         },
         getAll: () => (window as any).pluginSystem.mediaContextMenus.list.slice(),
       },
+      // FilterBar 搜索提供者注册中心：插件向顶部筛选栏注册语义搜索入口，
+      // 宿主 FilterBar 订阅变化并渲染；search 返回按相关性降序的素材 id 集合，
+      // 结果经现有 filter-change/filter-clear 链路写入 filterConditions.semantic。
+      filterSearchProviders: {
+        list: [] as any[],
+        listeners: [] as ((providers: any[]) => void)[],
+        register: (provider: any) => {
+          const registry = (window as any).pluginSystem.filterSearchProviders
+          const idx = registry.list.findIndex((p: any) => p.id === provider.id)
+          if (idx >= 0) registry.list[idx] = provider
+          else registry.list.push(provider)
+          registry.emit()
+          return () => registry.unregister(provider.id)
+        },
+        unregister: (id: string) => {
+          const registry = (window as any).pluginSystem.filterSearchProviders
+          const idx = registry.list.findIndex((p: any) => p.id === id)
+          if (idx >= 0) registry.list.splice(idx, 1)
+          registry.emit()
+        },
+        subscribe: (fn: (providers: any[]) => void) => {
+          const registry = (window as any).pluginSystem.filterSearchProviders
+          registry.listeners.push(fn)
+          try {
+            fn(registry.list.slice())
+          } catch (err) {
+            console.error('filterSearchProviders subscribe initial push failed:', err)
+          }
+          return () => {
+            const i = registry.listeners.indexOf(fn)
+            if (i > -1) registry.listeners.splice(i, 1)
+          }
+        },
+        emit: () => {
+          const registry = (window as any).pluginSystem.filterSearchProviders
+          const snapshot = registry.list.slice()
+          registry.listeners.forEach((fn: (p: any[]) => void) => {
+            try {
+              fn(snapshot)
+            } catch (err) {
+              console.error('filterSearchProviders listener error:', err)
+            }
+          })
+        },
+      },
       fileFormats: {
         list: [] as PluginFileFormat[],
         register: (format: PluginFileFormat) => {

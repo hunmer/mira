@@ -131,7 +131,12 @@
     "icon": "html",
     "title": "HTML 格式支持",
     "category": "storage",
-    "tags": ["HTML", "HTM", "网页", "预览"],
+    "tags": [
+      "HTML",
+      "HTM",
+      "网页",
+      "预览"
+    ],
     "status": "active"
   },
   {
@@ -145,7 +150,15 @@
     "icon": "text_fields",
     "title": "字体格式支持",
     "category": "storage",
-    "tags": ["TTF", "OTF", "WOFF", "WOFF2", "TTC", "字体", "预览"],
+    "tags": [
+      "TTF",
+      "OTF",
+      "WOFF",
+      "WOFF2",
+      "TTC",
+      "字体",
+      "预览"
+    ],
     "status": "active"
   },
   {
@@ -258,7 +271,34 @@
     "icon": "description",
     "title": "Office 文档预览",
     "category": "productivity",
-    "tags": ["Office", "Word", "Excel", "PowerPoint", "PDF", "预览"],
+    "tags": [
+      "Office",
+      "Word",
+      "Excel",
+      "PowerPoint",
+      "PDF",
+      "预览"
+    ],
+    "status": "active"
+  },
+  {
+    "name": "mira_semantic_search",
+    "enabled": true,
+    "path": "../../../../plugins/plugins/mira_semantic_search",
+    "version": "1.0.0",
+    "description": "语义搜索：基于 Ollama embedding 模型（embeddinggemma-2）为素材文本信息建立向量索引，支持自然语言语义检索与以图搜图。",
+    "author": "Mira Team",
+    "main": "dist/index.js",
+    "icon": "manage_search",
+    "title": "语义搜索",
+    "category": "productivity",
+    "tags": [
+      "语义搜索",
+      "semantic",
+      "embedding",
+      "ollama",
+      "向量检索"
+    ],
     "status": "active"
   }
 ]

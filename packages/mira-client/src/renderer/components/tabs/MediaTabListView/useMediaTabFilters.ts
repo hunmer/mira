@@ -25,6 +25,22 @@ export function useMediaTabFilters(deps: {
 
   // 把单个 FilterRule 的当前值写入查询用的 mergedFilters（供 handleFilterChange / 应用已保存过滤器共用）
   const mergeFilterInto = (mergedFilters: Record<string, any>, filter: FilterRule) => {
+    // 插件语义搜索（FilterBar 搜索提供者）：FilterRule type 判定（id 由插件定义）。
+    // 命中 id 集合写入 tab.filters，由 fetchFilesForTab 转 getFiles 的 filters.ids 服务端过滤。
+    if (filter.type === 'semantic') {
+      if (Array.isArray(filter.semanticFileIds) && filter.semanticFileIds.length > 0) {
+        mergedFilters[filter.id] = {
+          id: filter.id,
+          type: 'semantic',
+          value: filter.value,
+          semanticFileIds: filter.semanticFileIds,
+          label: filter.label
+        }
+      } else {
+        delete mergedFilters[filter.id]
+      }
+      return
+    }
     switch (filter.id) {
       case 'folders':
         if (filter.selectedValues && filter.selectedValues.length > 0) {
@@ -159,8 +175,11 @@ export function useMediaTabFilters(deps: {
 
     // 如果是初始筛选器，恢复为初始值而不是完全清除
     if (isInitialFilter(filter.id)) {
-      // 重新初始化 filterRules 显示
+      // 重新初始化FilterRules显示
       initializeFilterRules()
+    } else if (filter.type === 'semantic') {
+      // 插件语义搜索：按 type 判定（id 由插件定义），清除命中集合
+      delete mergedFilters[filter.id]
     } else {
       // 清除非初始筛选器
       if (filter.id === 'folders') {

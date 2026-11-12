@@ -1,5 +1,26 @@
 [
   {
+    "name": "mira_semantic_search",
+    "enabled": true,
+    "path": "mira_semantic_search",
+    "version": "1.0.0",
+    "description": "语义搜索：基于 Ollama embedding 模型（embeddinggemma-2）为素材文本信息建立向量索引，支持自然语言语义检索。",
+    "author": "Mira Team",
+    "main": "dist/index.js",
+    "icon": "manage_search",
+    "title": "语义搜索",
+    "category": "productivity",
+    "tags": [
+      "语义搜索",
+      "semantic",
+      "embedding",
+      "ollama",
+      "向量检索"
+    ],
+    "installedAt": "2026-10-08T00:00:00.000Z",
+    "status": "active"
+  },
+  {
     "name": "mira_image_cropper",
     "enabled": true,
     "path": "mira_image_cropper",

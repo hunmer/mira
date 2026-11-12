@@ -22,16 +22,5 @@
     "plugins"
   ],
   "author": "hunmer",
-  "license": "ISC",
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "electron",
-      "esbuild",
-      "sqlite3",
-      "sharp"
-    ],
-    "overrides": {
-      "express": "4.22.2"
-    }
-  }
+  "license": "ISC"
 }

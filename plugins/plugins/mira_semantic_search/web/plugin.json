@@ -1,0 +1,14 @@
+{
+  "pluginName": "语义搜索",
+  "pluginId": "mira-semantic-search-filter",
+  "version": "1.0.0",
+  "index": "index.js",
+  "priority": 1,
+  "category": "productivity",
+  "tags": ["语义搜索", "semantic", "embedding", "ollama"],
+  "description": "在顶部筛选栏提供语义搜索入口，按自然语言相似度检索素材（依赖服务端 mira_semantic_search 插件与 Ollama）。",
+  "author": "Mira Team",
+  "enable": true,
+  "permissions": ["ui"],
+  "platform": ["win32", "darwin", "linux"]
+}

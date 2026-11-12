@@ -198,7 +198,11 @@
     "layoutDescription": "Drag to reorder filter sections; drag a section to \"Disabled\" to hide it, drag it back to \"Enabled\" to restore.",
     "layoutEnabled": "Enabled",
     "layoutDisabled": "Disabled",
-    "layoutAllEnabled": "All sections enabled"
+    "layoutAllEnabled": "All sections enabled",
+    "semanticTitle": "Semantic Search",
+    "semanticHint": "Press Enter to search; results are ranked by semantic similarity",
+    "semanticNoResults": "No matching items",
+    "semanticSearching": "Searching..."
   },
   "folderEditDialog": {
     "editTitle": "Edit Folder",

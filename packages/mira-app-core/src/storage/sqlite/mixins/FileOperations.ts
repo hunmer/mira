@@ -365,11 +365,24 @@ export const FileOperations = {
       params.push(filters.metadata_duration_max);
     }
 
+    // 按 id 集合过滤（如插件语义搜索的命中集合）
+    const ids = Array.isArray(filters.ids) ? filters.ids.map((id: any) => Number(id)).filter(n => Number.isFinite(n)) : [];
+    if (ids.length > 0) {
+      whereClauses.push(`id IN (${ids.map(() => '?').join(',')})`);
+      params.push(...ids);
+    } else if (Array.isArray(filters.ids)) {
+      // 显式空集合：无命中，直接空结果（保持与其他过滤器的 AND 语义）
+      whereClauses.push('0 = 1');
+    }
+
     const where = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
     let orderBy = '';
     if (filters?.sort) {
       const order = filters?.order || 'asc';
-      if (filters.sort === 'custom_fields') {
+      if (filters.sort === 'ids') {
+        // 按 ids 集合的给定顺序排序（如语义相似度降序），instr 匹配 ",id," 片段
+        orderBy = ` ORDER BY instr(',${ids.join(',')},', ',' || id || ',')`;
+      } else if (filters.sort === 'custom_fields') {
         orderBy = ` ORDER BY json_extract(custom_fields, '$') ${order}`;
       } else {
         orderBy = ` ORDER BY ${filters.sort} ${order}`;

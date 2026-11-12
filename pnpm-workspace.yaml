@@ -12,3 +12,19 @@ packages:
   - 'packages/vue-selection-box'
   - 'online_client_plugins/plugins/*'
   - 'plugins/plugins/*/web'
+allowBuilds:
+  electron: true
+  electron-winstaller: true
+  esbuild: true
+  sharp: true
+  sqlite3: true
+  '@parcel/watcher': true
+  '@vue-office/docx': true
+  '@vue-office/excel': true
+  '@vue-office/pdf': true
+  '@vue-office/pptx': true
+  vue-demi: true
+  core-js: false
+  maplibre-gl: false
+overrides:
+  express: 4.22.2

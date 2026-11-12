@@ -335,6 +335,15 @@ export const useMediaStore = defineStore('media', () => {
           return
         }
 
+        // 插件语义搜索：按 type 判定（id 是插件 provider id，非 'semantic'），
+        // 命中 id 集合由服务端 getFiles 的 filters.ids 统一过滤排序
+        if (filterRule.type === 'semantic') {
+          if (Array.isArray(filterRule.semanticFileIds) && filterRule.semanticFileIds.length > 0) {
+            filters.ids = filterRule.semanticFileIds
+          }
+          return
+        }
+
         switch (filterRule.id) {
           case 'folders':
             if (filterRule.selectedValues && filterRule.selectedValues.length > 0) {
@@ -394,6 +403,12 @@ export const useMediaStore = defineStore('media', () => {
     }
     if (tabInfo.order) {
       filters.order = tabInfo.order
+    }
+
+    // 语义命中集合按相似度顺序展示：覆盖默认排序（服务端 ORDER BY instr ids 顺序）
+    if (Array.isArray(filters.ids) && filters.ids.length > 0) {
+      filters.sort = 'ids'
+      filters.order = 'asc'
     }
 
     // 根据Tab类型添加特定过滤器

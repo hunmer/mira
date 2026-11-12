@@ -6,7 +6,7 @@
  */
 export interface FilterRule {
   id: string
-  type: 'folders' | 'tags' | 'urls' | 'title' | 'size' | 'category' | 'metadata'
+  type: 'folders' | 'tags' | 'urls' | 'title' | 'size' | 'category' | 'metadata' | 'semantic'
   label: string
   icon: string
   active?: boolean

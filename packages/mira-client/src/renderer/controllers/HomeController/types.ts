@@ -25,4 +25,6 @@ export interface FilterConditions {
   sizeMin?: number
   sizeMax?: number
   sizePreset?: string
+  /** 插件语义搜索结果：fileIds 按相关性降序，列表按此顺序展示 */
+  semantic?: { providerId: string; query: string; fileIds: (string | number)[] } | null
 }

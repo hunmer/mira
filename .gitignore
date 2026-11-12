@@ -21,3 +21,4 @@ packages/mira-client/dist-float/
 packages/mira-client/build/
 packages/mira-app-server/web/
 packages/landing-page/introduction/
+.procm-mcp/
