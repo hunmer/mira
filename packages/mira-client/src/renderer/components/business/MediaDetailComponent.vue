@@ -901,11 +901,24 @@ const handleTagSelect = async (tagData: any) => {
     await handleRemoveTag(tagName)
     return
   }
-  await runBatchOperation(files, async (file) => {
+  // 按库分组，每组一次批量请求设置所有文件的标签（替代逐文件请求）
+  const filesByLibrary = new Map<string, FileInfo[]>()
+  for (const file of files) {
     const libId = file.libraryId || 'default'
-    await client.tags().addTagsToFile(libId, parseInt(file.id), [tagName])
-    if (!file.tags) file.tags = []
-    if (!file.tags.includes(tagName)) file.tags.push(tagName)
+    const group = filesByLibrary.get(libId)
+    if (group) group.push(file)
+    else filesByLibrary.set(libId, [file])
+  }
+  await runBatchOperation([...filesByLibrary.entries()], async ([libId, libFiles]) => {
+    await client.tags().setFileTagsBatch({
+      libraryId: libId,
+      fileIds: libFiles.map(f => parseInt(f.id)),
+      tags: [tagName],
+    })
+    for (const file of libFiles) {
+      if (!file.tags) file.tags = []
+      if (!file.tags.includes(tagName)) file.tags.push(tagName)
+    }
   }, { label: t('business.mediaDetailComponent.setTagAction') })
   await tagStore.refreshTags(libraryId.value || 'default')
 }

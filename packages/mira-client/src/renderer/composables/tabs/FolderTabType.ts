@@ -63,6 +63,12 @@ export class FolderTabType extends MediaViewTabType {
 
   shouldUpdateForEvent(tabData: any, eventData: any): boolean {
     if (String(tabData?.libraryId ?? '') !== String(eventData?.libraryId ?? '')) return false
+    // 纯 tags 更新（folder 归属未变、仅 tags 变化）不影响文件夹列表成员构成，不刷新
+    if (eventData.old_data
+      && String(eventData.old_data.folder_id ?? '') === String(eventData.folder_id ?? '')
+      && String(eventData.old_data.tags ?? '') !== String(eventData.tags ?? '')) {
+      return false
+    }
     const rawTabFolderId = tabData?.id || tabData?.folderId
     const tabFolderId = typeof rawTabFolderId === 'string'
       ? rawTabFolderId.replace(/^folder-/, '')

@@ -528,10 +528,10 @@ export class MiraSDKService {
     if (!this.client) throw new Error('Not connected to Mira server')
 
     try {
+      // 保留 null：tags=null 表示未标签、folder=null 表示未分类（服务端按 null 语义过滤）
       const requestFilters = filters
         ? Object.fromEntries(
             Object.entries(filters).filter(([, value]) =>
-              value !== null &&
               value !== undefined &&
               !(typeof value === 'number' && !Number.isFinite(value))
             )
@@ -555,10 +555,9 @@ export class MiraSDKService {
       // 使用 SDK 的文件模块获取文件列表
       let files: any;
       if (requestFilters && Object.keys(requestFilters).length > 0) {
-        // 清理 null/undefined 值
+        // 清理 undefined 值（保留 null：tags=null/folder=null 有过滤语义）
         const cleanedFilters = Object.fromEntries(
           Object.entries(requestFilters).filter(([, v]) =>
-            v !== null &&
             v !== undefined &&
             !(typeof v === 'number' && !Number.isFinite(v))
           )

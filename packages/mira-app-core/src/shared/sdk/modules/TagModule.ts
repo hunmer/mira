@@ -79,6 +79,25 @@ export interface SetFileTagsRequest {
 }
 
 /**
+ * 批量文件标签设置请求
+ */
+export interface SetFileTagsBatchRequest {
+    libraryId: string;
+    fileIds: Array<number | string>;
+    tags: Array<string | number>;
+}
+
+/**
+ * 批量文件标签设置响应
+ */
+export interface SetFileTagsBatchResponse extends BaseResponse<{
+    updated: number;
+    failed: number;
+    results: Array<{ fileId: number; success: boolean; error?: string }>;
+    tags: string[];
+}> { }
+
+/**
  * 获取文件标签请求
  */
 export interface GetFileTagsRequest {
@@ -173,6 +192,15 @@ export class TagModule {
      */
     async setFileTags(request: SetFileTagsRequest): Promise<SetFileTagsResponse> {
         return await this.httpClient.post<SetFileTagsResponse>('/api/tags/file/set', request);
+    }
+
+    /**
+     * 批量为多个文件设置标签（一个请求完成，替代逐文件调用 setFileTags）
+     * @param request 批量设置请求
+     * @returns Promise<SetFileTagsBatchResponse>
+     */
+    async setFileTagsBatch(request: SetFileTagsBatchRequest): Promise<SetFileTagsBatchResponse> {
+        return await this.httpClient.post<SetFileTagsBatchResponse>('/api/tags/file/set-batch', request);
     }
 
     /**

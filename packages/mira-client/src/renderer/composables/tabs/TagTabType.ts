@@ -1,6 +1,7 @@
 import { MediaViewTabType } from '../TabTypes'
 import type { TabContext } from '../TabRegistry'
 import { useTagStore } from '../../stores/tag'
+import { parseFileTags } from '../../utils/fileUtils'
 import i18n from '../../i18n'
 
 export class TagTabType extends MediaViewTabType {
@@ -103,15 +104,9 @@ export class TagTabType extends MediaViewTabType {
       )
 
     // 检查新标签
-    if (eventData.tags) {
-      const tags = typeof eventData.tags === 'string' ? JSON.parse(eventData.tags) : eventData.tags
-      if (Array.isArray(tags) && matchTags(tags)) return true
-    }
-    // 检查旧标签（标签被移除时，来源标签 tab 也需更新）
-    if (eventData.old_data?.tags) {
-      const oldTags = typeof eventData.old_data.tags === 'string' ? JSON.parse(eventData.old_data.tags) : eventData.old_data.tags
-      if (Array.isArray(oldTags) && matchTags(oldTags)) return true
-    }
+    if (matchTags(parseFileTags(eventData.tags))) return true
+    // 检查旧标签（标签被移除/替换时，来源标签 tab 也需更新）
+    if (matchTags(parseFileTags(eventData.old_data?.tags))) return true
     return false
   }
 }

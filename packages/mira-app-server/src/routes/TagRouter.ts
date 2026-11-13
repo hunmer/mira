@@ -123,6 +123,63 @@ export class TagRouter extends BaseRouter {
             }
         });
 
+        // 批量为多个文件设置标签（一个请求，替代客户端逐文件调用 /file/set）
+        this.router.post('/file/set-batch', async (req: Request, res: Response) => {
+            try {
+                const libraryId = req.body.libraryId || req.query.libraryId as string;
+                const rawFileIds: unknown[] = Array.isArray(req.body.fileIds) ? req.body.fileIds : [];
+                const fileIds = [...new Set(rawFileIds.map((id: unknown) => parseInt(String(id))).filter((id: number) => Number.isInteger(id)))];
+                const tags: string[] = req.body.tags;
+
+                if (fileIds.length === 0) {
+                    res.status(400).json({ code: 400, message: 'fileIds must be a non-empty array', data: null });
+                    return;
+                }
+
+                const validation = await this.validateLibrary(libraryId);
+                if (!validation.success) {
+                    res.status(validation.error!.code).json(validation.error);
+                    return;
+                }
+
+                const { library } = validation;
+                const db = library.libraryService;
+                // 标签名只需解析/创建一次，所有文件共享同一份 tagIds
+                const tagIds = await resolveTagIds(db, Array.isArray(tags) ? tags : []);
+
+                const results: Array<{ fileId: number; success: boolean; error?: string }> = [];
+                for (const fileId of fileIds) {
+                    try {
+                        const file = await db.getFile(fileId);
+                        if (!file) {
+                            results.push({ fileId, success: false, error: 'File not found' });
+                            continue;
+                        }
+                        if (Number(file.recycled) === 1) {
+                            results.push({ fileId, success: false, error: 'Cannot update a recycled file' });
+                            continue;
+                        }
+                        const result = await db.setFileTags(fileId, tagIds);
+                        if (result.success) {
+                            const updatedFile = await db.getFile(fileId);
+                            this.broadcastTagEvent('file::updated', libraryId, {
+                                ...updatedFile, libraryId, fileId, old_data: result.oldData,
+                            });
+                        }
+                        results.push({ fileId, success: result.success });
+                    } catch (err) {
+                        results.push({ fileId, success: false, error: err instanceof Error ? err.message : String(err) });
+                    }
+                }
+
+                const updated = results.filter(r => r.success).length;
+                this.sendSuccess(res, { updated, failed: results.length - updated, results, tags: tagIds }, 'Batch file tags set successfully');
+            } catch (error) {
+                console.error('Batch set file tags error:', error);
+                this.sendError(res, 500, 'Internal server error');
+            }
+        });
+
         // 获取文件的标签
         this.router.get('/file/:fileId', async (req: Request, res: Response) => {
             await this.handleFileAssociation(req, res, 'get', 'getFileTags', 'tags');

@@ -12,8 +12,8 @@ export function useFloatingToolbar(deps: {
   const { selectedItems, totalPages } = deps
 
   const toolbarRef = ref<HTMLElement | null>(null)
-  // 浮动栏可见条件：有选中项 或 存在分页
-  const showFloatingToolbar = computed(() => selectedItems.value.length > 0 || totalPages.value > 1)
+  // 浮动栏可见条件：始终显示（全选/反选按钮常驻）
+  const showFloatingToolbar = computed(() => true)
   // 记录宽度变化前的值，用于 FLIP 反转
   let prevToolbarWidth = 0
 

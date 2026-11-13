@@ -8,6 +8,7 @@
     "moreActions": "更多操作",
     "unknownViewMode": "未知的视图模式: {mode}",
     "invertSelection": "反选",
+    "selectAll": "全选",
     "clearSelection": "取消选择",
     "restoreFiles": "恢复文件 ({count})",
     "purgeFiles": "彻底删除 ({count})",

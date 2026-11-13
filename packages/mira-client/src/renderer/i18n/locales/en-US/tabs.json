@@ -8,6 +8,7 @@
     "moreActions": "More actions",
     "unknownViewMode": "Unknown view mode: {mode}",
     "invertSelection": "Invert selection",
+    "selectAll": "Select all",
     "clearSelection": "Clear selection",
     "restoreFiles": "Restore files ({count})",
     "purgeFiles": "Delete permanently ({count})",

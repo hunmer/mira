@@ -28,6 +28,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
+  selectAll: []
   invertSelection: []
   clearSelection: []
   toolbarAction: [action: string]
@@ -59,14 +60,26 @@ const goToPage = (n: number) => {
           :label="String(selectedItems.length)"
           :title="$t('tabs.mediaTabListView.selectedCount', { count: selectedItems.length })" />
 
-        <!-- 操作按钮 - 仅在选中文件时显示 -->
-        <div v-if="selectedItems.length > 0" class="flex items-center space-x-2">
+        <!-- 全选/反选：始终展示 -->
+        <div class="flex items-center space-x-2">
+          <!-- 全选 -->
+          <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
+            :title="$t('tabs.mediaTabListView.selectAll')" @click="emit('selectAll')">
+            <span
+              class="material-symbols-outlined text-muted-foreground dark:text-muted-foreground">select_all</span>
+          </button>
           <!-- 反选 -->
           <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
             :title="$t('tabs.mediaTabListView.invertSelection')" @click="emit('invertSelection')">
             <span
               class="material-symbols-outlined text-muted-foreground dark:text-muted-foreground">swap_horiz</span>
           </button>
+        </div>
+        <div v-if="selectedItems.length > 0 || totalPages > 1"
+          class="h-6 border-l border-border dark:border-border"></div>
+
+        <!-- 操作按钮 - 仅在选中文件时显示 -->
+        <div v-if="selectedItems.length > 0" class="flex items-center space-x-2">
           <!-- 取消选择 -->
           <button class="p-2 rounded-full hover:bg-primary/10 hover:text-primary transition-colors"
             :title="$t('tabs.mediaTabListView.clearSelection')" @click="emit('clearSelection')">

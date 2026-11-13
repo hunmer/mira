@@ -1,5 +1,6 @@
 import { MediaViewTabType } from '../TabTypes'
 import type { TabContext } from '../TabRegistry'
+import { isEmptyFileTags } from '../../utils/fileUtils'
 import i18n from '../../i18n'
 
 export class UntaggedTabType extends MediaViewTabType {
@@ -47,16 +48,8 @@ export class UntaggedTabType extends MediaViewTabType {
 
   shouldUpdateForEvent(tabData: any, eventData: any): boolean {
     if (String(tabData?.libraryId ?? '') !== String(eventData?.libraryId ?? '')) return false
-    // 事件带 tags 信息且为空 → 未标签文件受影响
-    if (eventData.tags !== undefined && eventData.tags !== null) {
-      const tags = typeof eventData.tags === 'string'
-        ? (() => {
-          try { return JSON.parse(eventData.tags) } catch { return undefined }
-        })()
-        : eventData.tags
-      if (Array.isArray(tags)) return tags.length === 0
-    }
-    return false
+    // 新旧 tags 任一为空 → 文件进入或离开未标签集合，列表成员构成变化
+    return isEmptyFileTags(eventData.tags) || isEmptyFileTags(eventData.old_data?.tags)
   }
 }
 

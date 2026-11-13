@@ -47,8 +47,13 @@ export class UncategorizedTabType extends MediaViewTabType {
 
   shouldUpdateForEvent(tabData: any, eventData: any): boolean {
     if (String(tabData?.libraryId ?? '') !== String(eventData?.libraryId ?? '')) return false
-    // 文件的 folder_id 为空/null → 未分类文件发生了变化
-    return eventData.folder_id == null || eventData.folder_id === 0 || eventData.folder_id === ''
+    const isEmptyFolder = (v: any) => v == null || v === 0 || v === ''
+    // updated（带 old_data）：folder 归属在空↔非空间切换（进入/离开未分类集合）才影响成员构成
+    if (eventData.old_data) {
+      return isEmptyFolder(eventData.folder_id) !== isEmptyFolder(eventData.old_data.folder_id)
+    }
+    // created/deleted/recovered 等：文件属于未分类即受影响
+    return isEmptyFolder(eventData.folder_id)
   }
 }
 

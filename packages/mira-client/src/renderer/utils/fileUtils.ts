@@ -454,3 +454,24 @@ export async function createFilePreviewUrl(file: File): Promise<string | undefin
 
   return undefined
 }
+
+/**
+ * 安全解析文件的 tags 字段（服务端存储为 JSON 字符串，如 '["1","2"]'；也可能是数组）
+ * 解析失败或非数组时返回空数组
+ */
+export function parseFileTags(raw: unknown): any[] {
+  if (raw === undefined || raw === null) return []
+  try {
+    const tags = typeof raw === 'string' ? JSON.parse(raw) : raw
+    return Array.isArray(tags) ? tags : []
+  } catch {
+    return []
+  }
+}
+
+/**
+ * 文件 tags 是否为空（无标签）。undefined/null/非数组视为无标签
+ */
+export function isEmptyFileTags(raw: unknown): boolean {
+  return parseFileTags(raw).length === 0
+}

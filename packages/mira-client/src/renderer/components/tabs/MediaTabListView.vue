@@ -61,7 +61,7 @@
         <!-- 浮动操作栏 -->
         <MediaTabFloatingToolbar :selected-items="selectedItems" :selected-images="selectedImages" :is-trash="isTrash"
           :current-page="currentPage" :total-pages="totalPages"
-          @invert-selection="handleInvertSelection" @clear-selection="handleClearSelection"
+          @select-all="handleSelectAll" @invert-selection="handleInvertSelection" @clear-selection="handleClearSelection"
           @toolbar-action="handleToolbarAction" @previous-page="handlePreviousPage"
           @next-page="handleNextPage" @page-change="handlePageChange" />
       </div>
