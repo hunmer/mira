@@ -1,7 +1,7 @@
 <template>
   <div
     class="media-preview-content flex items-center justify-center overflow-hidden rounded-lg"
-    :class="{ 'bg-black': kind !== 'image' }"
+    :class="kind === 'image' ? 'bg-black/50' : 'bg-black'"
     :style="{ width: containerSize.width + 'px', height: containerSize.height + 'px' }"
   >
     <div v-if="customHoverCard && !selectedViewer" ref="customContainer" class="h-full w-full" />
@@ -38,14 +38,20 @@
     </template>
 
     <!-- 图片预览：viewerjs 内嵌查看器，支持滚轮缩放 -->
-    <VViewer
-      v-else-if="!selectedViewer && !customHoverCard && viewersLoaded && kind === 'image'"
-      :key="imageSrc"
-      :options="viewerOptions"
+    <div
+      v-else-if="!selectedViewer && !customHoverCard && viewersLoaded && kind === 'image' && imageReady"
+      ref="imageViewport"
       class="media-preview-viewer h-full w-full"
     >
-      <img :src="imageSrc" :alt="item.name" class="media-preview-viewer-source" />
-    </VViewer>
+      <VViewer
+        v-if="viewerViewportKey"
+        :key="`${imageSrc}:${viewerViewportKey}`"
+        :options="viewerOptions"
+        class="h-full w-full"
+      >
+        <img :src="imageSrc" :alt="item.name" class="media-preview-viewer-source" />
+      </VViewer>
+    </div>
 
     <!-- 视频预览：复用 VideoPreview（Plyr 驱动，自动循环播放）-->
     <VideoPreview
@@ -93,7 +99,7 @@
 
     <!-- 未知类型：文件类型图标 + 文件名 -->
     <div
-      v-else-if="!selectedViewer && !customHoverCard && viewersLoaded"
+      v-else-if="!selectedViewer && !customHoverCard && viewersLoaded && (kind !== 'image' || imageReady)"
       class="flex h-full w-full flex-col items-center justify-center gap-3 p-4 text-center text-white"
     >
       <img
@@ -276,18 +282,35 @@ const onTextClick = (e: MouseEvent) => {
 
 /** 图片自然尺寸（预加载得到），用于容器等比缩放 */
 const imageDim = ref<{ w: number; h: number } | null>(null)
+/** 预加载失败兜底：放行 viewer 挂载，避免永久空白 */
+const imageLoadFailed = ref(false)
 
-watch([imageSrc, documentThumbSrc, kind], () => {
+watch([imageSrc, documentThumbSrc, kind], (_, __, onCleanup) => {
   imageDim.value = null
+  imageLoadFailed.value = false
   if (kind.value !== 'image' && kind.value !== 'document') return
   const src = kind.value === 'document' ? documentThumbSrc.value : imageSrc.value
   if (!src) return
   const img = new Image()
+  onCleanup(() => {
+    img.onload = null
+    img.onerror = null
+  })
   img.onload = () => {
     imageDim.value = { w: img.naturalWidth || img.width, h: img.naturalHeight || img.height }
   }
+  img.onerror = () => {
+    imageLoadFailed.value = true
+  }
   img.src = src
 }, { immediate: true })
+
+/**
+ * 图片尺寸就绪（或加载失败兜底）后才挂载内嵌 viewer：
+ * viewerjs 创建瞬间会缓存容器尺寸并据此计算初始缩放与画布定位，
+ * 容器随后再变化不会重新适配，导致初始显示错位/裁切看不到整体。
+ */
+const imageReady = computed(() => imageDim.value !== null || imageLoadFailed.value)
 
 /** 容器尺寸：图片和视频按媒体比例缩放到 width/height 上限内。 */
 const containerSize = computed(() => {
@@ -313,9 +336,37 @@ const containerSize = computed(() => {
   }
 })
 
+/** Portal 挂载完成后再按真实布局尺寸创建 viewer；尺寸变化时重建，避免沿用旧画布。 */
+const imageViewport = ref<HTMLElement | null>(null)
+const viewerViewportKey = ref('')
+
+watch(imageViewport, (viewport, _, onCleanup) => {
+  viewerViewportKey.value = ''
+  if (!viewport) return
+
+  const observer = new ResizeObserver(() => {
+    const width = viewport.offsetWidth
+    const height = viewport.offsetHeight
+    const key = width > 0 && height > 0 ? `${width}x${height}` : ''
+    if (key === viewerViewportKey.value) return
+    console.debug('[MediaPreviewContent] 图片预览布局', {
+      fileId: props.item.id,
+      naturalSize: imageDim.value,
+      expectedSize: containerSize.value,
+      viewportSize: { width, height },
+    })
+    viewerViewportKey.value = key
+  })
+  observer.observe(viewport)
+  onCleanup(() => observer.disconnect())
+}, { flush: 'post' })
+
 /** viewerjs 内嵌查看器配置：zoomable + 默认 zoomOnWheel 启用滚轮缩放 */
 const viewerOptions = {
   inline: true,
+  // 使用预览容器的实际尺寸，避免窄图、扁图被默认 200×100 画布裁切。
+  minWidth: 0,
+  minHeight: 0,
   button: false,
   navbar: false,
   title: false,
@@ -330,6 +381,18 @@ const viewerOptions = {
   keyboard: false,
   backdrop: true,
   focus: true,
+  // 初始缩放恰好 contain 容器（viewerjs 默认 0.9 会额外留 10% 边距）
+  initialCoverage: 1,
+  viewed(event: CustomEvent<{ image: HTMLImageElement }>) {
+    const image = event.detail.image
+    console.debug('[MediaPreviewContent] 图片预览已适配', {
+      fileId: props.item.id,
+      viewportSize: viewerViewportKey.value,
+      naturalSize: { width: image.naturalWidth, height: image.naturalHeight },
+      imageStyle: image.style.cssText,
+      renderedSize: { width: image.offsetWidth, height: image.offsetHeight },
+    })
+  },
 }
 
 /** 视频/音频预览源 */
