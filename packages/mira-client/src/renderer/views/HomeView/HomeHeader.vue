@@ -36,6 +36,7 @@ const emit = defineEmits<{
   windowMinimize: []
   windowMaximize: []
   windowClose: []
+  upload: []
   uploadQueue: []
 }>()
 
@@ -186,14 +187,15 @@ const openUiTestPanel = async () => {
   <!-- 紧凑右侧悬浮栏：用户头像菜单 + 窗口控制 -->
   <header
     class="flex items-center justify-end gap-1 px-2 py-1.5 rounded-2xl border border-white/60 dark:border-border bg-white/40 dark:bg-muted/60 backdrop-blur-xl shadow-[0_12px_40px_rgba(99,102,241,0.10)] w-fit ml-auto">
-    <!-- 上传队列状态 -->
+    <!-- 上传入口：常驻显示，点击打开文件上传对话框（上传队列入口在其内） -->
     <button
-      v-if="activeUploadCount > 0"
       class="relative h-8 w-8 flex items-center justify-center rounded-lg text-primary hover:bg-primary/10 transition-colors"
-      title="上传队列"
-      @click="emit('uploadQueue')">
+      :title="$t('business.fileUploadDialog.title')"
+      @click="emit('upload')">
       <span class="material-icons" style="font-size: 18px;">cloud_upload</span>
-      <span class="absolute -right-0.5 -bottom-0.5 min-w-3.5 h-3.5 px-0.5 rounded-full bg-primary text-primary-foreground text-[9px] leading-none flex items-center justify-center">
+      <span
+        v-if="activeUploadCount > 0"
+        class="absolute -right-0.5 -bottom-0.5 min-w-3.5 h-3.5 px-0.5 rounded-full bg-primary text-primary-foreground text-[9px] leading-none flex items-center justify-center">
         {{ activeUploadCount }}
       </span>
     </button>

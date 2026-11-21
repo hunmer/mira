@@ -522,25 +522,27 @@ export const useMediaStore = defineStore('media', () => {
     uploadProgress.value.set(fileId, 0)
     error.value = null
     
+    const progressInterval = setInterval(() => {
+      const current = uploadProgress.value.get(fileId) || 0
+      if (current < 90) {
+        const newProgress = current + 10
+        uploadProgress.value.set(fileId, newProgress)
+        const tempFile = files.value.find(f => f.id === fileId)
+        if (tempFile) tempFile.uploadProgress = newProgress
+      }
+    }, 200)
+    const removeTemporaryFile = () => {
+      const index = files.value.findIndex(f => f.id === fileId)
+      if (index !== -1) files.value.splice(index, 1)
+      uploadProgress.value.delete(fileId)
+    }
+
     try {
-      // 模拟上传进度
-      const progressInterval = setInterval(() => {
-        const current = uploadProgress.value.get(fileId) || 0
-        if (current < 90) {
-          const newProgress = current + 10
-          uploadProgress.value.set(fileId, newProgress)
-          
-          // 更新临时文件的进度
-          const tempFile = files.value.find(f => f.id === fileId)
-          if (tempFile) {
-            tempFile.uploadProgress = newProgress
-          }
-        }
-      }, 200)
-      
       const result = await miraSDKService.uploadFile(file, libraryId, metadata)
-      
-      clearInterval(progressInterval)
+      if (result.duplicate) {
+        removeTemporaryFile()
+        return { success: true as const, data: result }
+      }
       uploadProgress.value.set(fileId, 100)
       
       // 更新临时文件为最终文件信息
@@ -565,19 +567,14 @@ export const useMediaStore = defineStore('media', () => {
         uploadProgress.value.delete(fileId)
       }, 1000)
       
-      return { success: true, data: result }
+      return { success: true as const, data: result }
     } catch (err) {
-      // 回滚：移除临时文件
-      const tempIndex = files.value.findIndex(f => f.id === fileId)
-      if (tempIndex !== -1) {
-        files.value.splice(tempIndex, 1)
-      }
-      
+      removeTemporaryFile()
       const errorMessage = err instanceof Error ? err.message : 'Failed to upload file'
       error.value = errorMessage
-      uploadProgress.value.delete(fileId)
-      return { success: false, error: errorMessage }
+      return { success: false as const, error: errorMessage }
     } finally {
+      clearInterval(progressInterval)
       pendingOperations.value.delete(operationId)
     }
   }

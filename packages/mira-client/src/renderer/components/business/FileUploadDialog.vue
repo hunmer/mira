@@ -7,8 +7,16 @@
       class="file-upload-dialog sm:max-w-[90vw] h-[85vh] grid grid-rows-[auto_1fr_auto] overflow-hidden"
       @paste="handleClipboardPaste"
     >
-      <DialogHeader>
+      <DialogHeader class="flex-row items-center justify-between space-y-0">
         <DialogTitle>{{ $t('business.fileUploadDialog.title') }}</DialogTitle>
+        <!-- 查看上传队列入口（自 HomeHeader 迁入）：打开上传记录队列对话框 -->
+        <button
+          class="mr-8 rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+          :title="$t('business.fileUploadDialog.viewUploadQueue')"
+          @click="showQueueDialog = true"
+        >
+          <span class="material-icons text-lg">manage_search</span>
+        </button>
       </DialogHeader>
       <div class="file-upload-content flex flex-col min-h-[400px] overflow-hidden">
         <!-- 顶部队列状态 -->
@@ -76,6 +84,15 @@
                   </span>
                 </div>
                 <div class="flex items-center space-x-2">
+                  <button
+                    class="flex h-7 w-7 items-center justify-center rounded text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+                    :disabled="isCheckingDuplicates || pendingFiles.length === 0 || !selectedLibraryId"
+                    :title="$t('business.fileUploadDialog.checkDuplicates')"
+                    @click="checkDuplicateFiles"
+                  >
+                    <span class="material-icons leading-none animate-spin" v-if="isCheckingDuplicates" style="font-size: 18px">sync</span>
+                    <span class="material-icons leading-none" v-else style="font-size: 18px">find_in_page</span>
+                  </button>
                   <button
                     class="flex h-7 w-7 items-center justify-center rounded text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
                     :disabled="isReadingClipboard"
@@ -439,7 +456,7 @@
             </PopoverContent>
           </Popover>
           <button
-            class="px-6 py-2 bg-primary dark:bg-primary text-white rounded-lg font-medium hover:bg-primary dark:hover:bg-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            class="px-6 py-2 bg-primary dark:bg-primary text-white rounded-lg font-medium hover:bg-primary dark:hover:bg-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
             :disabled="pendingFiles.length === 0 || !selectedLibraryId || uploadingFileIds.size > 0"
             @click="startUpload({ skipSameName, enableHash })"
           >
@@ -452,6 +469,25 @@
       </DialogFooter>
     </DialogContent>
   </Dialog>
+  <!-- 上传队列（进行中批次 + 历史记录）：独立对话框，从本对话框标题栏入口打开 -->
+  <UploadQueueDialog v-model:open="showQueueDialog" />
+  <!-- 重名文件移除确认 -->
+  <AlertDialog :open="showDuplicateConfirm" @update:open="showDuplicateConfirm = $event">
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>{{ $t('business.fileUploadDialog.duplicateFoundTitle') }}</AlertDialogTitle>
+        <AlertDialogDescription>
+          {{ $t('business.fileUploadDialog.duplicateFoundDesc', { count: duplicateIds.length }) }}
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel>{{ $t('business.fileUploadDialog.duplicateCancel') }}</AlertDialogCancel>
+        <AlertDialogAction class="bg-primary hover:bg-primary text-white" @click="confirmRemoveDuplicates">
+          {{ $t('business.fileUploadDialog.duplicateRemove') }}
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
 </template>
 
 <script setup lang="ts">
@@ -468,6 +504,20 @@ import { useUrlImportStore } from '@renderer/stores/urlImport'
 import { SelectionBox } from '@hunmer/vue-selection-box'
 import { Masonry, type MasonryColumns, type MasonryItemMeta } from '@hunmer/vue-masonry'
 import FolderTreeComponent from './FolderTreeComponent/FolderTreeComponent.vue'
+import UploadQueueDialog from './UploadQueueDialog.vue'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { toast } from 'vue-sonner'
+import { useI18n } from 'vue-i18n'
+import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { useFileUploadDialog } from './FileUploadDialog/useFileUploadDialog'
 import { isImageFile, isVideoFile, isAudioFile, isDocumentFile, formatFileSize } from './FileUploadDialog/useFileManagement'
 import { useFileRatios } from './FileUploadDialog/useFileRatios'
@@ -482,6 +532,7 @@ const emit = defineEmits<Emits>()
 const settingsStore = useSettingsStore()
 const urlImportStore = useUrlImportStore()
 const uploadSettingsOpen = ref(false)
+const showQueueDialog = ref(false)
 const skipSameName = ref(false)
 const enableHash = ref(false)
 /** 单批上传文件数上限(设置-素材库);0 = 不限制 */
@@ -650,10 +701,13 @@ const approxColumns = computed(() => {
 const { ratios, getRatio } = useFileRatios(pagedDisplayFiles, approxColumns.value)
 
 // Electron 下优先使用系统 nativeImage 缩略图，避免读取完整文件字节；失败时保留原有预览回退。
+// 仅监听页内成员 id 签名（成员增减才重跑），preview 赋值不触发，避免 deep watch 在大量缩略图连续到达时反复全页遍历阻塞主线程。
 const nativeThumbnailRequests = new Set<string>()
-watch(pagedDisplayFiles, (files) => {
+const pageMemberSignature = computed(() => pagedDisplayFiles.value.map((f) => f.id).join(','))
+watch(pageMemberSignature, () => {
   if (!window.electronAPI?.fs?.getThumbnail) return
-  const pendingTasks = files.filter((pending) => pending.localPath && !pending.preview && !nativeThumbnailRequests.has(pending.id))
+  const pageFiles = pagedDisplayFiles.value
+  const pendingTasks = pageFiles.filter((pending) => pending.localPath && !pending.preview && !nativeThumbnailRequests.has(pending.id))
   let cursor = 0
   const worker = async () => {
     while (cursor < pendingTasks.length) {
@@ -668,7 +722,7 @@ watch(pagedDisplayFiles, (files) => {
     }
   }
   void Promise.all(Array.from({ length: Math.min(4, pendingTasks.length) }, worker))
-}, { deep: true, immediate: true })
+}, { immediate: true })
 
 // 卡片信息块（文件名/大小/标签）固定高度估值，叠加到预览高度上
 const CARD_INFO_HEIGHT = 76
@@ -730,6 +784,55 @@ function handleDeleteSelection(ids: string[]) {
 function handleClearAll() {
   clearAllPendingFiles()
   clearLocalTree()
+}
+
+// ==================== 服务器重名文件检查 ====================
+const { t } = useI18n()
+const isCheckingDuplicates = ref(false)
+const showDuplicateConfirm = ref(false)
+const duplicateIds = ref<string[]>([])
+
+/**
+ * 检查待上传文件在库内是否已有同名文件（全库任意文件夹，recycled=0）。
+ * 服务端批量精确匹配（POST /api/files/checkDuplicates，name IN 分块查询），
+ * 一次请求返回全部重名文件名；有重名则弹确认框，确认后从待上传列表移除（不上传）。
+ */
+async function checkDuplicateFiles() {
+  if (pendingFiles.value.length === 0 || !selectedLibraryId.value || isCheckingDuplicates.value) return
+  isCheckingDuplicates.value = true
+  try {
+    const res = await (miraSDKService as any).client.files().checkDuplicates({
+      libraryId: selectedLibraryId.value,
+      names: Array.from(new Set(pendingFiles.value.map((f) => f.file.name))),
+    })
+    // 服务端返回库内已存在的文件名列表，按文件名精确回配待上传文件
+    const dupNames = new Set<string>((res?.duplicates ?? []) as string[])
+    const dupIds = pendingFiles.value
+      .filter((f) => dupNames.has(f.file.name))
+      .map((f) => f.id)
+    if (dupIds.length === 0) {
+      toast.success(t('business.fileUploadDialog.noDuplicates'))
+      return
+    }
+    duplicateIds.value = dupIds
+    showDuplicateConfirm.value = true
+  } catch (error) {
+    console.error('FileUploadDialog: duplicate check failed', error)
+    toast.error(t('business.fileUploadDialog.duplicateCheckFailed'))
+  } finally {
+    isCheckingDuplicates.value = false
+  }
+}
+
+/** 确认移除：从待上传列表删除重名文件（不上传服务器）。单次批量重建数组，避免逐个 splice 触发大列表反复重渲染 */
+function confirmRemoveDuplicates() {
+  const idSet = new Set(duplicateIds.value)
+  pendingFiles.value.forEach((f) => {
+    if (idSet.has(f.id) && f.preview) URL.revokeObjectURL(f.preview)
+  })
+  pendingFiles.value = pendingFiles.value.filter((f) => !idSet.has(f.id))
+  selectedPendingIds.value = selectedPendingIds.value.filter((id) => !idSet.has(id))
+  duplicateIds.value = []
 }
 
 function handleFolderTreeSelect(folder: any) {

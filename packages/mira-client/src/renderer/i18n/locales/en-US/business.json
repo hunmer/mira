@@ -127,7 +127,15 @@
     "startUpload": "Start Upload ({count})",
     "uploadSettings": "Upload settings",
     "skipSameName": "Skip files with duplicate names",
-    "hashDuplicateCheck": "Verify duplicate files by hash"
+    "hashDuplicateCheck": "Verify duplicate files by hash",
+    "viewUploadQueue": "View upload queue",
+    "checkDuplicates": "Check duplicate files on server",
+    "noDuplicates": "No duplicate files found",
+    "duplicateCheckFailed": "Duplicate check failed",
+    "duplicateFoundTitle": "Duplicate files found",
+    "duplicateFoundDesc": "{count} pending files have the same name as existing files in their target folders. Remove them from the upload list?",
+    "duplicateCancel": "Cancel",
+    "duplicateRemove": "Remove"
   },
   "filterBar": {
     "clear": "Clear",

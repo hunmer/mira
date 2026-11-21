@@ -11,7 +11,7 @@ export interface UploadRecord {
   libraryId: string
   libraryName: string
   uploadedAt: Date
-  status: 'success' | 'failed'
+  status: 'success' | 'failed' | 'skipped'
   localPath?: string
   serverId?: string
   error?: string

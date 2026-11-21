@@ -79,14 +79,7 @@ export function useUploadQueue() {
   }
 
   uploadQueue.addEventListener('start', updateQueueStats)
-  uploadQueue.addEventListener('success', () => {
-    queueStats.value.completed++
-    updateQueueStats()
-  })
-  uploadQueue.addEventListener('error', () => {
-    queueStats.value.failed++
-    updateQueueStats()
-  })
+  uploadQueue.addEventListener('success', updateQueueStats)
   uploadQueue.addEventListener('end', updateQueueStats)
 
   function updateQueueStats() {
@@ -105,7 +98,7 @@ export function useUploadQueue() {
     batchId: string,
     options?: { skipSameName?: boolean; enableHash?: boolean }
   ) {
-    const addHistory = (status: 'success' | 'failed', error?: string, serverId?: string) => {
+    const addHistory = (status: 'success' | 'failed' | 'skipped', error?: string, serverId?: string) => {
       const library = libraryStore.libraries.find((item) => item.id === libraryId)
       uploadHistoryStore.addUploadRecord({
         name: pendingFile.file.name,
@@ -120,7 +113,14 @@ export function useUploadQueue() {
         batchId,
       })
     }
-    return async (callback?: (error?: Error, result?: any) => void) => {
+    const finish = (data: { id?: string | number; duplicate?: boolean } | undefined, duplicate = data?.duplicate === true) => {
+      uploadProgressMap.value.set(pendingFile.id, 100)
+      onFileRemoved(pendingFile.id)
+      addHistory(duplicate ? 'skipped' : 'success', undefined, data?.id != null ? String(data.id) : undefined)
+      queueStats.value.completed++
+      markBatchComplete(batchId)
+    }
+    return async () => {
       const metadata: Record<string, any> = {}
       if (pendingFile.folderId) metadata.folderId = pendingFile.folderId
       if (pendingFile.tags && pendingFile.tags.length > 0) metadata.tags = pendingFile.tags
@@ -139,14 +139,7 @@ export function useUploadQueue() {
         if (canImportByPath) {
           // 快速导入同样带上 folderId/tags（服务端 /api/files/import-path 已支持），否则本地路径导入会丢失目标
           const result = await miraSDKService.importLocalFilePath(libraryId, pendingFile.localPath!, metadata)
-          clearInterval(progressInterval)
-          uploadProgressMap.value.set(pendingFile.id, 100)
-          onFileRemoved(pendingFile.id)
-          uploadingFileIds.value.delete(pendingFile.id)
-          activeUploadCount.value = Math.max(0, activeUploadCount.value - 1)
-          addHistory('success', undefined, (result.data as any)?.id ? String((result.data as any).id) : undefined)
-          markBatchComplete(batchId)
-          callback?.(undefined, result)
+          finish(result.data)
           return
         }
 
@@ -175,32 +168,27 @@ export function useUploadQueue() {
             ? { ...metadata, ...(pendingFile.localPath ? { sourcePath: pendingFile.localPath } : {}), ...options }
             : undefined
         )
-        clearInterval(progressInterval)
-        uploadProgressMap.value.set(pendingFile.id, 100)
-        if (result.success) {
-          onFileRemoved(pendingFile.id)
-          uploadingFileIds.value.delete(pendingFile.id)
-          activeUploadCount.value = Math.max(0, activeUploadCount.value - 1)
-          addHistory('success', undefined, (result.data as any)?.id ? String((result.data as any).id) : undefined)
-          markBatchComplete(batchId)
-          callback?.(undefined, result)
-        } else {
+        if (!result.success) {
           throw new Error(result.error || t('business.uploadQueue.uploadFailed'))
         }
+        finish(result.data.data, result.data.duplicate === true)
       } catch (error) {
-        clearInterval(progressInterval)
-        uploadingFileIds.value.delete(pendingFile.id)
-        activeUploadCount.value = Math.max(0, activeUploadCount.value - 1)
+        // queue@7 会在任务拒绝时清空剩余任务，在这里记录单项失败并正常结束任务。
+        const message = error instanceof Error ? error.message : String(error)
         console.error('Upload error:', error)
-        addHistory('failed', (error as Error).message)
+        addHistory('failed', message)
+        queueStats.value.failed++
         markBatchComplete(batchId, true)
-        callback?.(error as Error)
         toast.add({
           severity: 'error',
           summary: t('business.uploadQueue.uploadFailedTitle'),
-          detail: t('business.uploadQueue.uploadFailedDetail', { name: pendingFile.file.name, message: (error as Error).message }),
+          detail: t('business.uploadQueue.uploadFailedDetail', { name: pendingFile.file.name, message }),
           life: 5000
         })
+      } finally {
+        clearInterval(progressInterval)
+        uploadingFileIds.value.delete(pendingFile.id)
+        activeUploadCount.value = Math.max(0, activeUploadCount.value - 1)
       }
     }
   }

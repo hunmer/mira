@@ -87,7 +87,22 @@ export function useFileRatios(files: Ref<PendingFile[]>, columnsPerRow = 6) {
     await Promise.all(Array.from({ length: Math.min(CONCURRENCY, pending.length) }, runWorker))
   }
 
-  watch(fileSignatures, () => void preload(files.value), { immediate: true })
+  // 大量缩略图异步连续到达时,逐个触发 preload 会全量替换 ratios 驱动瀑布流反复重排,阻塞主线程。
+  // 首屏立即加载,后续签名变化(成员增减/preview 就绪)以 150ms 去抖合并成一次布局更新。
+  let preloadTimer: ReturnType<typeof setTimeout> | null = null
+  let firstSignatureRun = true
+  watch(fileSignatures, () => {
+    if (firstSignatureRun) {
+      firstSignatureRun = false
+      void preload(files.value)
+      return
+    }
+    if (preloadTimer !== null) clearTimeout(preloadTimer)
+    preloadTimer = setTimeout(() => {
+      preloadTimer = null
+      void preload(files.value)
+    }, 150)
+  }, { immediate: true })
 
   /** 稳定 fallback:hash 派生 [0.8, 1.3],当前实例内不变,避免异步比例引起连续重排 */
   const fallbackRatio = (id: string): number => {

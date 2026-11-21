@@ -56,6 +56,18 @@ export interface GetFilesRequest {
     clientId?: string;
 }
 
+export interface CheckDuplicatesRequest {
+    libraryId: string;
+    /** 待检查的文件名列表（全库精确匹配，不分文件夹） */
+    names: string[];
+    clientId?: string;
+}
+
+export interface CheckDuplicatesResponse {
+    /** 库内已存在的同名文件名（name 精确匹配，recycled = 0） */
+    duplicates: string[];
+}
+
 /**
  * 文件数据类型
  */
@@ -507,6 +519,14 @@ export class FileModule {
      */
     async getFiles(request: GetFilesRequest): Promise<FileData[]> {
         return await this.httpClient.post<FileData[]>('/api/files/getFiles', request);
+    }
+
+    /**
+     * 批量检查待上传文件名在库内是否已存在同名文件（仅未回收，全库任意文件夹）。
+     * 返回已存在的文件名列表。
+     */
+    async checkDuplicates(request: CheckDuplicatesRequest): Promise<CheckDuplicatesResponse> {
+        return await this.httpClient.post<CheckDuplicatesResponse>('/api/files/checkDuplicates', request);
     }
 
     /**

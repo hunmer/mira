@@ -39,6 +39,7 @@ const groups = computed(() => {
     completed: uploadBatchProgress.value.get(key)?.completed ?? value.records.length,
     pending: Math.max(0, (uploadBatchProgress.value.get(key)?.total ?? value.records.length) - (uploadBatchProgress.value.get(key)?.completed ?? value.records.length)),
     success: value.records.filter(record => record.status === 'success').length,
+    skipped: value.records.filter(record => record.status === 'skipped').length,
     failed: value.records.filter(record => record.status === 'failed').length,
   }))
   if (expandedGroups.value.size === 0 && result.length > 0) expandedGroups.value.add(result[0].key)
@@ -73,7 +74,11 @@ const retry = async (record: any) => {
     if (!bytes.success || !bytes.data) throw new Error(bytes.message || '读取本地文件失败')
     const result = await media.uploadFile(new File([bytes.data], record.name, { type: record.mimeType }), record.libraryId)
     if (!result.success) throw new Error(result.error || '上传失败')
-    history.updateUploadRecord(record.id, { status: 'success', serverId: String((result.data as any)?.id || '') , error: undefined })
+    history.updateUploadRecord(record.id, {
+      status: result.data.duplicate ? 'skipped' : 'success',
+      serverId: result.data.data?.id != null ? String(result.data.data.id) : undefined,
+      error: undefined,
+    })
   } catch (error) {
     history.updateUploadRecord(record.id, { error: error instanceof Error ? error.message : String(error) })
   } finally {
@@ -135,9 +140,10 @@ watch([groups, expandedGroups, groupPages], () => {
             <button class="flex w-full items-center gap-2 border-b border-border pb-2 text-left" @click="toggleGroup(group.key)">
               <span class="material-icons text-base">{{ expandedGroups.has(group.key) ? 'expand_more' : 'chevron_right' }}</span>
               <span class="flex-1 text-xs font-medium text-muted-foreground">{{ group.title }}</span>
-              <span class="text-xs text-muted-foreground">已上传 {{ group.completed }} / 待上传 {{ group.pending }}</span>
+              <span class="text-xs text-muted-foreground">已处理 {{ group.completed }} / 待上传 {{ group.pending }}</span>
               <span class="text-xs text-muted-foreground">共 {{ group.total }} 个</span>
               <span v-if="group.success" class="text-xs text-green-600">{{ group.success }} 成功</span>
+              <span v-if="group.skipped" class="text-xs text-muted-foreground">{{ group.skipped }} 跳过</span>
               <span v-if="group.failed" class="text-xs text-destructive">{{ group.failed }} 失败</span>
             </button>
             <div v-if="expandedGroups.has(group.key)">
@@ -151,6 +157,7 @@ watch([groups, expandedGroups, groupPages], () => {
               <div v-if="record.error" class="truncate text-[11px] text-destructive" :title="record.error">{{ record.error }}</div>
             </div>
             <span v-if="record.status === 'success'" class="material-icons text-sm text-green-600" title="成功">check</span>
+            <span v-else-if="record.status === 'skipped'" class="text-[11px] text-muted-foreground" title="文件已存在">重复跳过</span>
             <button v-else-if="environment.isElectron && record.localPath" class="rounded p-0.5 text-primary hover:bg-primary/10" :disabled="retrying === record.id" title="重试上传" @click="retry(record)">
               <span class="material-icons text-sm" :class="retrying === record.id ? 'animate-spin' : ''">refresh</span>
             </button>

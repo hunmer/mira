@@ -682,6 +682,7 @@ onUnmounted(() => {
       @plugins="showPluginsDialog = true"
       @shortcuts="showShortcutDialog = true"
       @settings="showSettingsDialog = true"
+      @upload="showFileUploadDialog = true"
       @upload-queue="showUploadQueueDialog = true"
       @logout="handleLogout"
       @window-minimize="handleWindowMinimize"

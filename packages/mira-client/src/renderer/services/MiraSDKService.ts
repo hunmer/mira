@@ -737,7 +737,7 @@ export class MiraSDKService {
     return response?.viewers || []
   }
 
-  async uploadFile(file: File, libraryId: string, metadata?: any): Promise<BaseResponse> {
+  async uploadFile(file: File, libraryId: string, metadata?: any): Promise<BaseResponse & { duplicate?: true }> {
     if (!this.client) throw new Error('Not connected to Mira server')
     
     try {
@@ -752,6 +752,12 @@ export class MiraSDKService {
       }) | undefined
       if (uploaded?.operation === 'duplicate') {
         notifyDuplicateUpload(uploaded.result?.name || file.name)
+        return {
+          success: true,
+          message: 'File already exists, skipped upload',
+          duplicate: true,
+          data: uploaded.result,
+        }
       }
       if (!uploaded?.success || !uploaded.result) {
         throw new Error(uploaded?.error || 'File upload failed')

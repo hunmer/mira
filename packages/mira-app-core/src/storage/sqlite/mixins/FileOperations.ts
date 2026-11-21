@@ -454,4 +454,28 @@ export const FileOperations = {
     const { result } = await this.getFiles({ filters: query });
     return this.processingFiles(result, isUrlFile);
   },
+
+  /**
+   * 批量检查待上传文件名在库内是否已存在同名文件（仅未回收，recycled = 0，全库任意文件夹）。
+   * 文件名 IN 分块查询（规避 SQLITE_MAX_VARIABLE_NUMBER 上限）。
+   * 返回已存在的文件名集合。
+   */
+  async checkDuplicateNames(
+    this: CoreAccessible,
+    names: string[],
+  ): Promise<string[]> {
+    const unique = Array.from(new Set(names.filter((n) => typeof n === 'string' && n)));
+    const duplicates: string[] = [];
+    const CHUNK = 500;
+    for (let i = 0; i < unique.length; i += CHUNK) {
+      const chunk = unique.slice(i, i + CHUNK);
+      const placeholders = chunk.map(() => '?').join(',');
+      const sql = `SELECT DISTINCT name FROM files WHERE recycled = 0 AND name IN (${placeholders})`;
+      const rows = await this.getSql(sql, chunk);
+      for (const row of rows) {
+        duplicates.push(row.name);
+      }
+    }
+    return duplicates;
+  },
 };

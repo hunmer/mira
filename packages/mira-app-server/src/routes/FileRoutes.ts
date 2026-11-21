@@ -1353,6 +1353,59 @@ export class FileRoutes {
             }
         });
 
+        // 批量检查待上传文件名在库内是否已有同名文件（仅未回收，全库任意文件夹）
+        this.router.post('/checkDuplicates', async (req: Request, res: Response) => {
+            try {
+                const { libraryId, names = [], clientId } = req.body;
+                if (!libraryId) {
+                    return res.status(400).json({
+                        code: 400,
+                        message: 'Library ID is required',
+                        data: null
+                    });
+                }
+
+                const obj = this.backend.libraries!.getLibrary(libraryId);
+                if (!obj) {
+                    return res.status(404).json({
+                        code: 404,
+                        message: 'Library not found',
+                        data: null
+                    });
+                }
+
+                const allowed = await obj.pluginManager.runHttpHooks({
+                    libraryId,
+                    clientId,
+                    method: req.method,
+                    path: '/api/files/checkDuplicates',
+                    req,
+                    res,
+                    fields: this.backend.webSocketServer?.getClientFields(libraryId, clientId),
+                });
+                if (!allowed || res.headersSent) return;
+
+                // 规范化：仅保留非空字符串文件名
+                const normalized = (Array.isArray(names) ? names : [])
+                    .filter((n: any) => typeof n === 'string' && n);
+
+                const duplicates = await obj.libraryService.checkDuplicateNames(normalized);
+                res.json({
+                    code: 0,
+                    message: 'Success',
+                    data: { duplicates }
+                });
+
+            } catch (error) {
+                console.error('Error checking duplicates:', error);
+                res.status(500).json({
+                    code: 500,
+                    message: 'Internal server error while checking duplicates',
+                    data: null
+                });
+            }
+        });
+
         // 获取单个文件信息
         this.router.post('/getFile', async (req: Request, res: Response) => {
             try {

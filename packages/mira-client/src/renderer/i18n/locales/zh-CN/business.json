@@ -127,7 +127,15 @@
     "startUpload": "开始上传 ({count})",
     "uploadSettings": "上传设置",
     "skipSameName": "跳过同名文件",
-    "hashDuplicateCheck": "哈希验证重复文件"
+    "hashDuplicateCheck": "哈希验证重复文件",
+    "viewUploadQueue": "查看上传队列",
+    "checkDuplicates": "检查服务器重名文件",
+    "noDuplicates": "未发现重名文件",
+    "duplicateCheckFailed": "重名检查失败",
+    "duplicateFoundTitle": "发现重名文件",
+    "duplicateFoundDesc": "发现 {count} 个待上传文件在目标文件夹已存在同名文件，是否将其从上传列表移除？",
+    "duplicateCancel": "取消",
+    "duplicateRemove": "移除"
   },
   "filterBar": {
     "clear": "清除",
