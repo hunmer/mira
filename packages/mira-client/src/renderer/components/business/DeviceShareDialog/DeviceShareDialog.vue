@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import QRCode from 'qrcode'
 import { toast } from 'vue-sonner'
 import type { Device } from 'mira-app-core/shared/sdk'
+import { formatBytes as formatSize } from '@renderer/utils'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
@@ -202,12 +203,7 @@ const selectedDeviceLabel = computed(() => {
   return device ? describeDevice(device) : ''
 })
 
-const formatSize = (n?: number) => {
-  if (!n) return ''
-  if (n > 1048576) return (n / 1048576).toFixed(1) + ' MB'
-  if (n > 1024) return (n / 1024).toFixed(1) + ' KB'
-  return n + ' B'
-}
+
 
 /* ---------- send 页签：配对 QR ---------- */
 // 打开时生成配对 QR（token / libraryId / ws 打进 URL，静态页免输入配对）

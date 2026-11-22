@@ -115,8 +115,8 @@
 | `src/views/auth/register.vue` | 注册页 |
 | `src/views/auth/not-found.vue` | 404 页面 |
 | `src/views/mira/overview/index.vue` | 概览（统计/系统信息/最近活动/设置） |
-| `src/views/mira/library/index.vue` | 素材库管理 |
-| `src/views/mira/library/LibraryFormDialog.vue` | 素材库表单对话框 |
+| `src/views/mira/library/index.vue` | 素材库管理（编辑改 path 触发 relocate 迁移 + 进度轮询） |
+| `src/views/mira/library/LibraryFormDialog.vue` | 素材库表单对话框（skipSameName、迁移进度条、busy 态） |
 | `src/views/mira/library/ShareDialog.vue` | 素材库分享对话框（qrcode）（新增） |
 | `src/views/mira/plugin/index.vue` | 插件管理 |
 | `src/views/mira/plugin/InstallTerminalDialog.vue` | 插件安装终端对话框（新增） |

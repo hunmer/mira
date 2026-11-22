@@ -29,7 +29,7 @@
 2. `initSettingsWatcher()` 绑 storage.onChanged → 广播给监听器
 3. `getSettings()` 启动初始化(uiMode → side panel 行为)
 4. onMessage 监听:SNIFFER_REPORT(content 上报)→ 存快照 + 广播 SNIFFER_FOUND;Request → router
-5. `onInstalled` → `setupContextMenus`
+5. `setupContextMenus` 模块加载即注册(`contextMenus.onClicked` 监听在**模块顶层**,SW 重启不丢);菜单项仅 `onInstalled` 时 removeAll + 重建
 
 ### UI(`ui/main.ts` → `App.vue`;`ui/upload-main.ts` → `UploadApp.vue`)
 1. `main.ts`:按 `location.pathname` 定 containerMode(sidepanel/popup);挂载前应用默认主题(防闪烁);读 storage 真实主题 + 监听系统变化;挂 vue-i18n
@@ -42,7 +42,9 @@
 1. 模块加载:打印 `[content] script loaded {url, readyState}`
 2. 装配 sniffer/dragdrop/scroller
 3. onMessage 处理 ContentCommand + 截图滚动命令(SCROLL_TO/SCROLL_RESTORE)
-4. **初始化**:`CONFIG_GET` → 按 `dragPopoverEnabled`/`snifferEnabled` 恢复开关(实现持久化自动启用)
+4. **初始化**:`CONFIG_GET` → 按 `dragPopoverEnabled`/`snifferEnabled` 恢复开关(实现持久化自动启用);dragdrop 需再过站点黑白名单(`isDragPopoverHostAllowed(location.host, mode, hosts)`)才启用
+5. **拖拽浮层库记忆**:首次打开浮层 `getOverlayLibraryId()`(优先 `dragDropLibraryId`,回退 `libraryId`);浮层内切库经 `saveOverlayLibraryId` 持久化(CONFIG_SET)
+6. **浮层挂载**(dragdrop.ts):document.documentElement 建 `#mira-dragdrop-host`(all:initial)→ `attachShadow({mode:'open'})` → 注入 overlay CSS + mira-plugin-ui 编译 CSS(dev 下 URL 回退 `localhost:5174`)→ `createApp(DragDropOverlay)` 挂载 props(services/upload/回调)
 
 ### Offscreen(按需)
 - `capturer` 整页/选区截图时 `ensureOffscreen()` → `createDocument({reason:BLOBS})`
@@ -51,8 +53,8 @@
 ## 关键时序
 
 - **截图**:UI 点按钮 → Request CAPTURE_* → SW capturer → `sendToContent`(必要时注入)→ captureVisibleTab/滚动 → offscreen 拼接 → uploader.enqueue
-- **拖拽上传**:网页 dragstart → content dragdrop 浮层 → drop → `fileToStaged`(number[])→ UPLOAD_FILES → SW stagedToFile → uploader
-- **嗅探**:content `extractFromDOM` + PerformanceObserver → SNIFFER_REPORT → SW 存快照 → SNIFFER_FOUND 广播 → UI 刷新
+- **拖拽上传**:网页 dragstart → content dragdrop(过站点黑白名单)→ Shadow DOM 内 DragDropOverlay(双栏树/根区/批量 zone)→ 落点释放 → `fileToStaged`(number[])→ UPLOAD_FILES → SW stagedToFile → uploader;URL 拖拽走 drag-data 解析(DOMParser/Pinterest)→ UPLOAD_FROM_URL/BATCH_IMPORT
+- **嗅探**:content `extractFromDOM` + PerformanceObserver → SNIFFER_REPORT → SW 存快照 → SNIFFER_FOUND 广播 → UI 刷新;「导入到」先本地 IMU 大图解析(phase upgrade)→ BATCH_IMPORT(带库/文件夹/标签落点)
 - **自动登录**:见 ui 入口流程
 
 ## 注意

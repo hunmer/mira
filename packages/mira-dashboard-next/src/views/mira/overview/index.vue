@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { formatSize } from '@/lib/utils'
 import StatCard from '@/components/common/StatCard.vue'
 import { systemApi, libraryApi, pluginApi, adminApi } from '@/api'
 import { toast } from 'vue-sonner'
@@ -19,13 +20,6 @@ const loading = ref(false)
 const stats = ref({ libraries: 0, plugins: 0, admins: 0, dbSize: '0 B' })
 const systemInfo = ref({ uptime: '-', version: '-', nodeVersion: '-' })
 const recentActivities = ref<{ id: number; message: string; time: string }[]>([])
-
-function formatSize(bytes: number): string {
-  if (!bytes) return '0 B'
-  const units = ['B', 'KB', 'MB', 'GB', 'TB']
-  const i = Math.floor(Math.log(bytes) / Math.log(1024))
-  return `${(bytes / 1024 ** i).toFixed(2)} ${units[i]}`
-}
 
 function formatUptime(seconds: number): string {
   const d = Math.floor(seconds / 86400)

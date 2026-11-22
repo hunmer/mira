@@ -46,6 +46,7 @@ import {
   PaginationPrevious,
 } from '../components/ui/pagination';
 import { buildTree } from './tree';
+import { formatSize } from '../utils/format';
 import {
   applySnapshotToRule,
   createDefaultFilterRules,
@@ -425,13 +426,6 @@ function onThumbError(item: MediaBrowserItem) {
   brokenThumbs.value = new Set(brokenThumbs.value).add(item.id);
 }
 
-function formatSize(size?: number): string {
-  if (!size) return '';
-  if (size < 1024) return `${size} B`;
-  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
-  return `${(size / 1024 / 1024).toFixed(1)} MB`;
-}
-
 // ---- 瀑布流宽高预取(services.getMetadataByIds 提供后启用,参考桌面端 WaterfallComponent) ----
 // id -> "W:H" 宽高比;优先级 item.aspect > 预取缓存 > 1:1
 const ratios = ref<Record<string, string>>({});
@@ -641,7 +635,7 @@ function getAspectOf(item: MediaBrowserItem): string | undefined {
           <div class="flex flex-col gap-0.5 p-2">
             <span class="truncate text-xs font-medium">{{ item.title }}</span>
             <span class="text-muted-foreground truncate text-[11px]">
-              {{ [formatSize(item.size), item.extension?.toUpperCase()].filter(Boolean).join(' · ') || '—' }}
+              {{ [formatSize(item.size, ''), item.extension?.toUpperCase()].filter(Boolean).join(' · ') || '—' }}
             </span>
           </div>
         </button>
@@ -687,7 +681,7 @@ function getAspectOf(item: MediaBrowserItem): string | undefined {
             <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-2 pt-6">
               <span class="line-clamp-1 text-xs font-medium text-white">{{ (item as MediaBrowserItem).title }}</span>
               <span class="text-[11px] text-white/70">
-                {{ [formatSize((item as MediaBrowserItem).size), (item as MediaBrowserItem).extension?.toUpperCase()].filter(Boolean).join(' · ') || '—' }}
+                {{ [formatSize((item as MediaBrowserItem).size, ''), (item as MediaBrowserItem).extension?.toUpperCase()].filter(Boolean).join(' · ') || '—' }}
               </span>
             </div>
           </button>

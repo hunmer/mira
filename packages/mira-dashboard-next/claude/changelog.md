@@ -4,6 +4,7 @@
 
 | 日期 | 操作 | 说明 |
 |------|------|------|
+| 2026-11-21 | 增量更新 | 基线 bc638a73（08-25）以来小改（commits 8bdade3a/2623eaf0）：素材库迁移——`api/modules/library.ts` +relocate/getRelocationProgress（SDK）；`library/index.vue` 编辑改 path 先迁移再 500ms 轮询、完成后 update、`onBeforeUnmount` 清理；`LibraryFormDialog.vue` +skipSameName 复选框（customFields）、+saving/relocationProgress props、迁移进度条与 busy 态；i18n +3 键（relocating 等）。 |
 | 2026-08-25 | 增量更新 | 新增 `/server` 运维页（SSE 实时日志/健康检查/停止服务，仅 super）与菜单项；Eagle/Billfish `ImportDialog`（importFrom + 进度轮询 + 取消）；LibraryFormDialog 加导入方式 Select；settings/index.vue -515 行拆出 DownloadPanel/ServerPanel/PluginPanel/SiteEditDialog/ManualCookieDialog；插件源迁到服务端设置（pluginSources）；DatabaseScanCard 加 matchMode 与重复文件链接；api +stopServer/fetchStore/导入三件套，client.ts 统一 401；i18n +52 键。 |
 | 2026-08-23 | 增量更新 | 08-20 以来小改：ui +tags-input 系列（6 文件）、`composables/useLibrary.ts`、`layouts/DefaultLayout.vue`、`pluginRuntime.ts`、`views/mira/statistics/index.vue`。 |
 | 2026-08-20 | 增量更新 | git since 2026-08-11（19 commits，src 33 增 0 删 43 改）。API 层迁移到 mira-app-core SDK（新增 `lib/miraClient.ts`，12/13 模块改走 SDK，axios client.ts 退化为 baseURL/token 配置）；路由 10→11（删 `/thumbnail` 并入新 `/media`；增 `/settings`）；api/modules 增 `cookieSites.ts`/`download.ts`（共 13）；ui 组件 27→30（+combobox/input-group/alert-dialog）；新组件 LibraryTreeSelect/Node、PageLoading、ShareDialog(qrcode)、TokenManageDialog、InstallTerminalDialog；composables 增 useConfirmDialog/usePluginSources；依赖增 qrcode/@types/qrcode、reka-ui ^2.10.3。更新 CLAUDE.md + claude/{overview,module-responsibilities,file-map,public-interfaces,dependencies-and-config,conventions} |

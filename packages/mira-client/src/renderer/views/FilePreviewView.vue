@@ -49,7 +49,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter, type LocationQuery } from 'vue-router'
 import { miraSDKService } from '../services/MiraSDKService'
 import { useViewHistoryStore } from '../stores/viewHistory'
-import { AUDIO_EXTENSIONS, CONVERTED_IMAGE_EXTENSIONS, VIDEO_EXTENSIONS } from '../utils/fileUtils'
+import { AUDIO_EXTENSIONS, CONVERTED_IMAGE_EXTENSIONS, VIDEO_EXTENSIONS, getFileExtension } from '../utils/fileUtils'
 import { getPluginFileFormat, getPluginFileFormats } from '../plugins/instanceManager'
 
 // 导入预览组件
@@ -139,11 +139,8 @@ const previewComponent = computed(() => {
   return DefaultPreview
 })
 
-// 获取文件扩展名
-const getFileExtension = (filename: string): string => {
-  const lastDotIndex = filename.lastIndexOf('.')
-  return lastDotIndex > 0 ? filename.substring(lastDotIndex + 1).toLowerCase() : ''
-}
+// 获取文件扩展名（正源 renderer/utils/fileUtils）
+
 
 // 加载文件信息
 const loadFileInfo = async (): Promise<void> => {

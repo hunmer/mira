@@ -10,6 +10,9 @@ plugins/users.db
 plugins/plugins/*/data/
 .spec-workflow/
 
+# 运行时依赖目录(插件运行时 pnpm/npm install 产物,勿提交、勿移动目录本身)
+packages/mira-app-server/src/plugins/node_modules/
+
 mira-server.tar
 packages/mira-app-server/.tmp-*
 

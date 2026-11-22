@@ -5,6 +5,7 @@ import { useLibrary } from '@/composables/useLibrary'
 import { fileManagerApi, fileApi } from '@/api'
 import { downloadApi, type DownloadProgress } from '@/api/modules/download'
 import PathTreeSelect from '@/components/PathTreeSelect.vue'
+import { formatSize } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Progress } from '@/components/ui/progress'
@@ -208,15 +209,6 @@ const hasMore = computed(() => offset.value + limit < total.value)
 const allSelected = computed(() =>
   items.value.length > 0 && items.value.every(item => selected.value.has(item.path)),
 )
-
-function formatSize(bytes: number) {
-  if (bytes === 0) return '-'
-  const units = ['B', 'KB', 'MB', 'GB']
-  let i = 0
-  let size = bytes
-  while (size >= 1024 && i < units.length - 1) { size /= 1024; i++ }
-  return `${size.toFixed(i === 0 ? 0 : 1)} ${units[i]}`
-}
 
 function fileIconClass(item: FileItem) {
   if (item.isDir) return 'text-blue-500'
@@ -624,7 +616,7 @@ if (selectedLibraryId.value) await loadItems()
 
         <span class="w-full truncate text-center text-sm" :title="item.name">{{ item.name }}</span>
         <span class="text-xs text-muted-foreground">
-          {{ item.isDir ? t('fileManager.folder') : formatSize(item.size) }}
+          {{ item.isDir ? t('fileManager.folder') : formatSize(item.size, '-') }}
         </span>
 
         <!-- 右键菜单触发按钮 -->

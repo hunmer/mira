@@ -1,11 +1,12 @@
 # online_client_plugins — 插件清单
 
-## 在册插件（5 个）
+## 在册插件（6 个）
 
 | 目录 | 名称/版本 | 职责 |
 |---|---|---|
 | mira-video-editor | 视频剪辑器 v1.0.0 | 片段剪辑、PySceneDetect 场景分割、delogo 去水印、批量导出（市场内最大插件，详见下节） |
 | image-search | 图片搜索 v3.0.0 | 以图搜图聚合：Pinterest + Google/Bing/Yandex/TinEye/SauceNAO/搜狗，webview 内嵌 |
+| mira-font-actions | 字体操作 v1.0.0 | 激活 TTF/OTF/TTC 字体并应用到 Adobe（Ps/Ai/Id）当前文字对象；贡献点「字体操作」窗口行为 + 媒体右键「激活或发送字体」（过滤 ttf/otf/ttc）→ `openPluginWindow` 860x640（`dist/index.html` 自包含 UI：拖入字体/激活所选/Adobe 应用），已开窗口经 `pluginWindow.send('media:add')` 增量推送；`minAppVersion 3.0.2`，permissions ui/media/font；带 `test.cjs` vm 沙箱冒烟测试（2026-09-09 新增） |
 | mira-whiteboard | 自由白板 v1.0.0 | @woven-canvas/vue 无限画板，工程管理 + 独立窗口 + 本地持久化 |
 | mira-custom-tab-demo | 自定义 Tab Demo v1.0.0 | 演示注册自定义 Tab + DOM 回调渲染 |
 | mira-welcome-demo | 欢迎示例插件 v1.0.0 | 演示配置/事件/UI/日志基本能力 |

@@ -56,6 +56,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { classifyMedia } from 'mira-app-core/shared/sdk'
 
 const { t } = useI18n()
 
@@ -82,11 +83,12 @@ const props = defineProps<Props>()
 const fileIcon = computed((): string => {
   const mimeType = props.item.mimeType || ''
   
-  if (mimeType.startsWith('image/')) {
+  const kind = classifyMedia(mimeType).kind
+  if (kind === 'image') {
     return 'image'
-  } else if (mimeType.startsWith('video/')) {
+  } else if (kind === 'video') {
     return 'video_file'
-  } else if (mimeType.startsWith('audio/')) {
+  } else if (kind === 'audio') {
     return 'audio_file'
   } else if (mimeType.includes('pdf')) {
     return 'picture_as_pdf'
@@ -111,11 +113,12 @@ const fileIcon = computed((): string => {
 const fileType = computed((): string => {
   const mimeType = props.item.mimeType || ''
   
-  if (mimeType.startsWith('image/')) {
+  const kind = classifyMedia(mimeType).kind
+  if (kind === 'image') {
     return t('search.fileSearchResult.fileTypeImage')
-  } else if (mimeType.startsWith('video/')) {
+  } else if (kind === 'video') {
     return t('search.fileSearchResult.fileTypeVideo')
-  } else if (mimeType.startsWith('audio/')) {
+  } else if (kind === 'audio') {
     return t('search.fileSearchResult.fileTypeAudio')
   } else if (mimeType.includes('pdf')) {
     return t('search.fileSearchResult.fileTypePdf')

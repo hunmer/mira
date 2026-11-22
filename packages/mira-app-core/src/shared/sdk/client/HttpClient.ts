@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import { ClientConfig, ErrorResponse, BaseResponse } from '../types';
 
 /**
@@ -23,13 +23,7 @@ export class HttpClient {
 
         // 设置请求拦截器
         this.axiosInstance.interceptors.request.use(
-            (config) => {
-                const token = this.config.getToken?.() || this.config.token;
-                if (token) {
-                    config.headers.Authorization = `Bearer ${token}`;
-                }
-                return config;
-            },
+            (reqConfig) => this.applyAuthToken(reqConfig),
             (error) => {
                 return Promise.reject(error);
             }
@@ -37,64 +31,90 @@ export class HttpClient {
 
         // 设置响应拦截器
         this.axiosInstance.interceptors.response.use(
-            (response) => {
-                return response;
-            },
-            async (error) => {
-                if (error.response) {
-                    const requestConfig = error.config as (AxiosRequestConfig & { _miraAuthRetried?: boolean }) | undefined;
-                    const isLoginRequest = requestConfig?.url?.includes('/api/auth/login');
-                    const isActiveReauthenticationRequest = !!this.reauthenticationPromise
-                        && requestConfig?.url?.includes('/api/auth/');
-                    if (
-                        error.response.status === 401
-                        && requestConfig
-                        && !requestConfig._miraAuthRetried
-                        && !isLoginRequest
-                        && !isActiveReauthenticationRequest
-                        && this.config.onUnauthorized
-                    ) {
-                        requestConfig._miraAuthRetried = true;
-                        try {
-                            const token = await this.reauthenticate();
-                            if (token) {
-                                requestConfig.headers = requestConfig.headers || {};
-                                requestConfig.headers.Authorization = `Bearer ${token}`;
-                                return this.axiosInstance.request(requestConfig);
-                            }
-                        } catch {
-                            // 重认证失败时继续抛出原始 401，保留调用方现有错误处理语义
-                        }
-                    }
-
-                    // 服务器返回了错误状态码
-                    const errorResponse: ErrorResponse = {
-                        error: error.response.data?.error || 'HTTP_ERROR',
-                        message: error.response.data?.message || error.message,
-                        timestamp: new Date().toISOString(),
-                        stack: error.response.data?.stack,
-                        status: error.response.status,
-                    };
-                    return Promise.reject(errorResponse);
-                } else if (error.request) {
-                    // 请求已发出但没有收到响应
-                    const errorResponse: ErrorResponse = {
-                        error: 'NETWORK_ERROR',
-                        message: 'Network error or server is not responding',
-                        timestamp: new Date().toISOString(),
-                    };
-                    return Promise.reject(errorResponse);
-                } else {
-                    // 其他错误
-                    const errorResponse: ErrorResponse = {
-                        error: 'REQUEST_ERROR',
-                        message: error.message,
-                        timestamp: new Date().toISOString(),
-                    };
-                    return Promise.reject(errorResponse);
-                }
-            }
+            (response) => response,
+            (error) => this.handleResponseError(error)
         );
+    }
+
+    /** 请求拦截器：注入 Bearer 认证头。 */
+    private applyAuthToken(reqConfig: InternalAxiosRequestConfig): InternalAxiosRequestConfig {
+        const token = this.config.getToken?.() || this.config.token;
+        if (token) {
+            reqConfig.headers.Authorization = `Bearer ${token}`;
+        }
+        return reqConfig;
+    }
+
+    /** 响应错误拦截器：401 时尝试重认证并重放，其余统一转 ErrorResponse 抛出。 */
+    private async handleResponseError(error: any): Promise<any> {
+        if (error.response) {
+            const replayed = await this.tryReplayWithFreshToken(error.response.status, error.config);
+            if (replayed) return replayed;
+        }
+        return Promise.reject(this.toErrorResponse(error));
+    }
+
+    /**
+     * 401 时单飞重认证并重放原请求一次。
+     * 返回重放响应的 Promise；不可重放或重认证失败时返回 null（继续抛原始错误）。
+     */
+    private async tryReplayWithFreshToken(
+        status: number,
+        requestConfig: (AxiosRequestConfig & { _miraAuthRetried?: boolean }) | undefined,
+    ): Promise<AxiosResponse | null> {
+        const isLoginRequest = requestConfig?.url?.includes('/api/auth/login');
+        const isActiveReauthenticationRequest = !!this.reauthenticationPromise
+            && requestConfig?.url?.includes('/api/auth/');
+        if (
+            status !== 401
+            || !requestConfig
+            || requestConfig._miraAuthRetried
+            || isLoginRequest
+            || isActiveReauthenticationRequest
+            || !this.config.onUnauthorized
+        ) {
+            return null;
+        }
+        requestConfig._miraAuthRetried = true;
+        try {
+            const token = await this.reauthenticate();
+            if (token) {
+                requestConfig.headers = requestConfig.headers || {};
+                requestConfig.headers.Authorization = `Bearer ${token}`;
+                return this.axiosInstance.request(requestConfig);
+            }
+        } catch {
+            // 重认证失败时继续抛出原始 401，保留调用方现有错误处理语义
+        }
+        return null;
+    }
+
+    /** axios 错误 → 统一 ErrorResponse（有响应 / 无响应 / 其他三分支）。 */
+    private toErrorResponse(error: any): ErrorResponse {
+        if (error.response) {
+            // 服务器返回了错误状态码
+            return {
+                error: error.response.data?.error || 'HTTP_ERROR',
+                message: error.response.data?.message || error.message,
+                timestamp: new Date().toISOString(),
+                stack: error.response.data?.stack,
+                status: error.response.status,
+            };
+        }
+        if (error.request) {
+            // 请求已发出但没有收到响应
+            return {
+                error: 'NETWORK_ERROR',
+                message: 'Network error or server is not responding',
+                timestamp: new Date().toISOString(),
+            };
+        }
+        // 其他错误
+        return {
+            error: 'REQUEST_ERROR',
+            message: error.message,
+            timestamp: new Date().toISOString(),
+        };
     }
 
     private reauthenticate(): Promise<string | undefined> {

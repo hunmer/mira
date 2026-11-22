@@ -92,6 +92,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 import StatusImage from '@renderer/components/common/StatusImage.vue'
 import { useLibraryStore } from '@renderer/stores/library'
+import { classifyMedia } from 'mira-app-core/shared/sdk'
 
 /**
  * 相册小组件。
@@ -177,7 +178,7 @@ function openPreview(img: AlbumImage) {
   })
 }
 
-const isImage = (mimeType?: string) => !!mimeType && mimeType.startsWith('image/')
+const isImage = (mimeType?: string) => classifyMedia(mimeType).isImage
 
 async function loadImages() {
   const libraryId = libraryStore.currentLibrary?.id

@@ -1,6 +1,45 @@
 import { Router, Request, Response } from 'express';
 import { MiraServer } from '../server';
 
+/** 单条上传活动记录（按文件夹/标签聚合的原始行） */
+type UploadActivityRecord = {
+    date: string;
+    userName: string;
+    uploader: number | null;
+    target: string;
+    targetType: 'folder' | 'tag';
+    targetId: number | null;
+    fileCount: number;
+};
+
+/** 同天同用户同目标聚合后的统计项 */
+type MergedUploadStat = {
+    userName: string;
+    uploader: number | null;
+    target: string;
+    targetType: string;
+    targetId: number | null;
+    fileCount: number;
+};
+
+/** 按 uploader::targetType::targetId 为键把一条记录合并进聚合 map（已存在则累加 fileCount） */
+function mergeStat(map: Map<string, MergedUploadStat>, item: UploadActivityRecord): void {
+    const key = `${item.uploader}::${item.targetType}::${item.targetId}`;
+    const existing = map.get(key);
+    if (existing) {
+        existing.fileCount += item.fileCount;
+        return;
+    }
+    map.set(key, {
+        userName: item.userName,
+        uploader: item.uploader,
+        target: item.target,
+        targetType: item.targetType,
+        targetId: item.targetId,
+        fileCount: item.fileCount,
+    });
+}
+
 export class StatisticsRouter {
     private router: Router;
     private backend: MiraServer;
@@ -119,8 +158,7 @@ export class StatisticsRouter {
                 const userName = (id: number | null) => id ? (userMap.get(id) || `User#${id}`) : '未知';
 
                 // 合并成统一的活动记录
-                type Record = { date: string; userName: string; uploader: number | null; target: string; targetType: 'folder' | 'tag'; targetId: number | null; fileCount: number };
-                const records: Record[] = [];
+                const records: UploadActivityRecord[] = [];
 
                 for (const r of (raw.byFolder || [])) {
                     const folderName = r.folder_id ? (folderMap.get(r.folder_id) || '未分类') : '素材库';
@@ -133,24 +171,18 @@ export class StatisticsRouter {
                 }
 
                 // 按日期分组
-                const grouped = new Map<string, Record[]>();
+                const grouped = new Map<string, UploadActivityRecord[]>();
                 for (const r of records) {
                     if (!grouped.has(r.date)) grouped.set(r.date, []);
                     grouped.get(r.date)!.push(r);
                 }
 
                 // 合并同天同用户同目标的记录
-                const result: { date: string; items: { userName: string; uploader: number | null; target: string; targetType: string; targetId: number | null; fileCount: number }[] }[] = [];
+                const result: { date: string; items: MergedUploadStat[] }[] = [];
                 for (const [date, items] of grouped) {
-                    const merged = new Map<string, { userName: string; uploader: number | null; target: string; targetType: string; targetId: number | null; fileCount: number }>();
+                    const merged = new Map<string, MergedUploadStat>();
                     for (const item of items) {
-                        const key = `${item.uploader}::${item.targetType}::${item.targetId}`;
-                        const existing = merged.get(key);
-                        if (existing) {
-                            existing.fileCount += item.fileCount;
-                        } else {
-                            merged.set(key, { userName: item.userName, uploader: item.uploader, target: item.target, targetType: item.targetType, targetId: item.targetId, fileCount: item.fileCount });
-                        }
+                        mergeStat(merged, item);
                     }
                     result.push({ date, items: [...merged.values()].sort((a, b) => b.fileCount - a.fileCount) });
                 }

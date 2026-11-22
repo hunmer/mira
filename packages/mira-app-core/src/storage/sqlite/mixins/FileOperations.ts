@@ -8,6 +8,253 @@ const serializeCustomFields = (value: any) => {
   return value === undefined || typeof value === 'string' ? value : JSON.stringify(value);
 };
 
+/**
+ * getFiles 专用：由 filters 构造 WHERE 子句与参数。
+ * 涵盖 recycled/thumb/star/名称/分类/日期/尺寸/评分/文件夹/标签/自定义字段/metadata/ids 全部过滤。
+ */
+function buildFilesWhere(filters: Record<string, any>): { whereSql: string; params: any[]; ids: number[] } {
+  const whereClauses: string[] = [];
+  const params: any[] = [];
+  const folderId = parseInt(filters.folder?.toString() || '0') || 0;
+  const tagIds = Array.isArray(filters.tags) ? filters.tags.map((id: any) => id.toString()) : [];
+  const ids = Array.isArray(filters.ids) ? filters.ids.map((id: any) => Number(id)).filter(n => Number.isFinite(n)) : [];
+
+  if (filters.recycled !== undefined) {
+    whereClauses.push('recycled = ?');
+    params.push(filters.recycled ? 1 : 0);
+  }
+
+  if (filters.thumb !== undefined) {
+    whereClauses.push('thumb = ?');
+    params.push(filters.thumb ? 1 : 0);
+  }
+
+  if (filters.star !== undefined) {
+    whereClauses.push('stars >= ?');
+    params.push(filters.star);
+  }
+
+  if (filters.title) {
+    whereClauses.push('name LIKE ?');
+    params.push(`%${filters.title}%`);
+  }
+
+  if (filters.name) {
+    whereClauses.push('name LIKE ?');
+    params.push(`%${filters.name}%`);
+  }
+
+  if (filters.url) {
+    whereClauses.push('website LIKE ?');
+    params.push(`%${filters.url}%`);
+  }
+
+  if (filters.category) {
+    const extMap: Record<string, string[]> = {
+      image: ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg', '.ico', '.tiff', '.tif'],
+      video: ['.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv', '.webm', '.m4v', '.mpg', '.mpeg', '.3gp'],
+      audio: ['.mp3', '.wav', '.flac', '.aac', '.ogg', '.wma', '.m4a', '.ape', '.opus'],
+    };
+    const exts = extMap[filters.category];
+    if (exts) {
+      const placeholders = exts.map(() => 'LOWER(name) LIKE ?').join(' OR ');
+      whereClauses.push(`(${placeholders})`);
+      params.push(...exts.map((ext: string) => `%${ext}`));
+    }
+  }
+
+  if (filters.dateRange) {
+    let startTime = filters.dateRange.start.getTime();
+    let endTime = filters.dateRange.end.getTime();
+    const today = new Date();
+    const isToday =
+      filters.dateRange.end.getFullYear() === today.getFullYear() &&
+      filters.dateRange.end.getMonth() === today.getMonth() &&
+      filters.dateRange.end.getDate() === today.getDate();
+    if (isToday) {
+      const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+      endTime = endOfToday.getTime();
+    }
+    whereClauses.push('created_at BETWEEN ? AND ?');
+    params.push(startTime, endTime);
+  }
+
+  // 日期范围过滤（ISO 字符串或毫秒时间戳；SDK / FilterBar 日期区间）。
+  // created_after/created_before -> created_at（文件创建时间,导入素材保留文件原始时间）
+  // imported_after/imported_before -> imported_at（导入时间,与 UI 默认排序一致）
+  const toDateMs = (v: any): number | null => {
+    if (typeof v === 'number' && Number.isFinite(v)) return v;
+    if (typeof v === 'string' && v.trim()) {
+      const ms = Date.parse(v);
+      if (!Number.isNaN(ms)) return ms;
+    }
+    return null;
+  };
+  if (filters.created_after !== undefined) {
+    const ms = toDateMs(filters.created_after);
+    if (ms !== null) {
+      whereClauses.push('created_at >= ?');
+      params.push(ms);
+    }
+  }
+  if (filters.created_before !== undefined) {
+    const ms = toDateMs(filters.created_before);
+    if (ms !== null) {
+      whereClauses.push('created_at <= ?');
+      params.push(ms);
+    }
+  }
+  if (filters.imported_after !== undefined) {
+    const ms = toDateMs(filters.imported_after);
+    if (ms !== null) {
+      whereClauses.push('imported_at >= ?');
+      params.push(ms);
+    }
+  }
+  if (filters.imported_before !== undefined) {
+    const ms = toDateMs(filters.imported_before);
+    if (ms !== null) {
+      whereClauses.push('imported_at <= ?');
+      params.push(ms);
+    }
+  }
+
+  const sizeMin = filters.size_min ?? filters.minSize;
+  if (sizeMin !== undefined) {
+    whereClauses.push('size >= ?');
+    params.push(sizeMin * 1024);
+  }
+
+  const sizeMax = filters.size_max ?? filters.maxSize;
+  if (sizeMax !== undefined) {
+    whereClauses.push('size <= ?');
+    params.push(sizeMax * 1024);
+  }
+
+  if (filters.minRating !== undefined) {
+    whereClauses.push('stars >= ?');
+    params.push(filters.minRating);
+  }
+
+  if (filters.folder === '=null' || filters.folder === null) {
+    whereClauses.push('(folder_id IS NULL OR folder_id = 0)');
+  } else if (folderId !== 0) {
+    whereClauses.push('folder_id = ?');
+    params.push(folderId);
+  }
+
+  if (filters.tags === '=null' || filters.tags === null) {
+    whereClauses.push("(tags IS NULL OR tags = '[]' OR json_array_length(tags) = 0)");
+  } else if (tagIds.length > 0) {
+    const tagPlaceholders = tagIds.map(() => '?').join(',');
+    whereClauses.push(`(
+      SELECT COUNT(DISTINCT value)
+      FROM json_each(tags)
+      WHERE value IN (${tagPlaceholders})
+    ) = ${tagIds.length}`);
+    params.push(...tagIds);
+  }
+
+  if (filters.custom_fields) {
+    const customFields = filters.custom_fields;
+    const convertValue = (value: any) => {
+      if (value == 'null') {
+        value = null;
+      }
+      return value;
+    }
+    for (const [key, value] of Object.entries(customFields)) {
+      if (typeof value === 'string' && value.startsWith('!=')) {
+        let actualValue: string | null = value.substring(2).trim();
+        whereClauses.push(`(json_extract(custom_fields, '$.${key}') IS NOT NULL OR json_extract(custom_fields, '$.${key}') != ?)`);
+        params.push(convertValue(actualValue));
+      } else if (typeof value === 'string' && value.startsWith('>')) {
+        whereClauses.push(`json_extract(custom_fields, '$.${key}') > ?`);
+        params.push(convertValue(value.substring(1).trim()));
+      } else if (typeof value === 'string' && value.startsWith('<')) {
+        whereClauses.push(`json_extract(custom_fields, '$.${key}') < ?`);
+        params.push(convertValue(value.substring(1).trim()));
+      } else {
+        whereClauses.push(`json_extract(custom_fields, '$.${key}') = ?`);
+        params.push(convertValue(value));
+      }
+    }
+  }
+
+  // metadata 过滤：按最长边 MAX(width, height) 过滤
+  // SQLite 的 MAX(x,y) 是标量函数（非聚合），自动忽略 NULL 参数；
+  // width/height 都为 NULL 时返回 NULL，比较结果为 falsy，自然排除无尺寸字段的文件（如音频）。
+  // CAST AS REAL 确保 exiftool 返回的字符串数值（如 "1920"）正确数值比较。
+  if (filters.metadata_dim_min !== undefined || filters.metadata_dim_max !== undefined) {
+    const longest = `MAX(CAST(json_extract(metadata, '$.width') AS REAL), CAST(json_extract(metadata, '$.height') AS REAL))`;
+    if (filters.metadata_dim_min !== undefined) {
+      whereClauses.push(`${longest} >= ?`);
+      params.push(filters.metadata_dim_min);
+    }
+    if (filters.metadata_dim_max !== undefined) {
+      whereClauses.push(`${longest} <= ?`);
+      params.push(filters.metadata_dim_max);
+    }
+  }
+
+  // metadata 过滤：按时长 duration（秒）
+  if (filters.metadata_duration_min !== undefined) {
+    whereClauses.push(`CAST(json_extract(metadata, '$.duration') AS REAL) >= ?`);
+    params.push(filters.metadata_duration_min);
+  }
+  if (filters.metadata_duration_max !== undefined) {
+    whereClauses.push(`CAST(json_extract(metadata, '$.duration') AS REAL) <= ?`);
+    params.push(filters.metadata_duration_max);
+  }
+
+  // 按 id 集合过滤（如插件语义搜索的命中集合）
+  if (ids.length > 0) {
+    whereClauses.push(`id IN (${ids.map(() => '?').join(',')})`);
+    params.push(...ids);
+  } else if (Array.isArray(filters.ids)) {
+    // 显式空集合：无命中，直接空结果（保持与其他过滤器的 AND 语义）
+    whereClauses.push('0 = 1');
+  }
+
+  const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+  return { whereSql, params, ids };
+}
+
+/** getFiles 专用：构造 ORDER BY 子句（sort:'ids' 按传入 ids 顺序，custom_fields 走 json_extract）。 */
+function buildFilesOrderBy(filters: Record<string, any>, ids: number[]): string {
+  if (!filters.sort) return '';
+  const order = filters?.order || 'asc';
+  if (filters.sort === 'ids') {
+    // 按 ids 集合的给定顺序排序（如语义相似度降序），instr 匹配 ",id," 片段
+    return ` ORDER BY instr(',${ids.join(',')},', ',' || id || ',')`;
+  }
+  if (filters.sort === 'custom_fields') {
+    return ` ORDER BY json_extract(custom_fields, '$') ${order}`;
+  }
+  return ` ORDER BY ${filters.sort} ${order}`;
+}
+
+/** getFiles 专用：解析分页参数（默认 limit 100 / offset 0）。 */
+function applyFilesPagination(filters: Record<string, any>): { limit: number; offset: number } {
+  return {
+    limit: parseInt(filters.limit?.toString() || '100') || 100,
+    offset: parseInt(filters.offset?.toString() || '0') || 0,
+  };
+}
+
+/** getFiles 专用：行映射与后处理（countFile=true 时跳过 processingFiles 补全，仅做 row → map）。 */
+async function mapFileRows(
+  core: CoreAccessible,
+  rows: any[],
+  options?: { isUrlFile?: boolean; countFile?: boolean },
+): Promise<Record<string, any>[]> {
+  let result = rows.map((row: any) => core.rowToMap(row));
+  if (!options?.countFile) {
+    result = await core.processingFiles(result, options?.isUrlFile ?? true);
+  }
+  return result;
+}
+
 export const FileOperations = {
   async createFile(this: CoreAccessible, fileData: Record<string, any>): Promise<Record<string, any>> {
     const result = await this.runSql(
@@ -145,7 +392,7 @@ export const FileOperations = {
 
     if (src && fs.existsSync(src) && src !== dest) {
       try {
-        fs.renameSync(src, dest);
+        await fs.promises.rename(src, dest);
       } catch (e) {
         console.error(`[recoverFile] move out of .trash failed (${src} -> ${dest}):`, e);
         await this.runSql('UPDATE files SET name = ?, recycled = ?, path = ? WHERE id = ?', [item.name, item.recycled, item.path, id]);
@@ -210,244 +457,20 @@ export const FileOperations = {
   }> {
     const select = options?.select || '*';
     const filters = options?.filters || {};
-    const whereClauses: string[] = [];
-    const params: any[] = [];
-    const folderId = parseInt(filters.folder?.toString() || '0') || 0;
-    const tagIds = Array.isArray(filters.tags) ? filters.tags.map((id: any) => id.toString()) : [];
-    const limit = parseInt(filters.limit?.toString() || '100') || 100;
-    const offset = parseInt(filters.offset?.toString() || '0') || 0;
+    const { whereSql, params, ids } = buildFilesWhere(filters);
+    const orderBy = buildFilesOrderBy(filters, ids);
+    const { limit, offset } = applyFilesPagination(filters);
 
-    if (filters.recycled !== undefined) {
-      whereClauses.push('recycled = ?');
-      params.push(filters.recycled ? 1 : 0);
-    }
-
-    if (filters.thumb !== undefined) {
-      whereClauses.push('thumb = ?');
-      params.push(filters.thumb ? 1 : 0);
-    }
-
-    if (filters.star !== undefined) {
-      whereClauses.push('stars >= ?');
-      params.push(filters.star);
-    }
-
-    if (filters.title) {
-      whereClauses.push('name LIKE ?');
-      params.push(`%${filters.title}%`);
-    }
-
-    if (filters.name) {
-      whereClauses.push('name LIKE ?');
-      params.push(`%${filters.name}%`);
-    }
-
-    if (filters.url) {
-      whereClauses.push('website LIKE ?');
-      params.push(`%${filters.url}%`);
-    }
-
-    if (filters.category) {
-      const extMap: Record<string, string[]> = {
-        image: ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg', '.ico', '.tiff', '.tif'],
-        video: ['.mp4', '.avi', '.mkv', '.mov', '.wmv', '.flv', '.webm', '.m4v', '.mpg', '.mpeg', '.3gp'],
-        audio: ['.mp3', '.wav', '.flac', '.aac', '.ogg', '.wma', '.m4a', '.ape', '.opus'],
-      };
-      const exts = extMap[filters.category];
-      if (exts) {
-        const placeholders = exts.map(() => 'LOWER(name) LIKE ?').join(' OR ');
-        whereClauses.push(`(${placeholders})`);
-        params.push(...exts.map((ext: string) => `%${ext}`));
-      }
-    }
-
-    if (filters.dateRange) {
-      let startTime = filters.dateRange.start.getTime();
-      let endTime = filters.dateRange.end.getTime();
-      const today = new Date();
-      const isToday =
-        filters.dateRange.end.getFullYear() === today.getFullYear() &&
-        filters.dateRange.end.getMonth() === today.getMonth() &&
-        filters.dateRange.end.getDate() === today.getDate();
-      if (isToday) {
-        const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
-        endTime = endOfToday.getTime();
-      }
-      whereClauses.push('created_at BETWEEN ? AND ?');
-      params.push(startTime, endTime);
-    }
-
-    // 日期范围过滤（ISO 字符串或毫秒时间戳；SDK / FilterBar 日期区间）。
-    // created_after/created_before -> created_at（文件创建时间,导入素材保留文件原始时间）
-    // imported_after/imported_before -> imported_at（导入时间,与 UI 默认排序一致）
-    const toDateMs = (v: any): number | null => {
-      if (typeof v === 'number' && Number.isFinite(v)) return v;
-      if (typeof v === 'string' && v.trim()) {
-        const ms = Date.parse(v);
-        if (!Number.isNaN(ms)) return ms;
-      }
-      return null;
-    };
-    if (filters.created_after !== undefined) {
-      const ms = toDateMs(filters.created_after);
-      if (ms !== null) {
-        whereClauses.push('created_at >= ?');
-        params.push(ms);
-      }
-    }
-    if (filters.created_before !== undefined) {
-      const ms = toDateMs(filters.created_before);
-      if (ms !== null) {
-        whereClauses.push('created_at <= ?');
-        params.push(ms);
-      }
-    }
-    if (filters.imported_after !== undefined) {
-      const ms = toDateMs(filters.imported_after);
-      if (ms !== null) {
-        whereClauses.push('imported_at >= ?');
-        params.push(ms);
-      }
-    }
-    if (filters.imported_before !== undefined) {
-      const ms = toDateMs(filters.imported_before);
-      if (ms !== null) {
-        whereClauses.push('imported_at <= ?');
-        params.push(ms);
-      }
-    }
-
-    const sizeMin = filters.size_min ?? filters.minSize;
-    if (sizeMin !== undefined) {
-      whereClauses.push('size >= ?');
-      params.push(sizeMin * 1024);
-    }
-
-    const sizeMax = filters.size_max ?? filters.maxSize;
-    if (sizeMax !== undefined) {
-      whereClauses.push('size <= ?');
-      params.push(sizeMax * 1024);
-    }
-
-    if (filters.minRating !== undefined) {
-      whereClauses.push('stars >= ?');
-      params.push(filters.minRating);
-    }
-
-    if (filters.folder === '=null' || filters.folder === null) {
-      whereClauses.push('(folder_id IS NULL OR folder_id = 0)');
-    } else if (folderId !== 0) {
-      whereClauses.push('folder_id = ?');
-      params.push(folderId);
-    }
-
-    if (filters.tags === '=null' || filters.tags === null) {
-      whereClauses.push("(tags IS NULL OR tags = '[]' OR json_array_length(tags) = 0)");
-    } else if (tagIds.length > 0) {
-      const tagPlaceholders = tagIds.map(() => '?').join(',');
-      whereClauses.push(`(
-        SELECT COUNT(DISTINCT value)
-        FROM json_each(tags)
-        WHERE value IN (${tagPlaceholders})
-      ) = ${tagIds.length}`);
-      params.push(...tagIds);
-    }
-
-    if (filters.custom_fields) {
-      const customFields = filters.custom_fields;
-      const convertValue = (value: any) => {
-        if (value == 'null') {
-          value = null;
-        }
-        return value;
-      }
-      for (const [key, value] of Object.entries(customFields)) {
-        if (typeof value === 'string' && value.startsWith('!=')) {
-          let actualValue: string | null = value.substring(2).trim();
-          whereClauses.push(`(json_extract(custom_fields, '$.${key}') IS NOT NULL OR json_extract(custom_fields, '$.${key}') != ?)`);
-          params.push(convertValue(actualValue));
-        } else if (typeof value === 'string' && value.startsWith('>')) {
-          whereClauses.push(`json_extract(custom_fields, '$.${key}') > ?`);
-          params.push(convertValue(value.substring(1).trim()));
-        } else if (typeof value === 'string' && value.startsWith('<')) {
-          whereClauses.push(`json_extract(custom_fields, '$.${key}') < ?`);
-          params.push(convertValue(value.substring(1).trim()));
-        } else {
-          whereClauses.push(`json_extract(custom_fields, '$.${key}') = ?`);
-          params.push(convertValue(value));
-        }
-      }
-    }
-
-    // metadata 过滤：按最长边 MAX(width, height) 过滤
-    // SQLite 的 MAX(x,y) 是标量函数（非聚合），自动忽略 NULL 参数；
-    // width/height 都为 NULL 时返回 NULL，比较结果为 falsy，自然排除无尺寸字段的文件（如音频）。
-    // CAST AS REAL 确保 exiftool 返回的字符串数值（如 "1920"）正确数值比较。
-    if (filters.metadata_dim_min !== undefined || filters.metadata_dim_max !== undefined) {
-      const longest = `MAX(CAST(json_extract(metadata, '$.width') AS REAL), CAST(json_extract(metadata, '$.height') AS REAL))`;
-      if (filters.metadata_dim_min !== undefined) {
-        whereClauses.push(`${longest} >= ?`);
-        params.push(filters.metadata_dim_min);
-      }
-      if (filters.metadata_dim_max !== undefined) {
-        whereClauses.push(`${longest} <= ?`);
-        params.push(filters.metadata_dim_max);
-      }
-    }
-
-    // metadata 过滤：按时长 duration（秒）
-    if (filters.metadata_duration_min !== undefined) {
-      whereClauses.push(`CAST(json_extract(metadata, '$.duration') AS REAL) >= ?`);
-      params.push(filters.metadata_duration_min);
-    }
-    if (filters.metadata_duration_max !== undefined) {
-      whereClauses.push(`CAST(json_extract(metadata, '$.duration') AS REAL) <= ?`);
-      params.push(filters.metadata_duration_max);
-    }
-
-    // 按 id 集合过滤（如插件语义搜索的命中集合）
-    const ids = Array.isArray(filters.ids) ? filters.ids.map((id: any) => Number(id)).filter(n => Number.isFinite(n)) : [];
-    if (ids.length > 0) {
-      whereClauses.push(`id IN (${ids.map(() => '?').join(',')})`);
-      params.push(...ids);
-    } else if (Array.isArray(filters.ids)) {
-      // 显式空集合：无命中，直接空结果（保持与其他过滤器的 AND 语义）
-      whereClauses.push('0 = 1');
-    }
-
-    const where = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
-    let orderBy = '';
-    if (filters?.sort) {
-      const order = filters?.order || 'asc';
-      if (filters.sort === 'ids') {
-        // 按 ids 集合的给定顺序排序（如语义相似度降序），instr 匹配 ",id," 片段
-        orderBy = ` ORDER BY instr(',${ids.join(',')},', ',' || id || ',')`;
-      } else if (filters.sort === 'custom_fields') {
-        orderBy = ` ORDER BY json_extract(custom_fields, '$') ${order}`;
-      } else {
-        orderBy = ` ORDER BY ${filters.sort} ${order}`;
-      }
-    }
-
-    const query = `SELECT ${select} FROM files ${where}${orderBy} LIMIT ? OFFSET ?`;
-    const countQuery = `SELECT COUNT(*) as total FROM files ${where}`;
+    const query = `SELECT ${select} FROM files ${whereSql}${orderBy} LIMIT ? OFFSET ?`;
+    const countQuery = `SELECT COUNT(*) as total FROM files ${whereSql}`;
 
     const [rows, countRows] = await Promise.all([
       this.getSql(query, [...params, limit, offset]),
       this.getSql(countQuery, params),
     ]);
 
-    let result = rows.map((row: any) => this.rowToMap(row));
-    if (!options?.countFile) {
-      result = await this.processingFiles(result, options?.isUrlFile ?? true);
-    }
-
-    return {
-      result,
-      limit,
-      offset,
-      total: countRows[0].total,
-    };
+    const result = await mapFileRows(this, rows, options);
+    return { result, limit, offset, total: countRows[0].total };
   },
 
   async queryFile(this: CoreAccessible, query: Record<string, any>, isUrlFile: boolean = true): Promise<Record<string, any>[]> {

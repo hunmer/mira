@@ -45,6 +45,9 @@ export { FileSystemModule } from './modules/FileSystemModule';
 export { StatisticsModule } from './modules/StatisticsModule';
 export { ThumbnailModule } from './modules/ThumbnailModule';
 
+// 共享媒体类型判定（client / plugin-ui / dashboard 通用纯函数）
+export { classifyMedia, type MediaKind, type MediaClassification } from '../media/classifyMedia';
+
 // 导出类型定义
 export * from './types';
 export type { WebSocketOptions, WebSocketMessage, WebSocketEventCallback } from './types';

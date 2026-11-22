@@ -4,6 +4,7 @@
  * 包含路径工具、MIME/类型标签映射、排序/过滤比较器、索引构建与格式化函数，
  * 全部为无框架依赖的纯函数，供各视图 SFC 与根组件共用。
  */
+import { classifyMedia } from "mira-app-core/shared/sdk";
 
 export type FileSystemView = "icons" | "list" | "columns" | "gallery"
 
@@ -187,7 +188,7 @@ export function fileKindLabel(file: FileEntry) {
   const byExtension = FILE_KIND_LABELS[fileExtension(file.name)]
 
   if (byExtension) return byExtension
-  if (file.contentType?.startsWith("image/")) return "Image"
+  if (classifyMedia(file.contentType).isImage) return "Image"
 
   return file.contentType ?? "Document"
 }
@@ -302,7 +303,7 @@ export function fileTypeFilterGroup(mime: string): FileTypeFilterGroup {
     return "Spreadsheets"
   }
 
-  if (mime.startsWith("image/")) return "Images"
+  if (classifyMedia(mime).isImage) return "Images"
 
   if (
     mime === "application/json" ||
@@ -334,7 +335,7 @@ export function fileTypeFilterGroup(mime: string): FileTypeFilterGroup {
 export function viewerKindForFile(
   file: FileSystemFileItem
 ): FileSystemViewerKind | null {
-  if (file.contentType?.startsWith("image/")) return "image"
+  if (classifyMedia(file.contentType).isImage) return "image"
   if (file.contentType === "application/pdf") return "pdf"
 
   const name = (file.name ?? file.path).toLowerCase()

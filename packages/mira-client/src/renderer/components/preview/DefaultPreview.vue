@@ -54,6 +54,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { formatBytes as formatFileSize, formatDate } from '@renderer/utils'
+import { classifyMedia } from 'mira-app-core/shared/sdk'
+import { getFileExtension as getExtFromName } from '@renderer/utils/fileUtils'
 
 interface Props {
   fileInfo: any
@@ -71,15 +74,15 @@ const getFileIcon = (): string => {
   const mimeType = (props.fileInfo?.mimeType || '').toLowerCase()
   
   // 根据文件类型返回对应的图标
-  if (mimeType.startsWith('image/') || fileName.match(/\.(jpg|jpeg|png|gif|bmp|svg|webp)$/)) {
+  if (classifyMedia(mimeType, getExtFromName(fileName)).isImage) {
     return '🖼️'
   }
   
-  if (mimeType.startsWith('video/') || fileName.match(/\.(mp4|avi|mov|wmv|flv|mkv|webm)$/)) {
+  if (classifyMedia(mimeType, getExtFromName(fileName)).isVideo) {
     return '🎥'
   }
   
-  if (mimeType.startsWith('audio/') || fileName.match(/\.(mp3|wav|flac|aac|ogg|m4a)$/)) {
+  if (classifyMedia(mimeType, getExtFromName(fileName)).isAudio) {
     return '🎵'
   }
   
@@ -108,31 +111,6 @@ const getFileIcon = (): string => {
   }
   
   return '📁'
-}
-
-const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return '0 B'
-  
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
-}
-
-const formatDate = (dateString: string): string => {
-  try {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  } catch {
-    return dateString
-  }
 }
 
 const goBack = (): void => {

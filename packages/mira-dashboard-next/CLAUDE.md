@@ -1,6 +1,6 @@
 # mira-dashboard-next
 
-Mira 的 Web 管理面板。基于 Vue 3.5 + Tailwind CSS 4 + shadcn-vue（reka-ui）构建的 SPA，替代旧版 Vben Admin 实现。提供素材库/插件/管理员/设备/文件/统计/媒体维护（缩略图/元数据/库扫描/重复清理）/Eagle·Billfish 跨库导入/服务端运维（/server 实时日志，仅 super）/服务端设置等管理能力，支持中英文 i18n 与动态插件前端路由。
+Mira 的 Web 管理面板。基于 Vue 3.5 + Tailwind CSS 4 + shadcn-vue（reka-ui）构建的 SPA，替代旧版 Vben Admin 实现。提供素材库（含路径迁移）/插件/管理员/设备/文件/统计/媒体维护（缩略图/元数据/库扫描/重复清理）/Eagle·Billfish 跨库导入/服务端运维（/server 实时日志，仅 super）/服务端设置等管理能力，支持中英文 i18n 与动态插件前端路由。
 
 ## 约定的规则
 
@@ -33,13 +33,11 @@ Mira 的 Web 管理面板。基于 Vue 3.5 + Tailwind CSS 4 + shadcn-vue（reka-
 ## 扫描状态
 
 - **版本**: 0.0.0 (private)
-- **扫描时间**: 2026-08-25（增量，上次 2026-08-23；基线 2d1710c1 以来 28 个 src 文件变更）
+- **扫描时间**: 2026-11-21（增量，上次 2026-08-25；基线 bc638a73 以来 5 个 src 文件变更）
 - **本次要点**:
-  - **新增 `/server` 运维页**（`views/mira/server/index.vue` 299 行，路由 meta roles: ['super']）：SSE 实时日志（/logs/stream）、健康检查、停止服务（stopServer）；router 与 DefaultLayout 加菜单项。
-  - **Eagle/Billfish 跨库导入**：新 `views/mira/library/ImportDialog.vue`（215 行，importFrom 发起 + 轮询进度 + 取消）；LibraryFormDialog 加「文件导入方式」Select（copy/move/link 写 `customFields.importType`）。
-  - **settings 拆分**：`views/mira/settings/index.vue` -515 行，拆出 DownloadPanel（355 行 Cookie 站点/下载）/ServerPanel/PluginPanel/SiteEditDialog/ManualCookieDialog 5 个组件；插件源从 localStorage 一次性迁移到服务端设置（usePluginSources 改造 + 迁移后清本地键）。
-  - **media 卡片**：DatabaseScanCard 加 matchMode Select（name-size/size/name）与重复文件链接；Metadata/ThumbnailCard 适配重导 Hook。
-  - api：library +importFrom/getImportProgress/cancelImport（SDK）、fileManager scanDuplicates matchMode、plugin +fetchStore（→ `/api/plugins/store` 代理）、system +stopServer；client.ts 统一 401。
-  - i18n en/zh-CN 各 +52 键。
+  - **素材库迁移**：编辑库时改 `path` 触发 `libraryApi.relocate(id, newPath)` → 轮询 `getRelocationProgress`（500ms，movedFiles/totalFiles 进度条）；完成后再 `update`，失败 toast 显示 `response.data.error`，`onBeforeUnmount` 清理定时器（`views/mira/library/index.vue`）
+  - `LibraryFormDialog.vue`：+`skipSameName` 复选框（写入 `customFields.skipSameName`）、+`saving`/`relocationProgress` props、迁移进度条（Progress 组件 + 百分比 + 当前文件）、busy 态禁止关闭/保存
+  - api：`library.ts` +relocate/getRelocationProgress（SDK `libraries()`，类型 `LibraryRelocationProgress`/`RelocateLibraryResponse` 来自 mira-app-core）
+  - i18n en/zh-CN 各 +3 键（relocating/relocationFiles/relocationCompleted）
 - **测试**: 无（未发现）
 - **下一步建议**: `claude/file-map·public-interfaces` 未随新页面/面板逐条重写，下次深扫补全

@@ -70,6 +70,9 @@ interface ServerSettings {
       "path": "...",
       "enableHash": false,
       "enableAutoSync": true,
+      "enableAutoBackup": true,   // v3.0 起库创建默认带
+      "importType": "copy",       // v3.0 起：copy / move / link 导入模式（见 docs/library-import-modes.md）
+      "skipSameName": false,      // v3.0.2 起：同文件夹同名文件直接复用已有记录（导入返回 duplicate:true）
       "useHttpFile": true,
       "serverURL": "http://127.0.0.1",
       "serverPort": "8081"
@@ -83,11 +86,13 @@ interface ServerSettings {
 ```
 
 > 顶层冗余字段：`useHttpFile` / `serverURL` / `serverPort` 在示例中既出现在 `customFields` 内也出现在顶层（历史遗留，未规范化）。
+> v3.0.2 素材库物理迁移：`LibraryRelocationService` 完成后会把本文件中对应库的 `path` 与 `customFields.path` 改写为目标路径并保留其余字段。
 
 ## 各素材库 SQLite
 
 - 每个库独立 SQLite 文件（位于库 `path` 下，由 `mira-app-core` 管理），接口契约 `ILibraryServerData`（from `mira-app-core/storage/sqlite`）。
 - 具体 schema 由 `mira-app-core` 定义，本包未扫描到建表代码。
+- 由 `LibraryRoutes` stats 查询可证（2026-11）：文件夹数量从 `folders` 表计数；文件标签存于 `files.tags` JSON 列（`json_each` 展开），不再是独立 `file_tags` 表；文件类型分布走 `getFileTypeStatistics()`。
 
 ## 插件清单 (`src/plugins/plugins.json`)
 
@@ -98,6 +103,8 @@ interface ServerSettings {
   { "name": "mira_eagle_extension",   "enabled": true,  "path": "node_modules/mira_eagle_extension" }
 ]
 ```
+
+> 2026-11 起注册表共 15 条（v3.0.1 时 11 条）：新增 mira_html_format、mira_font_format、mira_office_viewer（均 enabled）与 mira_semantic_search（disabled），并全量重写补齐 title/category/tags 展示 meta。
 
 重复文件扫描使用内置 `/fs/database/duplicates` 接口，不在插件清单中注册。
 

@@ -119,7 +119,8 @@ export class HttpClient { /* axios 封装 */ }
 ```
 
 > 各 Module 的方法签名本次未逐一扫描，需查阅 src/shared/sdk/modules/*.ts。
-> SDK 覆盖审计（`.audit/sdk-coverage-report.md`，2026-08-19）：server 固定 JSON API 128 条中 covered 117 / missing 11 / excluded 13 / dynamic 7。
+> v3.0.2 新增 SDK 方法：FileModule `importFilePath(libraryId, filePath, {folderId?, tags?})`、`checkDuplicates({libraryId, names, clientId?})`；LibraryModule `relocate(id, destinationPath)`、`getRelocationProgress(id, relocationId)`；TagModule `setFileTagsBatch({libraryId, fileIds, tags})`。HttpClient 支持 401 自动重认证（`onUnauthorized` 配置项，重放一次）。folder/tags 类参数普遍接受 ID 或名称。
+> SDK 覆盖审计（`.audit/sdk-coverage-report.md`，2026-09-09 生成）：server 固定 JSON API 141 条中 covered 128 / missing 13 / excluded 13 / dynamic 7。
 
 ## package.json exports 映射
 

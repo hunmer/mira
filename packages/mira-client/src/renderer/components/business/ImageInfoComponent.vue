@@ -111,7 +111,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import type { FileInfo } from '../../../shared/types'
-import { getCacheBustedPreviewImageSource } from '../../utils/fileUtils'
+import { getCacheBustedPreviewImageSource, getFileExtension as getExtFromName } from '../../utils/fileUtils'
+import { formatBytes as formatFileSize, formatDate } from '../../utils'
 import { useFolderStore } from '../../stores/folder'
 import { useTagStore } from '../../stores/tag'
 import StatusImage from '@renderer/components/common/StatusImage.vue'
@@ -176,41 +177,15 @@ const cancelAddTag = () => {
 }
 
 const getFileExtension = (image: FileInfo): string => {
-  const extension = image.extension || image.name.split('.').pop()?.toUpperCase()
+  const extension = image.extension || getExtFromName(image.name).toUpperCase()
   return extension || 'Unknown'
-}
-
-const formatFileSize = (bytes?: number): string => {
-  if (!bytes) return 'Unknown'
-  const units = ['B', 'KB', 'MB', 'GB']
-  let size = bytes
-  let unitIndex = 0
-  
-  while (size >= 1024 && unitIndex < units.length - 1) {
-    size /= 1024
-    unitIndex++
-  }
-  
-  return `${size.toFixed(1)} ${units[unitIndex]}`
 }
 
 const getFileFormat = (fileName?: string): string => {
   if (!fileName) return 'Unknown'
-  const extension = fileName.split('.').pop()?.toUpperCase()
-  return extension || 'Unknown'
+  return getExtFromName(fileName).toUpperCase() || 'Unknown'
 }
 
-const formatDate = (dateString?: string): string => {
-  if (!dateString) return 'Unknown'
-  const date = new Date(dateString)
-  return date.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-}
 </script>
 
 <style scoped>

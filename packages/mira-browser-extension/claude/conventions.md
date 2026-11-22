@@ -7,7 +7,7 @@
 | `pnpm --filter mira-browser-extension dev` | vite + @crxjs HMR 开发 |
 | `pnpm --filter mira-browser-extension build` | 类型检查 + 生产构建(`vue-tsc --noEmit && vite build`),产物在 `dist/` |
 | `pnpm --filter mira-browser-extension type-check` | 仅类型检查(`vue-tsc --noEmit`) |
-| `pnpm --filter mira-browser-extension test` | vitest 单测(目前 19 个测试文件,约 137 用例) |
+| `pnpm --filter mira-browser-extension test` | vitest 单测(26 个测试文件,约 169 用例;默认 node 环境,个别文件用 `// @vitest-environment jsdom` 覆盖) |
 | `pnpm --filter mira-browser-extension test:watch` | vitest watch |
 
 **加载到 Chrome**:`chrome://extensions` → 开发者模式 → 加载已解压 → 选 `dist/`。改代码后必须 build + 重新加载扩展 + 刷新目标页。
@@ -30,6 +30,10 @@
 6. **`chrome` 在测试环境不存在**:任何顶层(模块加载时)访问 `chrome.*` 必须 `typeof chrome !== 'undefined'` 守卫(见 `shared/debug.ts`)。
 7. **新加 offscreen/content/UI 之间的消息**:在 `shared/messages.ts` 的 Request/Event/ContentCommand 联合类型 + `REQUEST_TYPES`/`COMMAND_TYPES`/`EVENT_TYPES` 集合里都登记,`isRequest`/`isContentCommand` 才能识别。
 8. **不要动 `vite.config.ts` 的 `vue` 单路径 alias**:`mira-plugin-ui` 是 npm 实体目录,不钉死会出现双 vue 实例(slot/inject 崩溃)。
+9. **注入网页的 UI 一律进 Shadow DOM**(宿主 `all:initial` 隔离),mira-plugin-ui 样式引**编译产物** `mira-plugin-ui/mira-plugin-ui.css?url`,不要对源码 CSS 用 `?url`(@crxjs 会保留为不存在的 src 路径)。
+10. **CSS 弱化文字用 `var(--muted-foreground)`**:shadcn 的 `--muted` 是弱化**背景** token,不得将其别名/覆盖为文字色(曾导致暗色主题 TabsList 过亮、白字低对比)。
+11. **`chrome.contextMenus.onClicked` 监听必须在模块顶层注册**:SW 随时被回收重启,监听若注册在 `onInstalled` 回调里,重启后点击菜单无响应;菜单项本身才在 `onInstalled` 里 removeAll + 重建。
+12. **扩展内的拖拽/树交互优先复用 `mira-plugin-ui/library`**(LibraryTreeView、LibrarySelect、parseDrop、defaultDropUpload、sortTree 等),扩展侧只注入 services/回调,不自绘平行实现。
 
 ## 设计规范
 

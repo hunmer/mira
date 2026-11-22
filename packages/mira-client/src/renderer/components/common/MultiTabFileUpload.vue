@@ -472,6 +472,8 @@ import {
   TableCell,
 } from '@/components/ui/table'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { formatBytes as formatFileSize, formatDate } from '@renderer/utils'
+import { classifyMedia } from 'mira-app-core/shared/sdk'
 
 const { t } = useI18n()
 
@@ -797,25 +799,16 @@ const getFileIcon = (file: File): string => {
   const type = file.type
   const name = file.name.toLowerCase()
 
-  if (type.startsWith('image/')) return 'pi pi-image text-primary'
-  if (type.startsWith('video/')) return 'pi pi-video text-purple-500'
-  if (type.startsWith('audio/')) return 'pi pi-volume-up text-green-500'
+  const mediaKind = classifyMedia(type).kind
+  if (mediaKind === 'image') return 'pi pi-image text-primary'
+  if (mediaKind === 'video') return 'pi pi-video text-purple-500'
+  if (mediaKind === 'audio') return 'pi pi-volume-up text-green-500'
   if (type === 'application/pdf') return 'pi pi-file-pdf text-destructive'
   if (type.includes('word') || name.endsWith('.doc') || name.endsWith('.docx')) return 'pi pi-file-word text-primary'
   if (type.includes('sheet') || name.endsWith('.xls') || name.endsWith('.xlsx')) return 'pi pi-file-excel text-green-600'
   if (type.includes('zip') || type.includes('rar') || type.includes('archive')) return 'pi pi-file-archive text-yellow-500'
 
   return 'pi pi-file text-muted-foreground'
-}
-
-const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return '0 B'
-
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
 const formatUploadTime = (date: Date): string => {
@@ -832,10 +825,8 @@ const formatUploadTime = (date: Date): string => {
 
 // 根据 MIME 类型获取文件类型
 const getFileType = (mimeType: string): string => {
-  if (mimeType.startsWith('image/')) return 'image'
-  if (mimeType.startsWith('video/')) return 'video'
-  if (mimeType.startsWith('audio/')) return 'audio'
-  if (mimeType.includes('pdf') || mimeType.includes('document') || mimeType.includes('text')) return 'document'
+  const kind = classifyMedia(mimeType).kind
+  if (kind === 'image' || kind === 'video' || kind === 'audio' || kind === 'document') return kind
   if (mimeType.includes('zip') || mimeType.includes('rar') || mimeType.includes('tar')) return 'archive'
   return 'unknown'
 }
@@ -973,18 +964,6 @@ const getFileIconClass = (mimeType: string): string => {
     unknown: 'text-muted-foreground'
   }
   return classMap[type] || classMap.unknown
-}
-
-// 日期格式化
-const formatDate = (dateString: string): string => {
-  const date = new Date(dateString)
-  return date.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
 }
 
 // 事件处理

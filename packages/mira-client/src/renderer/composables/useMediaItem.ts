@@ -4,6 +4,8 @@
  */
 import { computed, type Ref } from 'vue'
 import type { FileInfo } from '../../shared/types'
+import { formatBytes, formatDate as formatDateUtil } from '../utils'
+import { classifyMedia } from 'mira-app-core/shared/sdk'
 
 export interface MediaItemEmits {
   (e: 'click', item: FileInfo, event: MouseEvent): void
@@ -50,72 +52,37 @@ export function useMediaItem(options: UseMediaItemOptions) {
       || (dotIdx > 0 ? itemRef.value.name.slice(dotIdx + 1).toUpperCase() : '')
     if (ext) return ext
 
-    if (itemRef.value.mimeType.startsWith('image/')) {
+    if (classifyMedia(itemRef.value.mimeType).isImage) {
       if (itemRef.value.mimeType.includes('png')) return 'PNG'
       if (itemRef.value.mimeType.includes('gif')) return 'GIF'
       if (itemRef.value.mimeType.includes('svg')) return 'SVG'
       return 'JPG'
     }
-    if (itemRef.value.mimeType.startsWith('video/')) return 'MP4'
-    if (itemRef.value.mimeType.startsWith('audio/')) return 'MP3'
+    if (classifyMedia(itemRef.value.mimeType).isVideo) return 'MP4'
+    if (classifyMedia(itemRef.value.mimeType).isAudio) return 'MP3'
     return 'FILE'
   })
 
   // 是否为视频
   const isVideo = computed((): boolean => {
-    return itemRef.value.mimeType.startsWith('video/')
+    return classifyMedia(itemRef.value.mimeType).isVideo
   })
 
   const isImage = computed((): boolean => {
-    return itemRef.value.mimeType.startsWith('image/')
+    return classifyMedia(itemRef.value.mimeType).isImage
   })
 
   // 获取文件类型
   const getFileType = (fileItem: FileInfo): string => {
-    if (!fileItem.mimeType) return 'document'
-
-    if (fileItem.mimeType.startsWith('image/')) return 'image'
-    if (fileItem.mimeType.startsWith('video/')) return 'video'
-    if (fileItem.mimeType.startsWith('audio/')) return 'audio'
-    return 'document'
+    const kind = classifyMedia(fileItem.mimeType).kind
+    return kind === 'other' ? 'document' : kind
   }
 
-  // 格式化文件大小
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 B'
+  // 格式化（正源 renderer/utils formatBytes）
+  const formatFileSize = formatBytes
 
-    const k = 1024
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-  }
-
-  // 格式化日期
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60)
-
-    if (diffInHours < 24) {
-      return date.toLocaleTimeString('zh-CN', {
-        hour: '2-digit',
-        minute: '2-digit'
-      })
-    } else if (diffInHours < 24 * 7) {
-      return date.toLocaleDateString('zh-CN', {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric'
-      })
-    } else {
-      return date.toLocaleDateString('zh-CN', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      })
-    }
-  }
+  // 格式化（正源 renderer/utils/helpers formatDate）
+  const formatDate = formatDateUtil
 
   // 事件处理器
   const handleClick = (event: MouseEvent) => {

@@ -41,6 +41,7 @@ import { useI18n } from 'vue-i18n'
 import { miraSDKService } from '../../services/MiraSDKService'
 import { getPluginFileFormats } from '../../plugins/instanceManager'
 import type { PluginFileFormat } from '../../plugins/types'
+import { formatBytes as formatFileSize } from '../../utils'
 
 const props = withDefaults(defineProps<{ fileInfo: any; saveVisible?: boolean; saving?: boolean; showOpenWith?: boolean; isTab?: boolean }>(), {
   saveVisible: false,
@@ -101,11 +102,6 @@ const commitRename = async () => {
   } catch (error) {
     emit('error', error instanceof Error ? error.message : t('preview.previewHeader.renameFailed'))
   } finally { savingRename.value = false }
-}
-const formatFileSize = (bytes: number) => {
-  if (!bytes) return '0 B'
-  const i = Math.floor(Math.log(bytes) / Math.log(1024))
-  return `${parseFloat((bytes / Math.pow(1024, i)).toFixed(1))} ${['B', 'KB', 'MB', 'GB'][i] || 'TB'}`
 }
 watch(() => props.fileInfo?.title || props.fileInfo?.name, value => { if (!renaming.value && value) title.value = value })
 onBeforeUnmount(() => clearInterval(formatTimer))

@@ -99,10 +99,10 @@ export class MiraWebsocketServer {
     }
 
     broadcastToClients(eventName: string, eventData: Record<string, any>): void {
-        const obj = this.backend.libraries!.getLibrary(eventData.libraryId);
-        if (!obj) return;
+        const library = this.backend.libraries!.getLibrary(eventData.libraryId);
+        if (!library) return;
 
-        const eventManager = obj.eventManager;
+        const eventManager = library.eventManager;
         if (!eventManager) return;
 
         eventManager.broadcast(
@@ -157,10 +157,10 @@ export class MiraWebsocketServer {
 
     broadcastPluginEvent(eventName: string, data: Record<string, any>): Promise<boolean> {
         const libraryId = data?.libraryId ?? data?.message?.libraryId;
-        const obj = this.backend.libraries!.getLibrary(libraryId);
-        if (!obj) return Promise.resolve(false);
+        const library = this.backend.libraries!.getLibrary(libraryId);
+        if (!library) return Promise.resolve(false);
 
-        const eventManager = obj.eventManager;
+        const eventManager = library.eventManager;
         if (!eventManager) return Promise.resolve(false);
 
         return eventManager.broadcast(
@@ -249,8 +249,8 @@ export class MiraWebsocketServer {
             return;
         }
 
-        const obj = this.backend.libraries!.getLibrary(libraryId);
-        if (!obj) {
+        const library = this.backend.libraries!.getLibrary(libraryId);
+        if (!library) {
             this.sendToWebsocket(ws, {
                 status: 'error',
                 msg: 'Library service not found'
@@ -258,7 +258,7 @@ export class MiraWebsocketServer {
             return;
         }
 
-        const handler = await WebSocketRouter.route(this, obj.libraryService, ws, {
+        const handler = await WebSocketRouter.route(this, library.libraryService, ws, {
             ...row,
             ...payload
         });

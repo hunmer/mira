@@ -208,6 +208,9 @@ import { PopoverRoot, PopoverTrigger, PopoverPortal, PopoverContent } from 'radi
 import VideoPreviewPopover from '@renderer/components/common/VideoPreviewPopover.vue'
 import { SelectionBox } from '@hunmer/vue-selection-box'
 import MediaContextMenu from './MediaContextMenu.vue'
+import { formatBytes as formatFileSize, formatDate } from '@renderer/utils'
+import { getFileExtension as getExtFromName } from '@renderer/utils/fileUtils'
+import { classifyMedia } from 'mira-app-core/shared/sdk'
 import MediaThumbnail from '@renderer/components/common/MediaThumbnail.vue'
 import MediaPreviewHoverCard from '@renderer/components/common/MediaPreviewHoverCard.vue'
 import StatusImage from '@renderer/components/common/StatusImage.vue'
@@ -455,39 +458,12 @@ const handlePopoverLeave = (itemId: string) => {
 
 // 工具函数
 const getFileExtension = (filename: string): string => {
-  const ext = filename.split('.').pop()
+  const ext = getExtFromName(filename)
   return ext ? `.${ext.toUpperCase()}` : ''
 }
 
 const getFileType = (file: FileInfo): string => {
-  const ext = file.name.split('.').pop()?.toLowerCase() || ''
-  const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg']
-  const videoExts = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv', 'webm']
-  const audioExts = ['mp3', 'wav', 'ogg', 'aac', 'flac', 'm4a']
-  if (imageExts.includes(ext)) return 'image'
-  if (videoExts.includes(ext)) return 'video'
-  if (audioExts.includes(ext)) return 'audio'
-  return 'other'
-}
-
-const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`
-}
-
-const formatDate = (dateString: string): string => {
-  if (!dateString) return '-'
-  const date = new Date(dateString)
-  return date.toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
+  return classifyMedia(undefined, '.' + getExtFromName(file.name)).kind
 }
 </script>
 

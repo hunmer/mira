@@ -49,12 +49,8 @@ export function supportsNativeThumbnail(entry: LocalFileEntry) {
   return !entry.isDirectory && (entryType(entry) === 'image' || entryType(entry) === 'video')
 }
 
-export function formatSize(bytes: number) {
-  if (!bytes) return '0 B'
-  const units = ['B', 'KB', 'MB', 'GB', 'TB']
-  const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1)
-  return `${(bytes / 1024 ** index).toFixed(index ? 1 : 0)} ${units[index]}`
-}
+/** 字节数格式化（正源 renderer/utils formatBytes） */
+export { formatBytes as formatSize } from '@/renderer/utils'
 
 export function mimeTypeForEntry(entry: LocalFileEntry) {
   const extension = entry.extension.replace(/^\./, '')

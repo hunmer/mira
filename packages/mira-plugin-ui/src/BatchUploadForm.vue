@@ -20,6 +20,8 @@
  */
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { File as FileIcon, FileImage, FileText, Film, Music, Upload, X } from '@lucide/vue'
+import { classifyMedia } from 'mira-app-core/shared/sdk'
+import { formatSize } from './utils/format'
 import { SelectionBox } from '@hunmer/vue-selection-box'
 import type { AcceptableValue } from 'reka-ui'
 // 注意:本组件可经 'mira-plugin-ui/src/...' 源码供宿主直接消费,必须用相对路径(宿主的 @ 别名指向其自身 src)
@@ -256,7 +258,7 @@ const filteredItems = computed(() => {
 
 function categoryOf (file: File): FileCategory {
   const type = file.type
-  if (type.startsWith('image/')) return 'image'
+  if (classifyMedia(type).isImage) return 'image'
   if (type.startsWith('video/')) return 'video'
   if (type.startsWith('audio/')) return 'audio'
   if (type.startsWith('text/') || type === 'application/pdf' || /word|excel|powerpoint|officedocument|presentation|sheet/.test(type)) return 'document'
@@ -381,13 +383,7 @@ function iconOf (file: File) {
 }
 
 function isImage (file: File) {
-  return file.type.startsWith('image/')
-}
-
-function formatSize (bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+  return classifyMedia(file.type).isImage
 }
 
 /** 扩展名大写(无扩展名显示 FILE) */

@@ -111,6 +111,7 @@ import { Input } from 'mira-plugin-ui/src/components/ui/input'
 import { Textarea } from 'mira-plugin-ui/src/components/ui/textarea'
 import { Empty, EmptyMedia, EmptyTitle, EmptyDescription } from 'mira-plugin-ui/src/components/ui/empty'
 import { Cross1Icon, UploadIcon, TrashIcon, VideoIcon, PlayIcon, MagnifyingGlassIcon } from '@radix-icons/vue'
+import { formatSize } from '../utils/formatters'
 import type { VideoData } from '@/types/video-editor'
 import { localVideoStorage } from '@/lib/localVideoStorage'
 import { getHost, isHostAvailable } from '@/lib/host'
@@ -344,11 +345,6 @@ function formatDuration(seconds: number): string {
   const s = Math.floor(seconds % 60)
   return h > 0 ? `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
     : `${m}:${s.toString().padStart(2, '0')}`
-}
-
-function formatSize(bytes: number): string {
-  const mb = bytes / (1024 * 1024)
-  return mb >= 1024 ? `${(mb / 1024).toFixed(2)} GB` : `${mb.toFixed(2)} MB`
 }
 
 // Watch

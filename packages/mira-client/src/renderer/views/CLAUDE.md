@@ -6,6 +6,7 @@
 
 | 日期 | 操作 | 说明 |
 |------|------|------|
+| 2026-11-21 | 增量更新 | v3.0.2:FileUploadView.vue 与 /upload 路由删除(上传收进 HomeView 的 FileUploadDialog+UploadQueueDialog);settings/ 核对为 7 分区面板(宿主实为 components/business/SettingsDialog.vue,ExtensionsPanel 为子枢纽,UsersPanel 已不存在),详见 settings/CLAUDE.md |
 | 2026-08-20 | 增量更新 | UITestView 移除、新增 PlaygroundView(/playground);settings/ 新增 LibraryPanel 与 playground/ 演练场(6 个组件);HomeView 新增 ImportDropdown |
 | 2026-05-12 | 架构扫描更新 | 补充面包屑导航 |
 
@@ -30,4 +31,4 @@
 |------|------|------|
 | `HomeView/` | [HomeView/CLAUDE.md](./HomeView/CLAUDE.md) | 首页完整实现 |
 | `LoginView/` | [LoginView/CLAUDE.md](./LoginView/CLAUDE.md) | 登录页面完整实现 |
-| `settings/` | [settings/CLAUDE.md](./settings/CLAUDE.md) | 设置子面板（General/Data/Library/Network/Notifications/FloatingBall/Import/Overview/Playground 等 Panel + playground/ 组件演练场：Components/Form/Glow/Notification/PageSlide/Toast） |
+| `settings/` | [settings/CLAUDE.md](./settings/CLAUDE.md) | 设置子面板(7 分区 general/library/notifications/extensions/plugins/network/data;ExtensionsPanel 枢纽含 Screenshot/FileShare/FloatingBall/Browser;pluginPlan 插件市场;playground/ 6 个演练场组件) |

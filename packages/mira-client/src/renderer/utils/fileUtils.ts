@@ -1,4 +1,5 @@
 import type { FileInfo } from '../../shared/types'
+import { classifyMedia } from 'mira-app-core/shared/sdk'
 import { environment } from './index'
 
 export const CONVERTED_IMAGE_EXTENSIONS = ['tif', 'tiff', 'psd', 'psb', 'heic', 'heif', 'cr2', 'cr3', 'nef', 'arw', 'dng', 'orf', 'rw2', 'raf', 'jp2', 'j2k', 'jpc', 'exr', 'hdr', 'tga', 'pcx', 'dds', 'dcm', 'dpx', 'fits', 'eps', 'ai', 'cur', 'xpm', 'xbm']
@@ -115,19 +116,6 @@ export function getCacheBustedPreviewImageSource(
   cacheKey?: string | number
 ): string | undefined {
   return toCacheBustedFileUrl(getPreviewImageSource(image), cacheKey)
-}
-
-/**
- * 格式化文件大小
- */
-export function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 B'
-  
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
 /**
@@ -439,11 +427,12 @@ export function createVideoThumbnail(
  * 图片直接返回 objectURL，视频返回封面图 dataURL
  */
 export async function createFilePreviewUrl(file: File): Promise<string | undefined> {
-  if (file.type.startsWith('image/')) {
+  const kind = classifyMedia(file.type).kind
+  if (kind === 'image') {
     return URL.createObjectURL(file)
   }
 
-  if (file.type.startsWith('video/')) {
+  if (kind === 'video') {
     try {
       return await createVideoThumbnail(file)
     } catch (error) {

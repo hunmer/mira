@@ -5,6 +5,7 @@ import { statisticsApi, adminApi } from '@/api'
 import { useLibrary } from '@/composables/useLibrary'
 import { useBroadcast } from '@/composables/useBroadcast'
 import type { ChartConfig } from '@/components/ui/chart'
+import { formatSize } from '@/lib/utils'
 import { Donut } from '@unovis/ts'
 import { VisArea, VisAxis, VisLine, VisXYContainer, VisDonut, VisSingleContainer } from '@unovis/vue'
 import {
@@ -201,12 +202,6 @@ const typeConfig = computed(() => {
 })
 
 // ---- 通用 ----
-function formatSize(bytes: number) {
-  if (bytes === 0) return '0 B'
-  const units = ['B', 'KB', 'MB', 'GB', 'TB']
-  const i = Math.floor(Math.log(bytes) / Math.log(1024))
-  return (bytes / Math.pow(1024, i)).toFixed(1) + ' ' + units[i]
-}
 
 const summary = computed(() => {
   const totalFiles = rawDaily.value.reduce((s, r) => s + r.file_count, 0)

@@ -43,3 +43,5 @@ const client = new MiraClient('http://localhost:8081');
 await client.auth().login('username', 'password');
 const libraries = await client.libraries().getAll();
 ```
+
+> 2026-11：`ClientConfig` 支持 `onUnauthorized?: () => Promise<string | undefined>`——HttpClient 收到 401 时自动调用取新 token 并重放原请求一次（login 请求与已重放请求除外）。

@@ -120,13 +120,8 @@ export function nameToColor(name: string) {
   return `hsl(${h}, 65%, 50%)`
 }
 
-/** 字节数格式化 */
-export function formatSize(bytes: number) {
-  if (!bytes || bytes <= 0) return '0 B'
-  const units = ['B', 'KB', 'MB', 'GB', 'TB']
-  const i = Math.min(units.length - 1, Math.floor(Math.log(bytes) / Math.log(1024)))
-  return (bytes / Math.pow(1024, i)).toFixed(1) + ' ' + units[i]
-}
+/** 字节数格式化（正源 renderer/utils formatBytes） */
+export { formatBytes as formatSize } from '@renderer/utils'
 
 /** statistics 模块快捷引用（未连接时抛错，由 useStatsCard 捕获展示） */
 export function stats() {

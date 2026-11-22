@@ -125,6 +125,8 @@
 
 <script setup lang="ts">
 import type { FileInfo } from '../../../shared/types'
+import { formatBytes as formatFileSize, formatDate, formatDuration } from '../../utils'
+import { getFileExtension as getExtFromName } from '../../utils/fileUtils'
 
 interface Props {
   video?: FileInfo
@@ -133,64 +135,10 @@ interface Props {
 
 defineProps<Props>()
 
-// 格式化文件大小
-const formatFileSize = (bytes?: number): string => {
-  if (!bytes) return 'Unknown'
-  const units = ['B', 'KB', 'MB', 'GB']
-  let size = bytes
-  let unitIndex = 0
-
-  while (size >= 1024 && unitIndex < units.length - 1) {
-    size /= 1024
-    unitIndex++
-  }
-
-  return `${size.toFixed(1)} ${units[unitIndex]}`
-}
-
 // 获取文件格式
 const getFileFormat = (fileName?: string): string => {
   if (!fileName) return 'Unknown'
-  const extension = fileName.split('.').pop()?.toUpperCase()
-  return extension || 'Unknown'
-}
-
-// 格式化日期
-const formatDate = (date?: Date | string): string => {
-  if (!date) return 'Unknown'
-
-  try {
-   const dateObj = date instanceof Date ? date : new Date(date)
-
-    // Check if the date is valid
-    if (isNaN(dateObj.getTime())) {
-      return 'Invalid Date'
-    }
-
-    return dateObj.toLocaleDateString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  } catch (error) {
-    console.error('Error formatting date:', error)
-    return 'Invalid Date'
-  }
-}
-
-// 格式化时长
-const formatDuration = (seconds: number): string => {
-  if (!seconds || seconds === 0) return '-'
-  const hours = Math.floor(seconds / 3600)
-  const minutes = Math.floor((seconds % 3600) / 60)
-  const secs = Math.floor(seconds % 60)
-
-  if (hours > 0) {
-    return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-  }
-  return `${minutes}:${secs.toString().padStart(2, '0')}`
+  return getExtFromName(fileName).toUpperCase() || 'Unknown'
 }
 
 // 格式化比特率

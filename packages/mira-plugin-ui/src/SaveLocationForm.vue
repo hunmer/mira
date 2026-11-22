@@ -14,6 +14,8 @@
  */
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { Check, ChevronDown, FileImage, FileText, Film, Music, X } from '@lucide/vue'
+import { classifyMedia } from 'mira-app-core/shared/sdk'
+import { formatSize } from './utils/format'
 import {
   ListboxContent,
   ListboxFilter,
@@ -213,20 +215,14 @@ onBeforeUnmount(() => {
 })
 
 function iconOf (file: File) {
-  if (file.type.startsWith('image/')) return FileImage
+  if (classifyMedia(file.type).isImage) return FileImage
   if (file.type.startsWith('video/')) return Film
   if (file.type.startsWith('audio/')) return Music
   return FileText
 }
 
 function isImage (file: File) {
-  return file.type.startsWith('image/')
-}
-
-function formatSize (bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+  return classifyMedia(file.type).isImage
 }
 
 /** 扩展名大写(无扩展名显示 FILE) */

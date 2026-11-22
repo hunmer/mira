@@ -7,7 +7,7 @@
 | mira-app-core | vitest(27+ 个测试文件 + test-helpers + contract 测试) | 见包内 `package.json` |
 | mira-app-server | Jest(`sdk/` 目录)+ node --test(`src/sync/`) + `DuplicateScanner.test.ts` 等单测 | `pnpm run test`、`pnpm run test:paths` |
 | mira-client | `procm-ui-tests/`(31 个文件的真实页面 UI 用例,经 procm-mcp 驱动,仅开发构建暴露 `window.__procmUiTests`)+ 主进程 `DownloadService.test.ts` + node --test 纯函数测试(`test:split-tabs`:mediaTabRuntime/splitPaneRestore) | `pnpm run test:ui:remote <name>`、`pnpm run test:split-tabs`、`pnpm run type-check` |
-| mira-browser-extension | Vitest(19 个测试文件,约 137 用例) | `pnpm run test` |
+| mira-browser-extension | Vitest(26 个测试文件,约 169 用例) | `pnpm run test` |
 | mira_mobile | Flutter test(9 文件:providers/services/utils;screens 零覆盖) | `flutter test` |
 | mira-dashboard-next | 无 | -- |
 | mira-scripts-core | 无 | -- |
@@ -17,7 +17,7 @@
 
 ## SDK 覆盖审计
 
-- `.audit/server-api-manifest.json` + `.audit/sdk-coverage-report.md`:固定 JSON API 138 条,covered 125 / missing 13 / excluded 13 / dynamic 7(2026-08-24 重生成)
+- `.audit/server-api-manifest.json` + `.audit/sdk-coverage-report.md`:固定 JSON API 141 条,covered 128 / missing 13 / excluded 13 / dynamic 7(2026-09-09 重生成)
 
 ## 类型检查
 

@@ -25,6 +25,9 @@ interface DatabaseFileEntry {
     path: string;
 }
 
+// Windows 盘符探测列表（A:\ ~ Z:\）
+const WIN_DRIVE_LETTERS = Array.from({ length: 26 }, (_, i) => `${String.fromCharCode(65 + i)}:\\`);
+
 export class FsRouter {
     private router: Router;
     private backend?: MiraServer;
@@ -66,15 +69,16 @@ export class FsRouter {
 
                 if (!dirPath) {
                     if (process.platform === 'win32') {
-                        const drives: any[] = [];
-                        for (let i = 65; i <= 90; i++) {
-                            const drive = `${String.fromCharCode(i)}:\\`;
-                            try {
-                                fs.accessSync(drive);
-                                drives.push({ label: drive, value: drive, isLeaf: false });
-                            } catch { /* drive not available */ }
-                        }
-                        res.json(drives);
+                        const drives = await Promise.all(
+                            WIN_DRIVE_LETTERS.map(async (drive) => {
+                                try {
+                                    await fs.promises.access(drive);
+                                    return { label: drive, value: drive, isLeaf: false };
+                                } catch { /* drive not available */ }
+                                return null;
+                            }),
+                        );
+                        res.json(drives.filter((drive) => drive !== null));
                         return;
                     }
                     const rootEntries = await fs.promises.readdir('/', { withFileTypes: true });

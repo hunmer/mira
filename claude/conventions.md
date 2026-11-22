@@ -16,7 +16,7 @@
 
 ## 插件系统(双协议)
 
-共 16 个插件(深度 5 + 格式 11),导出 `init(inst)` 工厂。注册表:`plugins/plugins/plugins.recommend.json`(推荐)、`plugins/plugins/plugins.json`(源码侧展示)、`packages/mira-app-server/src/plugins/plugins.json`(运行时)。**两套并行协议**:
+共 20 个插件(深度 6 + 格式 14),导出 `init(inst)` 工厂。注册表:`plugins/plugins/plugins.recommend.json`(推荐 11)、`plugins/plugins/plugins.json`(源码侧展示 7)、`packages/mira-app-server/src/plugins/plugins.json`(运行时 15)。**两套并行协议**:
 
 - **旧协议(`extends ServerPlugin`)**:mira_eagle_extension、mira_gallery_dl 等需深度介入服务端的插件。可注册 HTTP Hook、WebSocket 监听、缩略图生成器、前端路由
 - **新协议(格式插件)**:`init(inst)` 内调用 `inst.pluginManager.registerFileFormat(pluginName, handler)`,声明 `extensions`/`mimeTypes`/`thumbnailExtensions`/`thumbnail(src,dest)`/`viewers[]`。用于 mira_3d_format、mira_spine_format、mira_epub_format、mira_livp_format、mira_lottie_format、mira_pag_format、mira_swf_format、mira_tiptap_format、mira_zipper_format、pdf-viewer、psd-viewer 等

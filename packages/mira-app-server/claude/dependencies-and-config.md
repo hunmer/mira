@@ -72,16 +72,17 @@
 
 ## 插件配置
 
-- `src/plugins/plugins.json` — 插件注册清单（`name` / `enabled` / `path` / 可选 `status`）。
-- `src/plugins/package.json` — 插件依赖声明（独立 npm 依赖树）。
+- `src/plugins/plugins.json` — 插件注册清单（`name` / `enabled` / `path` / 可选 `status` + 2026-11 起含 title/category/tags 展示 meta，共 15 条）。
+- `src/plugins/package.json` — 插件依赖声明（独立 npm 依赖树，2026-11 +3 个 `file:`/link 依赖：html/font/office_viewer 对应插件）。
 - 重复文件扫描已内置，不再通过 `plugins.json` 或插件依赖安装。
 
 ## 构建产物
 
 - `dist/` — `tsc` 输出（`main`、`types`、`bin` 均指向 `dist/`）。
-- `scripts/copy-dashboard.mjs` / `scripts/copy-web.mjs` — 构建前拷贝 dashboard / web 前端静态资源进产物（`pnpm run build` 的前两步）。
+- `scripts/copy-dashboard.mjs` / `scripts/copy-web.mjs` — 构建前拷贝 dashboard / web 前端静态资源进产物（`pnpm run build` 的前两步）；`scripts/copy-plugin-ui.mjs` 为独立的 `build:plugin-ui` 脚本，不在 build 链中。
 - CI 会把 server 依赖打进 Electron 发行版（bundle electron releases with server dependencies）。
-- `files`：发布仅含 `dist/**/*` 与 `README.md`。
+- `files`（v3.0.2 实测）：`dist/**/*`、`web/**/*`、`public/**/*`、`README.md`。
+- 本地 `.env`（git 跟踪）含可选 `EXIFTOOL_PATH`（2026-11 起为注释占位，此前硬编码 Windows 路径）。
 
 ## 其他配置文件
 

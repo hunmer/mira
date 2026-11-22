@@ -165,6 +165,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import MultiTabFileUpload from './MultiTabFileUpload.vue'
+import { formatBytes as formatFileSize } from '@renderer/utils'
 
 const { t } = useI18n()
 
@@ -278,13 +279,4 @@ const clearEventLog = () => {
   eventLog.value = []
 }
 
-const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return '0 B'
-
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-}
 </script>

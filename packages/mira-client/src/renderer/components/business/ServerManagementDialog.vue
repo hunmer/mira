@@ -132,6 +132,7 @@
 import { ref, computed } from 'vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { useServerListStore, type ServerConfig } from '@renderer/stores/serverList'
+import { formatDate } from '@renderer/utils'
 
 interface Props {
   visible: boolean
@@ -158,14 +159,6 @@ const activeServerId = computed(() => serverListStore.activeServerId)
 
 const showDeleteConfirm = ref(false)
 const deleteTarget = ref<ServerConfig | null>(null)
-
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  })
-}
 
 const handleSetActive = async (serverId: string) => {
   try {

@@ -1,5 +1,6 @@
 import type { FileInfo } from '../../../shared/types'
 import { AUDIO_EXTENSIONS, CONVERTED_IMAGE_EXTENSIONS, VIDEO_EXTENSIONS } from '../../utils/fileUtils'
+import { classifyMedia } from 'mira-app-core/shared/sdk'
 
 /**
  * 工具方法模块
@@ -34,9 +35,8 @@ export class HomeControllerUtils {
    * @returns 文件类型
    */
   static getFileTypeFromInfo(item: FileInfo): 'image' | 'video' | 'audio' | 'document' | 'folder' {
-    if (item.mimeType?.startsWith('image/')) return 'image'
-    if (item.mimeType?.startsWith('video/')) return 'video'
-    if (item.mimeType?.startsWith('audio/')) return 'audio'
+    const kind = classifyMedia(item.mimeType).kind
+    if (kind === 'image' || kind === 'video' || kind === 'audio') return kind
     return this.getFileType(item.name)
   }
 

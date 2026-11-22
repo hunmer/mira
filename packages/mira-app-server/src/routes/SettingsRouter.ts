@@ -3,6 +3,18 @@ import { MiraServer } from '..';
 import { AuthRouter } from './AuthRouter';
 import { ServerSettings } from '../SettingsManager';
 
+// 插件源字段回退规则：id 缺失时按 时间36进制+序号 生成
+const PLUGIN_SOURCE_ID_PREFIX = 'src_';
+
+/** 把请求里的插件源条目规范化（调用前需保证 s.url 为非空字符串） */
+function normalizePluginSource(s: any, index: number) {
+    return {
+        id: (typeof s.id === 'string' && s.id) || `${PLUGIN_SOURCE_ID_PREFIX}${Date.now().toString(36)}_${index}`,
+        name: (typeof s.name === 'string' && s.name.trim()) || s.url.trim(),
+        url: s.url.trim(),
+    };
+}
+
 export class SettingsRouter {
     private router: Router;
     private backend: MiraServer;
@@ -41,11 +53,7 @@ export class SettingsRouter {
                     }
                     patch.pluginSources = pluginSources
                         .filter((s: any) => s && typeof s.url === 'string' && s.url.trim())
-                        .map((s: any, i: number) => ({
-                            id: typeof s.id === 'string' && s.id ? s.id : `src_${Date.now().toString(36)}_${i}`,
-                            name: (typeof s.name === 'string' && s.name.trim()) || s.url.trim(),
-                            url: s.url.trim(),
-                        }));
+                        .map(normalizePluginSource);
                 }
                 if (typeof pluginSourceActive === 'string') {
                     patch.pluginSourceActive = pluginSourceActive;

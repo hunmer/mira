@@ -308,6 +308,14 @@ export class ShortcutService {
   /**
    * 处理键盘按下事件 (网页版)
    */
+  /** 输入类元素(输入框/文本域/可编辑区)判定 */
+  private isEditableTarget(el: HTMLElement | EventTarget | null): boolean {
+    if (!el || !(el instanceof HTMLElement)) return false
+    return el.tagName === 'INPUT' ||
+      el.tagName === 'TEXTAREA' ||
+      el.contentEditable === 'true' ||
+      el.isContentEditable
+  }
   private handleKeyDown(event: KeyboardEvent): void {
     // 跳过已经被处理过的事件
     if (event.defaultPrevented) {
@@ -321,10 +329,7 @@ export class ShortcutService {
     if (binding && binding.enabled && !binding.isGlobal) {
       // 检查是否在输入框等元素中，如果是则不处理某些快捷键
       const target = event.target as HTMLElement
-      const isInputElement = target.tagName === 'INPUT' ||
-                           target.tagName === 'TEXTAREA' ||
-                           target.contentEditable === 'true' ||
-                           target.isContentEditable
+      const isInputElement = this.isEditableTarget(target)
 
       // 对于输入框，只处理特定的快捷键
       if (isInputElement) {

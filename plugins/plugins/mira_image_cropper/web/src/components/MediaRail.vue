@@ -4,6 +4,7 @@ import { ImagePlus, Trash2 } from '@lucide/vue'
 import { Button } from 'mira-plugin-ui/src/components/ui/button'
 import { useCropperStore } from '@/stores/cropper'
 import { useI18n } from '@/lib/i18n'
+import { classifyMedia } from 'mira-app-core/shared/sdk'
 
 /**
  * 左侧图片实例栏：每个缩略图对应一份独立的选区/历史/导出数据。
@@ -22,7 +23,7 @@ const list = computed(() =>
 function onPickFile(e: Event) {
   const files = Array.from((e.target as HTMLInputElement).files || [])
   for (const file of files) {
-    if (file.type.startsWith('image/')) void store.addLocalFile(file)
+    if (classifyMedia(file.type).isImage) void store.addLocalFile(file)
   }
   ;(e.target as HTMLInputElement).value = ''
 }

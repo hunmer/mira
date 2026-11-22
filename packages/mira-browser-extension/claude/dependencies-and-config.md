@@ -1,13 +1,13 @@
 # 依赖与配置
 
-> 更新:2026-08-20(依据 package.json + vite.config.ts + manifest.ts 核对)
+> 更新:2026-11-21(依据 package.json + vite.config.ts + manifest.ts 核对;依赖与构建配置自 2026-08-25 基线起无任何变化)
 
 ## 运行时依赖
 
 | 依赖 | 版本 | 用途 |
 |------|------|------|
 | `mira-app-core` | `workspace:*` | 后端 SDK(`MiraClient` / auth/libraries/folders/files 模块),workspace 包 |
-| `mira-plugin-ui` | `workspace:*` | 共享 UI 组件库(Tailwind class;npm 实体目录,注意 vue 双实例) |
+| `mira-plugin-ui` | `workspace:*` | 共享 UI 组件库(Tailwind class;npm 实体目录,注意 vue 双实例)。本扩展消费三类:①`ui` 原语(Dialog/Textarea 等);②`mira-plugin-ui/library` 子路径(LibraryTreeView/LibrarySelect/sortTree/parseDrop/defaultDropUpload 等,拖拽浮层与选择器复用);③个别组件走**源码直引** `mira-plugin-ui/src/SaveLocationDialog.vue`、`src/BatchUploadForm.vue`(exports 通配符下 types 路径解析不稳);④content 浮层样式引**编译产物** `mira-plugin-ui/mira-plugin-ui.css?url` |
 | `@hunmer/vue-masonry` | `workspace:*` | 嗅探瀑布流视图 |
 | `vue` | `^3.4.0` | UI 框架(popup + side panel + upload 窗口) |
 | `vue-i18n` | `^11.4.4` | 双语(zh-CN/en) |
@@ -23,9 +23,9 @@
 | `@tailwindcss/vite` / `tailwindcss` | `^4.3.3` | Tailwind 4(mira-plugin-ui 样式在本扩展构建内编译) |
 | `@types/chrome` | `^0.0.260` | Chrome 扩展 API 类型(`chrome.offscreen.Reason.BLOBS` 枚举等) |
 | `vite` | `^5.4.0` | 构建 |
-| `vitest` | `^1.6.0` | 单测(node 环境) |
+| `vitest` | `^1.6.0` | 单测(默认 node 环境;部分用例文件头 `// @vitest-environment jsdom` 覆盖) |
 | `vue-tsc` | `^2.0.0` | Vue 类型检查 |
-| `jsdom` | `^24.0.0` | 测试 DOM 环境(当前用 node) |
+| `jsdom` | `^24.0.0` | 测试 DOM 环境(jsdom 标头测试用:浮层组件/表单/树交互) |
 | `typescript` | `~5.8.3` | — |
 | `@vitest/coverage-v8` | `^1.6.0` | 覆盖率 |
 
@@ -63,6 +63,8 @@ MV3 配置。关键:`permissions`(activeTab/tabs/storage/scripting/contextMenus/
 - **vue 双实例**:mira-plugin-ui 是 npm 实体目录(内含自己的 vue 拷贝),其依赖链(reka-ui/@lucide/vue/@vueuse)按 importer 解析会得到第二份 vue → slot/inject 崩溃;vite alias 必须保留。
 - **`chrome.offscreen.Reason`**:`Reason` 是 **enum**,字符串字面量(`'BLOBS'`)不直接兼容,须用 `chrome.offscreen.Reason.BLOBS`;`IMAGE_PROCESSING` 在 Chrome 不存在(是 Firefox/Edge 的)。
 - **`vite/client` 的 `?raw`**:声明 `*?raw → string`;imu.ts 曾用动态 import,现已改 MAIN world 注入(public/maxurl.user.js)。
+- **`mira-plugin-ui.css?url` 的 dev/prod 路径分叉**:content 浮层引编译产物 CSS,dev 下 @crxjs 给出 `/@fs/` 路径需拼 `http://localhost:5174`(vite dev strictPort),prod 下用 `chrome.runtime.getURL`;改 dev 端口或源码 CSS `?url` 都会破坏浮层样式。
+- **源码直引 mira-plugin-ui 组件**:`mira-plugin-ui/src/*.vue` 直接 import(SaveLocationDialog/BatchUploadForm)绕过 exports 通配符的 types 解析问题;新增类似消费时优先确认包 exports 是否已覆盖。
 
 ## maxurl 资源
 

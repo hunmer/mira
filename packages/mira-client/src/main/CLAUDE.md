@@ -8,6 +8,7 @@
 
 | 日期 | 操作 | 说明 |
 |------|------|------|
+| 2026-11-21 | 增量更新 | v3.0.2:IPC Handler 18→19(新增 Screenshot/PluginExec,FloatingWindow 改为悬浮窗基类模板不再独立注册;另有单数 PluginHandler/DragDropHandler);services 新增 FontActionService(fontkit 字体激活/应用到 Adobe);PluginWindowHandlers 新增 font-action 通道;NotificationWindowHandlers 新增 set-max-visible(同屏通知数 1-10,动态分页) |
 | 2026-08-20 | 增量更新 | main.ts 533→323 行(窗口管理拆入 MainWindowService);IPC Handler 13→18(新增 FloatingBallWindow/LoginWindow/Network/PluginWindow/ServerControl/ServerDeploy,删 HotUpdate);services 新增 MainWindowService/LocalServerService/ProcmService/DownloadService(含单测);新增 i18n/ 目录 |
 | 2026-05-12 | 架构扫描更新 | 补充入口分析、IPC 通道清单、服务接口梳理 |
 
@@ -37,7 +38,8 @@ src/main/
 ├── i18n/                     # 主进程轻量 i18n(托盘菜单文案,zh-CN/en-US,经 tray:set-locale 同步)
 ├── ipc/                      # IPC 通信模块
 │   ├── handlers.ts          # 处理器注册中心 (291 行)
-│   ├── *Handlers.ts         # 18 个 Handler:App / AutoUpdate / FileSystem / FloatingBallWindow / FloatingWindow / LoginWindow / Menu / Network / Notification / NotificationWindow / PluginWindow / Protocol / SearchWindow / ServerControl / ServerDeploy / Shortcut / System / Tray
+│   ├── *Handlers.ts         # 19 个 Handler(v3.0.2,handlers.ts 实例化计):App / AutoUpdate / FileSystem / FloatingBallWindow / LoginWindow / Menu / Network / Notification / NotificationWindow / PluginExec / PluginWindow / Protocol / Screenshot / SearchWindow / ServerControl / ServerDeploy / Shortcut / System / Tray
+│   ├── FloatingWindowHandler.ts # 悬浮窗基类模板(被 FloatingBallWindowHandlers 等 extends,不独立注册,v3.0.2 起)
 │   └── ipc-bindings.ts      # IPC 绑定
 ├── services/                # 系统服务
 │   ├── MiraService.ts       # 后端 SDK 通信 (364 行)
@@ -48,6 +50,7 @@ src/main/
 │   ├── ProcmService.ts      # procm 集成(UI 远程测试/进程管理)
 │   ├── TrayService.ts       # 系统托盘
 │   ├── PluginDiscoveryService.ts # 插件发现
+│   ├── FontActionService.ts # 字体动作服务(v3.0.2:fontkit 解析,激活系统字体/应用到 Adobe PS·AI·IdCC,.ttf/.otf/.ttc ≤128MB)
 │   └── useAutoUpdater.ts    # 自动更新
 └── utils/
     ├── Logger.ts            # 日志
@@ -67,14 +70,14 @@ src/main/
 | `search-window:*` | 搜索窗口显示/隐藏/切换 |
 | `floating-ball:*` | 悬浮球窗口(v2.x 新增) |
 | `shortcut:*` | 快捷键注册/注销 |
-| `plugin:*` / `plugin-window:*` | 插件发现/安装/执行/卸载、插件窗口 |
+| `plugin:*` / `plugin-window:*` | 插件发现/安装/执行/卸载、插件窗口(v3.0.2:`plugin-window:font-action` 字体动作,仅插件 mira-font-actions) |
 | `drag-drop:*` | 拖拽启动 |
 | `fs:*` | 文件系统读写/目录选择 |
 | `app:*` | 应用信息/版本/路径 |
 | `network:*` | 网络状态(v2.x 新增) |
 | `server-control:*` / `server-deploy:*` / `server-autostart:*` | 内置服务端控制/部署/自启动(v2.x 新增) |
 | `library-cache:*` | 渲染层库缓存 |
-| `notification:*` | 通知 |
+| `notification:*` | 通知(v3.0.2:`notification:set-max-visible` 同屏通知数,1-10) |
 | `update:*` / `updater:*` | 自动更新 |
 
 (原 `hot-update:*`、`window:*`、`system:*`、`menu:*`、`auto-update:*` 前缀已不在 preload 暴露清单中)

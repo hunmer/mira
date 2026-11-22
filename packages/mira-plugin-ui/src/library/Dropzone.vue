@@ -20,6 +20,8 @@ import { computed, onBeforeUnmount, ref } from 'vue';
 import { CheckIcon, FileImage, FileText, FileWarningIcon, Film, Music, X } from '@lucide/vue';
 import { canAcceptDrop } from './drag-data';
 import { useI18n } from '../i18n';
+import { classifyMedia } from 'mira-app-core/shared/sdk';
+import { formatSize } from '../utils/format';
 import { Spinner } from '../components/ui/spinner';
 import {
   Attachment,
@@ -126,14 +128,14 @@ function removeFile(file: DropzoneItem) {
 
 // ---- 类型图标 / 大小格式化 ----
 function iconOf(file: DropzoneItem) {
-  if (file.type?.startsWith('image/')) return FileImage;
+  if (classifyMedia(file.type).isImage) return FileImage;
   if (file.type?.startsWith('video/')) return Film;
   if (file.type?.startsWith('audio/')) return Music;
   return FileText;
 }
 
 function isImage(file: DropzoneItem) {
-  return !!file.type?.startsWith('image/');
+  return classifyMedia(file.type).isImage;
 }
 
 function mediaVariantOf(file: DropzoneItem): 'icon' | 'image' {
@@ -141,12 +143,6 @@ function mediaVariantOf(file: DropzoneItem): 'icon' | 'image' {
   const state = stateOf(file)
   if (state !== 'idle' && state !== 'processing') return 'icon'
   return props.mediaVariant === 'image' && isImage(file) ? 'image' : 'icon'
-}
-
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
 /** 扩展名大写(无扩展名显示 FILE) */

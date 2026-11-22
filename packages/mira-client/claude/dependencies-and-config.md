@@ -2,8 +2,9 @@
 
 ## package.json 概要
 
-- name:`mira-web`,version `2.0.9`,license MIT,engines node >=18
+- name:`mira-web`,version `3.0.2`,license MIT,engines node >=18
 - main:`dist-main/main.js`,homepage `./`
+- v3.0.2 scripts 变更:删除 `test:split-tabs` 与 `test:ui:remote`(node 测试文件保留,可 `node --experimental-strip-types --test <file>` 直跑;UI 测试可 `node scripts/test-ui.mjs` 直跑)
 
 ## 关键 dependencies(UI / 框架相关)
 
@@ -24,6 +25,8 @@
 | clsx + tailwind-merge | 3.0.2 | `cn()` 类名合并 |
 | vue-sonner | ^2.0.9 | Toast(sonner 组件) |
 | motion-v | ^2.2.1 | 动画 |
+| event-emitter-adv | ^2.1.1 | miraEventBus 类型化事件总线(v3.0.2 新增) |
+| fontkit | ^2.0.4 | 字体元数据解析,FontActionService(v3.0.2 新增) |
 | @lucide/vue + lucide-vue-next | ^1.17 / ^1.0 | 图标 |
 | @internationalized/date | ^3.12.3 | calendar 日期 |
 | @tanstack/vue-table | ^8.21.3 | table 高级用法 |
@@ -35,7 +38,7 @@
 
 ## 关键 devDependencies
 
-electron ^38.8.6、electron-builder ^26、vite ^6.2、vite-plugin-electron ^0.29、vue-tsc ^2.2.4、typescript ~5.7.2、eslint ^9.35、typedoc、dependency-cruiser、vite-bundle-analyzer;v2.x 新增 UI 测试三件套:`@testing-library/dom` ^10.4.0、`@testing-library/vue` ^8.1.0、`@testing-library/user-event` ^14.6.1,以及 `@hunmer/procm-mcp-sdk`(link,驱动远程 UI 测试)。
+electron ^38.8.6、electron-builder ^26、vite ^6.2、vite-plugin-electron ^0.29、vue-tsc ^2.2.4、typescript ~5.7.2、eslint ^9.35、typedoc、dependency-cruiser、vite-bundle-analyzer;v2.x 新增 UI 测试三件套:`@testing-library/dom` ^10.4.0、`@testing-library/vue` ^8.1.0、`@testing-library/user-event` ^14.6.1;`@hunmer/procm-mcp-sdk` v3.0.2 起由本地 link 改为 **npm ^0.1.1**。
 
 ## 配置文件
 

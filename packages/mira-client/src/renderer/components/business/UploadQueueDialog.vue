@@ -15,6 +15,8 @@ import { useLibraryStore } from '@renderer/stores/library'
 import { useMediaStore } from '@renderer/stores/media'
 import { environment } from '@renderer/utils'
 import { uploadBatchProgress } from './FileUploadDialog/useUploadQueue'
+import { formatDate } from '@renderer/utils'
+import { classifyMedia } from 'mira-app-core/shared/sdk'
 
 const open = defineModel<boolean>('open', { required: true })
 const history = useUploadHistoryStore()
@@ -86,7 +88,6 @@ const retry = async (record: any) => {
   }
 }
 
-const formatDate = (date: Date) => new Date(date).toLocaleString()
 const libraryName = (id: string) => libraries.libraries.find(item => item.id === id)?.name || ''
 
 const clearAll = () => {
@@ -96,11 +97,13 @@ const clearAll = () => {
 // 展开组内带本地路径的媒体记录，通过主进程 nativeImage 缩略图 IPC 展示
 const thumbnails = ref<Record<string, string>>({})
 const thumbnailRequests = new Set<string>()
-const canThumbnail = (record: any) =>
-  environment.isElectron &&
-  !!window.electronAPI?.fs?.getThumbnail &&
-  record.localPath &&
-  (record.mimeType?.startsWith('image/') || record.mimeType?.startsWith('video/'))
+const canThumbnail = (record: any) => {
+  const kind = classifyMedia(record.mimeType).kind
+  return environment.isElectron &&
+    !!window.electronAPI?.fs?.getThumbnail &&
+    !!record.localPath &&
+    (kind === 'image' || kind === 'video')
+}
 
 watch([groups, expandedGroups, groupPages], () => {
   for (const group of groups.value) {

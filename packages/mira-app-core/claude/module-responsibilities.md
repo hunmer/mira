@@ -16,14 +16,15 @@ SQLite 持久化层。
 
 - **index.ts** — 存储层入口，导出 ILibraryServerData 接口与 LibraryServerDataSQLite 实现。
 - **ILibraryServerData.ts** — 存储接口契约（文件/文件夹/标签 CRUD + 统计 + 导入）。
-- **LibraryServerDataSQLite.ts** — SQLite 主实现，组合 mixins 提供完整能力。
+- **LibraryServerDataSQLite.ts** — SQLite 主实现，组合 mixins 提供完整能力（2026-11：+`skipSameName` getter 读 customFields）。
+- **retryFileOperation.ts** — 文件操作重试工具（2026-11 新增）：仅对 EBUSY/EPERM/EACCES 指数退避重试（默认 5 次、起步 100ms）。
 - **mixins/** — 按职责拆分的实现片段：
-  - FileOperations.ts（文件 CRUD）
-  - FileImport.ts（文件批量导入）
-  - FolderOperations.ts（文件夹操作）
+  - FileOperations.ts（文件 CRUD；2026-11：回收/恢复同步 name、失败回滚、filters +ids/时间范围、checkDuplicateNames）
+  - FileImport.ts（文件批量导入；2026-11：createFileFromPath +enableHash/skipSameName，同名复用返回 duplicate:true）
+  - FolderOperations.ts（文件夹操作；2026-11：回收站物理路径改 getItemFilePath 解析）
   - TagOperations.ts（标签操作）
   - Statistics.ts（统计数据）
-  - types.ts（mixin 类型定义）
+  - types.ts（mixin 类型定义；2026-11：CoreAccessible +checkDuplicateNames）
 
 ## src/shared/sdk/
 
@@ -32,8 +33,8 @@ SQLite 持久化层。
 - **index.ts** — SDK 入口，导出 MiraClient、WebSocketClient、17 个 Module 类，以及 types.ts 全部类型。
 - **types.ts** — SDK 类型定义（WebSocketOptions / WebSocketMessage / WebSocketEventCallback 等）。
 - **client/MiraClient.ts** — 主客户端，链式 API（auth/user/libraries/plugins/files/database/devices/system/tags/folders/cookieSites/settings/admins/downloads/fs/statistics/thumbnails，共 17 个访问器）。
-- **client/HttpClient.ts** — HTTP 通道（axios）。
+- **client/HttpClient.ts** — HTTP 通道（axios；2026-11：401 自动重认证，`onUnauthorized` 单飞取新 token 重放一次）。
 - **client/WebSocketClient.ts** — WebSocket 通道（ws）。
 - **utils/EventEmitter.ts** — SDK 内部事件发射器。
 - **test-helpers.ts** — SDK 测试共享工具（供 vitest 测试使用）。
-- **modules/** — 17 个领域模块：AuthModule、UserModule、LibraryModule、PluginModule、FileModule、DatabaseModule、DeviceModule、SystemModule、TagModule、FolderModule、CookieSiteModule、SettingsModule、AdminModule、DownloadModule、FileSystemModule、StatisticsModule、ThumbnailModule（后 7 个为 2026-08 新增，与 server 新路由对应）。
+- **modules/** — 17 个领域模块：AuthModule、UserModule、LibraryModule、PluginModule、FileModule、DatabaseModule、DeviceModule、SystemModule、TagModule、FolderModule、CookieSiteModule、SettingsModule、AdminModule、DownloadModule、FileSystemModule、StatisticsModule、ThumbnailModule（后 7 个为 2026-08 新增，与 server 新路由对应）。2026-11 新方法：FileModule +importFilePath/checkDuplicates、LibraryModule +relocate/getRelocationProgress、TagModule +setFileTagsBatch。

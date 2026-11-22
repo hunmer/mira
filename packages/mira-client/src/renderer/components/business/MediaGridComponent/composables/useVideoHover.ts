@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import type { FileInfo } from '../../../../../shared/types'
+import { classifyMedia } from 'mira-app-core/shared/sdk'
 
 export function useVideoHover() {
   const hoveredItem = ref<FileInfo | null>(null)
@@ -27,13 +28,7 @@ export function useVideoHover() {
   }
 
   const getFileType = (item: FileInfo): 'image' | 'video' | 'audio' | 'document' | 'other' => {
-    if (item.mimeType.startsWith('image/')) return 'image'
-    if (item.mimeType.startsWith('video/')) return 'video'
-    if (item.mimeType.startsWith('audio/')) return 'audio'
-    if (item.mimeType.includes('pdf') ||
-        item.mimeType.includes('document') ||
-        item.mimeType.includes('text/')) return 'document'
-    return 'other'
+    return classifyMedia(item.mimeType).kind
   }
 
   const isStillHovering = (item: FileInfo) => {

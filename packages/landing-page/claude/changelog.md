@@ -1,5 +1,6 @@
 # changelog
 
+- 2026-11-21: 增量核对（基线 bc638a73）。next.config.ts +`trailingSlash: true`（静态服务器自动映射 `<route>/index.html`，修复 /introduction/privacy 直达 404，177cce96）；首页 dark/light 截图重压缩（约 -75%，f7a87be7）。无其他实质变更。
 - 2026-08-25: 增量核对。新增隐私政策页（app/privacy + privacy-section，sitemap/footer 加链接）；contact-section 隐藏 QQ 群二维码。其余无实质变更。
 - 2026-08-20: 全量重扫并建档 `claude/`。移除已失效的 registry 文档(`registry/`、`registry.json`、`build-registry.mts`、`b:r` 命令均已删除,`zod` 依赖已移除);记录静态导出部署方案(`output: "export"` + `basePath: "/introduction"` + `postbuild.mjs`)与新增依赖(three、next-themes、@next/third-parties 等);CLAUDE.md 改为轻量索引。
 - 2026-08-13: 8-11~13 密集修复期(约 23 个提交,多为部署相关 fix:Vercel prerender 崩溃、Tweets 网络失败、Turbopack 禁用),随后转向静态导出 + `/introduction/` 子路径的自托管方案。

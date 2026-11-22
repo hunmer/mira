@@ -46,7 +46,7 @@
 |--------|---------------------------|--------------------------------|
 | `authApi` | `auth.ts` | login, register, me, logout, changePassword, uploadAvatar |
 | `adminApi` | `admin.ts` | list, create, update, delete |
-| `libraryApi` | `library.ts` | list, get, create, update, delete, toggleStatus |
+| `libraryApi` | `library.ts` | list, get, create, update, delete, toggleStatus, relocate/getRelocationProgress（库路径迁移，2026-09） |
 | `pluginApi` | `plugin.ts` | list, listByLibrary, get, updateStatus, configure, install, uninstall |
 | `deviceApi` | `device.ts` | list, disconnect |
 | `fileApi` | `file.ts` | upload, uploadProgress |

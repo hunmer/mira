@@ -17,7 +17,13 @@
 
 ## 测试
 
-vitest（配置 `vitest.config.ts`，devDependency）。测试与源码同目录放置：`*.test.ts`（单元/contract）、`*.integration.test.ts`（需本地服务）、`src/shared/sdk/test-helpers.ts` 为共享测试工具。当前共 27 个测试文件。
+vitest（配置 `vitest.config.ts`，devDependency）。测试与源码同目录放置：`*.test.ts`（单元/contract）、`*.integration.test.ts`（需本地服务）、`src/shared/sdk/test-helpers.ts` 为共享测试工具。当前共 29 个测试文件（2026-11 新增 FileOperations.recycle / MetadataImport / LibraryModule.contract / HttpClient.contract / FileModule.test）。
+
+## SDK 编码约定（2026-11 确认）
+
+- 文件操作统一走 `retryFileOperation` 包装（新 `storage/sqlite/retryFileOperation.ts`）：仅 EBUSY/EPERM/EACCES 重试，指数退避默认 5 次。
+- 回收/恢复/重命名等 DB+文件双写操作失败时回滚 DB 原值并清理目标文件。
+- SDK folder/tags 类参数接受 ID 或名称（名称不存在由 server 侧创建）。
 
 ## TypeScript 约定
 

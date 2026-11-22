@@ -155,16 +155,19 @@ export class FolderRouter extends BaseRouter {
                 }
 
                 const result = await db.setFileFolder(parseInt(fileId), folderId ?? null);
-                if (result.success) {
-                    const newFile = await db.getFile(parseInt(fileId));
-                    if (newFile) {
-                        const newPath = await db.getItemFilePath(newFile);
-                        if (newPath && watcher) watcher.ignorePath(newPath);
-                    }
-                    this.broadcastFolderEvent('file::updated', libraryId, {
-                        ...newFile, libraryId, fileId: parseInt(fileId), old_data: result.oldData,
-                    });
+                if (!result.success) {
+                    this.sendSuccess(res, { fileId, folder: folderId, success: result.success }, 'File folder set successfully');
+                    return;
                 }
+
+                const newFile = await db.getFile(parseInt(fileId));
+                if (newFile) {
+                    const newPath = await db.getItemFilePath(newFile);
+                    if (newPath && watcher) watcher.ignorePath(newPath);
+                }
+                this.broadcastFolderEvent('file::updated', libraryId, {
+                    ...newFile, libraryId, fileId: parseInt(fileId), old_data: result.oldData,
+                });
 
                 this.sendSuccess(res, { fileId, folder: folderId, success: result.success }, 'File folder set successfully');
             } catch (error) {

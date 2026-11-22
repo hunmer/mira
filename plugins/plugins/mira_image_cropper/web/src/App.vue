@@ -7,6 +7,7 @@ import CropPanel from '@/components/CropPanel.vue'
 import { getSelectedItems, isDark, logInfo, onLocaleChanged, onThemeChanged } from '@/lib/host'
 import { useI18n } from '@/lib/i18n'
 import { useCropperStore } from '@/stores/cropper'
+import { classifyMedia } from 'mira-app-core/shared/sdk'
 
 /**
  * 组合根：顶栏 + 左侧图片实例栏 + 中部交互画布 + 右侧裁切列表/导出。
@@ -51,12 +52,12 @@ function onDrop(e: DragEvent) {
   dragDepth = 0
   dragging.value = false
   for (const file of Array.from(e.dataTransfer?.files || [])) {
-    if (file.type.startsWith('image/')) void store.addLocalFile(file)
+    if (classifyMedia(file.type).isImage) void store.addLocalFile(file)
   }
 }
 
 function onPaste(e: ClipboardEvent) {
-  const file = Array.from(e.clipboardData?.files || []).find((f) => f.type.startsWith('image/'))
+  const file = Array.from(e.clipboardData?.files || []).find((f) => classifyMedia(f.type).isImage)
   if (file) void store.addLocalFile(file)
 }
 

@@ -1,6 +1,6 @@
 # 文件清单
 
-src/ 下共 63 个 .ts 文件（36 个源文件 + 27 个测试文件，基于 find 扫描；另有 `src/shared/sdk/test-helpers.ts` 计入源文件）。测试文件（`*.test.ts` / `*.integration.test.ts`）与源码同目录放置，下表未逐一列出。
+src/ 下共 65 个 .ts 文件（36 个源文件 + 29 个测试文件，基于 find 扫描；另有 `src/shared/sdk/test-helpers.ts` 计入源文件）。测试文件（`*.test.ts` / `*.integration.test.ts`）与源码同目录放置，下表未逐一列出。2026-11 新增测试：FileOperations.recycle / MetadataImport / LibraryModule.contract / HttpClient.contract / FileModule.test。
 
 ## 核心层（src/）
 
@@ -16,10 +16,11 @@ src/ 下共 63 个 .ts 文件（36 个源文件 + 27 个测试文件，基于 fi
 |------|------|
 | src/storage/sqlite/index.ts | 存储层入口，导出接口与实现 |
 | src/storage/sqlite/ILibraryServerData.ts | 存储接口契约 |
-| src/storage/sqlite/LibraryServerDataSQLite.ts | SQLite 主实现（组合 mixins） |
-| src/storage/sqlite/mixins/FileOperations.ts | 文件 CRUD |
-| src/storage/sqlite/mixins/FileImport.ts | 文件批量导入 |
-| src/storage/sqlite/mixins/FolderOperations.ts | 文件夹操作 |
+| src/storage/sqlite/LibraryServerDataSQLite.ts | SQLite 主实现（组合 mixins；2026-11 +skipSameName getter） |
+| src/storage/sqlite/retryFileOperation.ts | 文件操作 EBUSY/EPERM/EACCES 指数退避重试（2026-11 新增） |
+| src/storage/sqlite/mixins/FileOperations.ts | 文件 CRUD（2026-11：回收/恢复 name 同步+回滚、filters +ids/时间范围、checkDuplicateNames） |
+| src/storage/sqlite/mixins/FileImport.ts | 文件批量导入（2026-11：+enableHash/skipSameName） |
+| src/storage/sqlite/mixins/FolderOperations.ts | 文件夹操作（2026-11：回收站物理路径 getItemFilePath 解析） |
 | src/storage/sqlite/mixins/TagOperations.ts | 标签操作 |
 | src/storage/sqlite/mixins/Statistics.ts | 统计数据 |
 | src/storage/sqlite/mixins/types.ts | mixin 类型定义 |
@@ -32,7 +33,7 @@ src/ 下共 63 个 .ts 文件（36 个源文件 + 27 个测试文件，基于 fi
 | src/shared/sdk/types.ts | SDK 类型（WebSocketOptions 等） |
 | src/shared/sdk/test-helpers.ts | SDK 测试共享工具 |
 | src/shared/sdk/client/MiraClient.ts | 主客户端（链式 API，17 个访问器） |
-| src/shared/sdk/client/HttpClient.ts | HTTP 通道（axios） |
+| src/shared/sdk/client/HttpClient.ts | HTTP 通道（axios；2026-11 401 自动重认证） |
 | src/shared/sdk/client/WebSocketClient.ts | WebSocket 通道（ws） |
 | src/shared/sdk/utils/EventEmitter.ts | SDK 内部事件发射器 |
 | src/shared/sdk/modules/AuthModule.ts | 认证模块 |

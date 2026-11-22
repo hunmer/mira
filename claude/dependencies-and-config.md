@@ -74,4 +74,4 @@ packages:
 - `handoff/`:任务交接设计文档(device-share / dropdown-animation / thumbnail-cache / float-window / tiptap-notion)
 - `.audit/`:SDK 覆盖审计工作区(server-api-manifest / sdk-coverage-report / decide.ts 等工具)
 - `test/`:仓库级测试(若有)
-- `scripts/`:构建/安装/部署辅助脚本(16 个)
+- `scripts/`:构建/安装/部署辅助脚本(18 个;install/uninstall-mira-windows.ps1 一键安装卸载、install-mira-macos.sh、publish-packages.ps1 支持 -Release 发版)

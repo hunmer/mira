@@ -132,6 +132,7 @@ import {
 } from '@renderer/utils/fileUtils'
 import { getExtIconUrl } from '@renderer/utils/extIconHelper'
 import { getPluginFileFormat } from '@renderer/plugins/instanceManager'
+import { classifyMedia } from 'mira-app-core/shared/sdk'
 
 interface Props {
   item: FileInfo
@@ -191,12 +192,11 @@ const DOCUMENT_EXTENSIONS = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
 
 /** 按 mime/扩展名分发预览内容（document 判定与 FilePreviewView 保持一致）*/
 const kind = computed<'image' | 'video' | 'audio' | 'document' | 'unknown'>(() => {
-  const mime = (props.item.mimeType || '').toLowerCase()
-  if (mime.startsWith('image/')) return 'image'
-  if (mime.startsWith('video/')) return 'video'
-  if (mime.startsWith('audio/')) return 'audio'
-  if (DOCUMENT_EXTENSIONS.includes(getFileExtension(props.item.name || ''))
-    || mime.includes('pdf') || mime.includes('document') || mime.startsWith('text/')) {
+  const media = classifyMedia(props.item.mimeType)
+  if (media.kind === 'image') return 'image'
+  if (media.kind === 'video') return 'video'
+  if (media.kind === 'audio') return 'audio'
+  if (media.isDocument || DOCUMENT_EXTENSIONS.includes(getFileExtension(props.item.name || ''))) {
     return 'document'
   }
   return 'unknown'

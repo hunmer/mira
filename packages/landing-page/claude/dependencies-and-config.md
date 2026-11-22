@@ -36,6 +36,7 @@
 ## next.config.ts
 
 - `output: "export"`(静态导出,产物固定 `out/`)
+- `trailingSlash: true`(每路由导出为 `<route>/index.html`,静态服务器访问子路径如 `/introduction/privacy` 时自动映射,避免 404;2026-08-27 加入)
 - `basePath = "/introduction"`,同时通过 `env.NEXT_PUBLIC_BASE_PATH` 暴露给运行时(供 `lib/asset.ts` 的 `withBasePath()` 使用)
 - `images.unoptimized: true`(静态导出无服务端图片优化)
 

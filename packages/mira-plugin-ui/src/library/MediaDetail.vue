@@ -20,6 +20,8 @@ import { Input } from '../components/ui/input';
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '../components/ui/empty';
 import { buildTree, collectIds, flattenTree } from './tree';
 import { createLibraryTreeT } from './i18n';
+import { classifyMedia } from 'mira-app-core/shared/sdk';
+import { formatSize } from '../utils/format';
 import LibraryTree from './LibraryTree.vue';
 import type {
   LibraryTreeT,
@@ -437,7 +439,7 @@ function extractPalette(img: HTMLImageElement): number[][] {
 
 // ---- 卡片辅助 ----
 function isImage(item?: MediaDetailItem): boolean {
-  return !!item && (item.mime_type ?? '').startsWith('image/');
+  return !!item && classifyMedia(item.mime_type).isImage;
 }
 
 function isVideo(item?: MediaDetailItem): boolean {
@@ -455,18 +457,6 @@ function typeIcon(item: MediaDetailItem) {
   if (isVideo(item) || ['mp4', 'mkv', 'webm', 'mov', 'avi'].includes(ext)) return 'video';
   if (mime.startsWith('audio') || ['mp3', 'wav', 'flac', 'ogg', 'm4a'].includes(ext)) return 'audio';
   return 'file';
-}
-
-function formatFileSize(bytes?: number): string {
-  if (!bytes) return '—';
-  const units = ['B', 'KB', 'MB', 'GB'];
-  let size = bytes;
-  let unitIndex = 0;
-  while (size >= 1024 && unitIndex < units.length - 1) {
-    size /= 1024;
-    unitIndex++;
-  }
-  return `${size.toFixed(1)} ${units[unitIndex]}`;
 }
 
 function formatDate(value?: string | number): string {
@@ -805,7 +795,7 @@ function formatDuration(seconds?: number): string {
           <template v-if="!isMultiSelect && displayItems[0]">
             <div class="flex justify-between">
               <span>{{ tt('detail.size') }}</span>
-              <span>{{ formatFileSize(displayItems[0].size) }}</span>
+              <span>{{ formatSize(displayItems[0].size, '—') }}</span>
             </div>
             <div class="flex justify-between">
               <span>{{ tt('detail.importedAt') }}</span>
@@ -832,7 +822,7 @@ function formatDuration(seconds?: number): string {
             </div>
             <div class="flex justify-between">
               <span>{{ tt('detail.totalSize') }}</span>
-              <span>{{ formatFileSize(mergedInfo.totalSize) }}</span>
+              <span>{{ formatSize(mergedInfo.totalSize, '—') }}</span>
             </div>
           </template>
         </div>

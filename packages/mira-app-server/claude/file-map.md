@@ -1,6 +1,6 @@
 # file-map
 
-`src/` 全部源文件清单（基于目录扫描；行数/大小为近似）。2026-08 新增 `src/cli/`、`src/mcp/`、`src/sync/` 目录。
+`src/` 全部源文件清单（基于目录扫描；行数/大小为近似）。2026-08 新增 `src/cli/`、`src/mcp/`、`src/sync/` 目录；2026-11 新增 `routes/FileAssociationResolver.ts`、`routes/UploadImportMode.ts`、`services/LibraryRelocationService.ts`。
 
 ## 顶层 (`src/`)
 
@@ -20,7 +20,7 @@
 | `src/SettingsManager.ts` | 1.5K | 全局设置 |
 | `src/types.ts` | 657B | 共享类型 |
 
-## 路由 (`src/routes/`，19 个 .ts)
+## 路由 (`src/routes/`，21 个 .ts = 19 Router + 2 辅助)
 
 | 文件 | 大小 | 说明 |
 |------|------|------|
@@ -28,21 +28,23 @@
 | `AuthRouter.ts` | 13K | `/api/auth` |
 | `AdminsRouter.ts` | 11K | `/api/admins` |
 | `UserRouter.ts` | 12K | `/api/user` |
-| `LibraryRoutes.ts` | 32K | `/api/libraries` |
+| `LibraryRoutes.ts` | 32K | `/api/libraries`（2026-11 +relocate 两端点、`resolveLibraryPath` 导出） |
 | `PluginRoutes.ts` | 49K | `/api/plugins` |
 | `DatabaseRoutes.ts` | 5.2K | `/api/database` |
-| `FileRoutes.ts` | 71K | `/api/files` |
+| `FileRoutes.ts` | 71K | `/api/files`（2026-11 +`import-path`/`checkDuplicates`，回收站 409） |
 | `DeviceRoutes.ts` | 17K | `/api/devices` |
-| `TagRouter.ts` | 6.2K | `/api/tags` |
-| `FolderRouter.ts` | 8K | `/api/folders` |
+| `TagRouter.ts` | 6.2K | `/api/tags`（2026-11 +`/file/set-batch`，回收站 409） |
+| `FolderRouter.ts` | 8K | `/api/folders`（2026-11 回收站 409、folder 名称解析） |
 | `FsRouter.ts` | 29K | `/api/fs` |
 | `ThumbRouter.ts` | 4.4K | `/api/thumb` |
 | `StatisticsRouter.ts` | 8.6K | `/api/statistics` |
 | `SettingsRouter.ts` | 1.8K | `/api/settings` |
 | `CookieSitesRouter.ts` | 4.9K | `/api/cookie-sites`（2026-08 新增） |
-| `DownloadRoutes.ts` | 3.5K | `/api/download`（2026-08 新增） |
+| `DownloadRoutes.ts` | 3.5K | `/api/download`（2026-08 新增；2026-11 标签/文件夹名称关联） |
 | `HttpRouter.ts` | 8.4K | `/plugins/:libraryId/:pluginName/*` |
 | `WebSocketRouter.ts` | 1.5K | WebSocket 消息分发 |
+| `FileAssociationResolver.ts` | 59 行 | 辅助模块（非路由，2026-11 新增）：`resolveTagIds`/`resolveFolderId` 按名称或 ID 关联，名称无则创建 |
+| `UploadImportMode.ts` | 31 行 | 辅助模块（非路由，2026-11 新增）：上传源文件存在时按库 importType 用源文件导入，否则回退临时副本 copy |
 
 ## CLI (`src/cli/`，2026-08 新增)
 
@@ -92,8 +94,10 @@
 
 | 文件 | 大小 | 说明 |
 |------|------|------|
-| `ThumbnailService.ts` | 11K | 缩略图服务 + Generator 注册 |
-| `MetadataService.ts` | — | 元数据解析规则 |
+| `ThumbnailService.ts` + `.test.ts` | 11K | 缩略图服务 + Generator 注册（2026-11 path=NULL 适配） |
+| `MetadataService.ts` + `.test.ts` | — | 元数据解析规则（2026-11 path=NULL 适配） |
+| `LibraryImportService.ts` | 484 行 | Eagle/Billfish 跨库导入（2026-08 新增） |
+| `LibraryRelocationService.ts` + `.test.ts` | 221 行 | 素材库物理迁移（2026-11 新增，relocate 端点支撑） |
 | `DownloadExecutorService.ts` | — | 下载任务执行 |
 | `DuplicateScanner.ts` + `.test.ts` | — | 重复文件扫描（内置，原插件功能） |
 | `DatabaseBackupService.ts` | — | 数据库备份 |
@@ -122,12 +126,13 @@
 | `API_REFERENCE.md` | API 参考（12.8K，未读取） |
 | `Dockerfile` / `Dockerfile.optimized` / `docker-build.sh` / `docker-build.bat` / `.dockerignore` | 容器化（未读取） |
 | `data/` | 运行时数据（`librarys.json` / `settings.json` / `users.db` / `users/` / `temp/`） |
+| `tests/` | 包根测试目录（`MetadataService.test.ts`，jest 风格，git 跟踪） |
 | `dist/` | 构建产物 |
-| `sdk/` | SDK 与测试目录（`jest.config.js` / `scripts/` / `examples/` / `tsconfig.json`，未读取） |
 | `library_data.db` | 根目录遗留 SQLite（20K，用途未确认） |
+
+> 注：曾记录的 `sdk/` 目录（jest 配置/脚本/示例）在工作区已不存在，git 全历史也从未跟踪过——系 2026-08 扫描时的本地未跟踪目录。
 
 ## 未扫描
 
 - `src/plugins/node_modules/**`、`node_modules/**`、`dist/**` —— 体量过大或为产物，跳过。
-- `sdk/**` 内容 —— 未读取。
 - `API_REFERENCE.md`、`README.md`、`Dockerfile*`、`tsconfig.json` 内容 —— 未读取。

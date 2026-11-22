@@ -2,11 +2,11 @@
 
 Chrome MV3 浏览器扩展,作为「Mira 素材库」(本地 `mira-app-core` 后端)的网页采集入口。把网页图片/视频、截图(可视/整页/选区)、拖拽文件、悬停按钮、选中文字批量导入、嗅探到的资源快速归档到素材库,并集成前端高清大图升级(maxurl)。
 
-技术栈:TypeScript(strict)+ Vue 3(`<script setup>`,popup/side panel/批量上传独立窗口页)+ Vite + @crxjs/vite-plugin + Tailwind 4 + `mira-plugin-ui` + vue-i18n(zh-CN/en)+ `mira-app-core` workspace SDK。运行时形态是 MV3 四上下文:Service Worker(认证/上传/截图编排/资源抓取)、Content Script(注入网页,DOM 扫描/拖拽浮层/悬停按钮/选框/导入对话框)、Offscreen Document(Canvas 拼接裁剪)、UI(Vue)。
+技术栈:TypeScript(strict)+ Vue 3(`<script setup>`,popup/side panel/批量上传独立窗口页,以及**注入网页的拖拽浮层**,Shadow DOM 隔离)+ Vite + @crxjs/vite-plugin + Tailwind 4 + `mira-plugin-ui`(UI 组件 + library 树组件 + 编译 CSS 产物)+ vue-i18n(zh-CN/en)+ `mira-app-core` workspace SDK。运行时形态是 MV3 四上下文:Service Worker(认证/上传/截图编排/资源抓取)、Content Script(注入网页,DOM 扫描/拖拽浮层/悬停按钮/选框/导入对话框)、Offscreen Document(Canvas 拼接裁剪)、UI(Vue)。
 
 ## 关键约定
 
-- **命令**:`pnpm --filter mira-browser-extension build`(含 `vue-tsc` 类型检查)/ `dev` / `test`(19 个测试文件,约 137 用例)。改代码后须 build + 重新加载扩展 + 刷新目标页。
+- **命令**:`pnpm --filter mira-browser-extension build`(含 `vue-tsc` 类型检查)/ `dev` / `test`(26 个测试文件,约 169 用例)。改代码后须 build + 重新加载扩展 + 刷新目标页。
 - **跨上下文传文件必须用 `fileToStaged`**(`number[]`):裸 ArrayBuffer/Uint8Array 经 `sendMessage` 会丢/退化。
 - **offscreen reason = `chrome.offscreen.Reason.BLOBS`**(非字符串、非 IMAGE_PROCESSING);offscreen HTML 与 upload HTML 都必须在 `vite.config.ts` 的 `rollupOptions.input` 声明。
 - **向 content 发消息用 `sendToContent`**(注入兜底),不要直接 `chrome.tabs.sendMessage` 后不处理 reject。
@@ -14,6 +14,8 @@ Chrome MV3 浏览器扩展,作为「Mira 素材库」(本地 `mira-app-core` 后
 - **顶层访问 `chrome.*` 必须** `typeof chrome !== 'undefined'` 守卫(测试环境无 chrome)。
 - 新加消息:`shared/messages.ts` 联合类型 + `*_TYPES` 集合三处都要登记。
 - **vue 必须单路径 alias**(`vite.config.ts` 把 `vue` 钉到本包 node_modules):`mira-plugin-ui` 是 npm 实体目录,不钉会出现双 vue 实例 → slot/inject 崩溃。
+- **注入网页的浮层样式必须进 Shadow DOM**:拖拽浮层宿主 `#mira-dragdrop-host` 用 `attachShadow` + `all: initial` 隔离;mira-plugin-ui 样式经其**编译产物** `mira-plugin-ui/mira-plugin-ui.css?url` 注入(源码 CSS 的 `?url` 会被 CRX 保留为不存在的 src 路径)。
+- **弱化文字色用 `var(--muted-foreground)`**,不要用/覆盖 shadcn 的 `--muted`(它是弱化**背景**;曾把它别名成文字色导致暗色主题大面积对比度异常)。
 
 更多见 [开发约定](claude/conventions.md)。
 
@@ -35,9 +37,19 @@ Chrome MV3 浏览器扩展,作为「Mira 素材库」(本地 `mira-app-core` 后
 
 ## 扫描状态
 
-- **更新时间**:2026-08-20
-- **已扫描**:src 101 文件(全量,含 19 个测试文件)+ 根配置(package.json/tsconfig/vite/vitest/manifest/README)+ public/ 用途 + icons。基于实际文件读取 + git 核对。
-- **跳过**:`dist/`(产物)、`public/maxurl.user.js` 内容(7.2MB,仅记用途)、`node_modules/`。
-- **覆盖率**:源码 101/101;background/content/offscreen/ui(3 页面)/shared 全覆盖。
-- **本次要点**(2026-08-11 后 33 commits):新增悬停按钮采集(`content/hover-button.ts`)、网页内批量导入对话框(`content/overlay/import-dialog.ts`)、带 cookie/DNR 的资源抓取(`background/resource-fetch.ts`,permissions 增 downloads/notifications/cookies/declarativeNetRequestWithHostAccess)、批量上传独立窗口(`ui/upload.html`+`UploadApp.vue`+`BatchUploadHost.vue`,文件经 IndexedDB 暂存)、多服务器管理(servers/activeServerId 设置 + SERVERS_* 消息)、嗅探瀑布流视图(MasonryView + @hunmer/vue-masonry)、i18n(vue-i18n zh-CN/en);删除 LibraryTree/ServerBar/ServerManagerView/ContextMenu。
-- **下一步**:i18n 文案与 settings 新字段已核对;`resource-fetch.ts` 的 DNR 规则细节未逐行展开,需要时再深挖。
+- **更新时间**:2026-11-21
+- **已扫描**:基线 bc638a73(2026-08-25)以来 23 commits(08-26 → 09-09,提交信息均为 "fix")、52 文件 +2552/−649;逐 diff 取证 + 新增文件全文阅读(dragdrop.ts/DragDropOverlay.vue/library-cache.ts/node-last-used.ts/types.ts/SnifferView.vue/SettingsView.vue/CustomUploadView.vue/LibraryPicker.vue/context-menus.ts 等)+ 硬事实核对(manifest/依赖/构建配置均无变化)。
+- **跳过**:`dist/`(git 忽略,本地产物为 08-24 旧构建)、`public/maxurl.user.js` 内容、`node_modules/`。
+- **覆盖率**:src 现 111 文件(76 ts + 29 vue + 2 css + 4 html,含 26 测试),本次变更全部覆盖。
+- **本次要点**(2026-08-25 后):
+  - **拖拽浮层重写为 Vue 组件**(`content/overlay/DragDropOverlay.vue`,Shadow DOM + mira-plugin-ui 编译 CSS):文件夹|标签双栏树(LibraryTreeView,支持右键编辑/删除/拖拽排序/跨层移动)、底部素材库横条 hover 切换(经 `dragDropLibraryId` 持久化)、「不设文件夹」根区 + 自定义上传 zone、批量导入/批量复制 URL zone(`collectImagesUnder`);宿主 `dragdrop.ts` 只管拖拽侦测/定位/自动滚动。
+  - **拖拽快传站点黑白名单**:`dragPopoverMode`(blacklist/whitelist)+ `dragPopoverHosts`(host 精确匹配,content 按 `location.host` 过滤);右键菜单「切换当前网站是否开启图片拖拽快速上传」;旧白名单数据自动迁移(storage.ts)。
+  - **「最后使用」排序链路**:新 `shared/node-last-used.ts`(导入时 touch 落点文件夹/标签,200ms 合并写 `mira_node_last_used`)+ 树 5 种排序(id/title/created_at/last_used/custom)+ 树样式 tree/tiles(`libraryTreeStyle`)。
+  - **新 `shared/library-cache.ts`**:内存 + storage 双层库/树缓存(scope=服务器),CustomUploadView 先占位渲染再后台刷新,消除打开闪烁。
+  - **嗅探「导入到」**:SnifferView 集成 mira-plugin-ui `SaveLocationDialog`,落点记忆(`snifferImportLibraryId/FolderId/Tags`);批量导入前 IMU 大图解析预处理(progress phase `upgrade`),batchImport 支持传 tags。
+  - **LibraryPicker 重写**:自绘卡片网格 → mira-plugin-ui `LibrarySelect` 下拉;`LibIcon.vue` 删除。
+  - **drag-data.ts 解析增强**:DOMParser 替代正则(还原 `&amp;`、data-* 懒加载属性、srcset 最大候选)、Pinterest 专用 `x-pinterest-closeup-image`、`text/x-moz-url`/`text/url` 回退。
+  - **context-menus 修复**:点击监听提至模块顶层(SW 重启不丢),菜单项仅在 onInstalled 重建。
+  - **暗色主题修复**:style.css 删除 `--muted` 覆盖,41 处弱化文字改 `--muted-foreground`(交接文档 `handoff/2026-09-02-dark-theme-save-location.md`)。
+  - 测试 19 → 26 文件、约 137 → 169 用例;i18n +24 键。
+- **下一步**:本地 `dist/` 落后 src(最后构建 08-24),验证前需重新 build;`DragDropOverlay` 的 dev 模式 CSS 回退(localhost:5174)依赖 vite dev 端口约定,改端口需同步。

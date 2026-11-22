@@ -55,9 +55,38 @@ interface EagleItem {
   description?: string;
 }
 
+/**
+ * ServerPluginManager 调 init(inst) 时传入的宿主上下文（协议 A 深度插件）。
+ * 本插件零运行时依赖、无法 import mira-app-server 类型，故按实际消费的字段
+ * 做结构化声明；server / miraClient 本插件未使用，仅保留协议形状。
+ */
+interface EaglePluginContext {
+  pluginManager: {
+    /** 宿主 ServerPluginManager；经 server.backend 访问库/WS 广播/HTTP app */
+    server: {
+      backend: {
+        libraries?: { getLibrary?: (id: string) => { libraryService: any } | null | undefined };
+        getWebSocketServer?: () => ({
+          broadcastLibraryEvent?: (libraryId: string, event: string, data: any) => void;
+          broadcastPluginEvent?: (event: string, data: any) => void;
+        } | null);
+        getHttpServer: () => { app: any };
+      };
+    };
+    /** 插件根目录（解析代理模块 node_modules 用） */
+    pluginsDir?: string;
+    /** 取插件安装目录（权威路径）；旧版宿主可能缺失 */
+    getPluginDir?: (name: string) => string;
+  };
+  /** init 时所在库的 dbService（仅用于记录 bootstrapLibraryId） */
+  dbService: { getLibraryId: () => string };
+  server?: unknown;
+  miraClient?: unknown;
+}
+
 class MiraEagleExtension {
   private pluginName = PLUGIN_NAME;
-  private pluginManager: any;
+  private pluginManager: EaglePluginContext['pluginManager'];
   /** init 时所在库（仅用于定位插件数据目录与 backend 入口） */
   private bootstrapLibraryId: string;
   private config: PluginConfig;
@@ -77,7 +106,7 @@ class MiraEagleExtension {
     return [...this.routes];
   }
 
-  constructor(inst: any) {
+  constructor(inst: EaglePluginContext) {
     const { pluginManager } = inst;
     const bootstrapDbService = inst.dbService;
     this.pluginManager = pluginManager;
@@ -318,7 +347,7 @@ class MiraEagleExtension {
    */
   private shouldProxy(host: string, sites: string[]): boolean {
     if (!Array.isArray(sites) || sites.length === 0) return true; // 空清单 = 全部走代理
-    const h = host.toLowerCase();
+    const hostLower = host.toLowerCase();
     const excludes = sites.filter(s => s.trim().startsWith('!')).map(s => s.trim().slice(1).toLowerCase());
     const includes = sites.filter(s => !s.trim().startsWith('!')).map(s => s.trim().toLowerCase());
 
@@ -326,10 +355,10 @@ class MiraEagleExtension {
       if (!rule) return false;
       if (rule.startsWith('*.')) {
         const base = rule.slice(2); // *.example.com -> example.com
-        return h === base || h.endsWith('.' + base);
+        return hostLower === base || hostLower.endsWith('.' + base);
       }
       // 精确或子域：example.com 匹配 example.com / x.example.com
-      return h === rule || h.endsWith('.' + rule);
+      return hostLower === rule || hostLower.endsWith('.' + rule);
     };
     // 排除优先
     if (excludes.some(matchOne)) return false;
@@ -602,8 +631,11 @@ class MiraEagleExtension {
 
   /**
    * 用 IMU 尝试把缩略图 URL 升级为原图 URL。
-   * 返回候选 URL 数组（已按优先级排序：is_original 优先，去重，去 bad/fake/video）。
-   * 第一个元素总是原 url（保底）。找不到/出错/超时则返回 [url]。
+   * 返回候选 URL 数组（已按优先级排序：is_original 优先，去重，去 bad/fake/video），
+   * 原 url 总是排在最后作保底（缩略图总能下成功但质量最差）。找不到/出错/超时则仅返回 [url]。
+   *
+   * 注：按站点区分的升级策略（尺寸替换/域名规则/页面解析等）全部在 IMU
+   * userscript（maxurl.user.js）内部，本方法只负责调用并收集其回调结果。
    */
   private upgradeImageUrlCandidates(url: string): Promise<string[]> {
     const imu = this.loadImu();
@@ -626,24 +658,7 @@ class MiraEagleExtension {
           do_request: (opts: any) => this.imuDoRequest(opts),
           cb: (result: any[]) => {
             clearTimeout(to);
-            if (!result || !result.length) return done([url]);
-            // 收集所有可用候选，is_original 优先；去重、去 bad/fake/video
-            const seen = new Set<string>();
-            const ordered: { url: string; original: boolean }[] = [];
-            for (const r of result) {
-              if (!r || !r.url || r.bad || r.fake || r.video) continue;
-              if (r.url === url || seen.has(r.url)) continue;
-              seen.add(r.url);
-              ordered.push({ url: r.url, original: !!r.is_original });
-            }
-            ordered.sort((a, b) => Number(b.original) - Number(a.original));
-            const candidates = ordered.map(o => o.url);
-            if (this.config.verbose && candidates.length) {
-              console.log(`[mira_eagle_extension] IMU 升级候选 (${candidates.length}): ${url} -> ${candidates.join(', ')}`);
-            }
-            // 优先尝试升级候选（大的在前），原 url 放最后作保底——
-            // 因为原 url 通常是缩略图，总能下成功，但质量最差，应最后才用
-            done([...candidates, url]);
+            done([...this.collectImuCandidates(result, url), url]);
           },
         });
       } catch (e) {
@@ -652,6 +667,28 @@ class MiraEagleExtension {
         done([url]);
       }
     });
+  }
+
+  /**
+   * 从 IMU 回调结果中筛选可用升级候选（不含原 url）：
+   * 去重、剔除 bad/fake/video，is_original 优先排前。结果为空表示无可用升级。
+   */
+  private collectImuCandidates(result: any[] | null | undefined, originalUrl: string): string[] {
+    if (!result || !result.length) return [];
+    const seen = new Set<string>();
+    const ordered: { url: string; original: boolean }[] = [];
+    for (const r of result) {
+      if (!r || !r.url || r.bad || r.fake || r.video) continue;
+      if (r.url === originalUrl || seen.has(r.url)) continue;
+      seen.add(r.url);
+      ordered.push({ url: r.url, original: !!r.is_original });
+    }
+    ordered.sort((a, b) => Number(b.original) - Number(a.original));
+    const candidates = ordered.map(o => o.url);
+    if (this.config.verbose && candidates.length) {
+      console.log(`[mira_eagle_extension] IMU 升级候选 (${candidates.length}): ${originalUrl} -> ${candidates.join(', ')}`);
+    }
+    return candidates;
   }
 
   /** 兼容旧调用：返回单个升级 URL（第一个候选） */
@@ -1150,7 +1187,7 @@ class MiraEagleExtension {
 // 借助 require 缓存（仅 reload 时清），模块级变量跨库共享，保证端口只 bind 一次。
 let globalServer: MiraEagleExtension | null = null;
 
-export function init(inst: any) {
+export function init(inst: EaglePluginContext): MiraEagleExtension {
   if (globalServer) return globalServer;
   globalServer = new MiraEagleExtension(inst);
   return globalServer;

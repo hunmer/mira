@@ -2,6 +2,13 @@
 
 > 本文件记录「AI 上下文索引」的生成/更新,与产品功能 Changelog 分开。仅保留最近 5 条。
 
+## 2026-11-21 — 增量更新(基线 bc638a73 后 23 个 "fix" 提交)
+
+- 核对范围:`git diff bc638a73..HEAD`(52 文件 +2552/−649,2026-08-26 → 09-09)+ 新增文件全文阅读;manifest/package.json/vite/vitest/tsconfig 零 diff(版本/依赖/构建方式不变)。
+- 事实修正:src 101→111 文件(76 ts + 29 vue + 2 css + 4 html);测试 19→26 文件/约 137→169 用例(vitest 默认 node,新用例以 `// @vitest-environment jsdom` 覆盖);LibIcon.vue 已删、UploadView.vue 早已不存在(旧清单误列);新增 handoff/ 目录。
+- 新能力补录:拖拽浮层重写为 Vue 组件(Shadow DOM + mira-plugin-ui LibraryTreeView 双栏树 + 库横条 + 批量 zone);拖拽快传站点黑白名单(dragPopoverMode/Hosts + 右键切换);「最后使用」排序链路(node-last-used.ts,200ms 合并写);库/树缓存占位(library-cache.ts);嗅探「导入到」SaveLocationDialog + IMU 大图解析预处理 + batchImport 传 tags;树样式 tree/tiles 与 5 种排序;LibraryPicker 改 mira-plugin-ui LibrarySelect;drag-data DOMParser/Pinterest 解析;context-menus 顶层监听修复;暗色主题 `--muted` token 修复。
+- 更新 CLAUDE.md 与 claude/ 全部 11 个详情文件。
+
 ## 2026-08-20 — 增量更新(采集能力大扩张后核对)
 
 - 核对范围:`git log --since=2026-08-11`(33 commits,src 21 增 4 删 38 改)+ package.json + vite/manifest + 全目录 ls。

@@ -25,7 +25,7 @@
 
 `commander` 程序 `mira-app-server`，版本号从 `package.json` 动态读取（`getPackageVersion()`，旧的内嵌版本号问题已解决）。
 
-**MCP 模式短路**：命令行含 `--mcp` 时跳过 commander，直接 `startMcpServer()`（stdio JSON-RPC，见 `src/mcp/server.ts`），保证 stdout 仅承载协议数据。
+**MCP 模式短路**：命令行含 `--mcp` 时跳过 commander，直接 `startMcpServer()`（stdio JSON-RPC，见 `src/mcp/server.ts`），保证 stdout 仅承载协议数据。2026-11：tools 参数放宽——`folders` 的 folderId 与 `tags` 的 tags 均接受名称或 ID。
 
 **顶层命令**：
 

@@ -110,7 +110,7 @@ describe('LibraryServerDataSQLite recycle bin', () => {
     await db.deleteFile(item.id, { moveToRecycleBin: true });
     const recycled = await db.getFile(item.id);
     fs.writeFileSync(filePath, 'existing');
-    vi.spyOn(fs, 'renameSync').mockImplementation(() => { throw new Error('restore failed'); });
+    vi.spyOn(fs.promises, 'rename').mockRejectedValue(Object.assign(new Error('restore failed'), { code: 'EBUSY' }));
 
     expect(await db.recoverFile(item.id)).toBe(false);
     const unchanged = await db.getFile(item.id);

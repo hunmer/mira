@@ -1,6 +1,7 @@
 import { useMediaStore } from '../../stores/media'
 import { useRouter } from 'vue-router'
 import type { SearchService } from '../../types/search'
+import { classifyMedia } from 'mira-app-core/shared/sdk'
 
 /**
  * 文件搜索服务
@@ -89,13 +90,13 @@ export const fileSearchService: SearchService = {
     // 根据文件类型导航到不同的预览页面
     const mimeType = item.mimeType || ''
     
-    if (mimeType.startsWith('image/')) {
+    if (classifyMedia(mimeType).kind === 'image') {
       // 图片预览
       router.push(`/image-preview/${item.id}`)
-    } else if (mimeType.startsWith('video/')) {
+    } else if (classifyMedia(mimeType).kind === 'video') {
       // 视频预览
       router.push(`/video-preview/${item.id}`)
-    } else if (mimeType.startsWith('audio/')) {
+    } else if (classifyMedia(mimeType).kind === 'audio') {
       // 音频预览
       router.push(`/audio-preview/${item.id}`)
     } else {

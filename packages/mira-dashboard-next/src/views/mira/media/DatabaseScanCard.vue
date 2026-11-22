@@ -5,6 +5,7 @@ import { toast } from 'vue-sonner'
 import { ChevronLeftIcon, ChevronRightIcon, ExternalLinkIcon, ListChecksIcon, SearchIcon, Trash2Icon, UploadIcon } from '@lucide/vue'
 import { fileManagerApi } from '@/api'
 import { getMiraClient } from '@/lib/miraClient'
+import { formatSize } from '@/lib/utils'
 import { useLibrary } from '@/composables/useLibrary'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -81,13 +82,6 @@ watch(selectedId, () => {
 
 function errorMessage(error: any, fallback: string) {
   return error.response?.data?.error || error.message || fallback
-}
-
-function formatSize(bytes: number) {
-  if (!bytes) return '0 B'
-  const units = ['B', 'KB', 'MB', 'GB', 'TB']
-  const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1)
-  return `${(bytes / 1024 ** index).toFixed(index ? 1 : 0)} ${units[index]}`
 }
 
 function toggleDuplicate(id: number) {

@@ -162,6 +162,8 @@ import VideoFileInfoComponent from '../business/VideoFileInfoComponent.vue'
 import PreviewHeader from './PreviewHeader.vue'
 import { useVideoPreviewController } from '../../controllers/VideoPreviewController'
 import { useCollapsibleSidebar } from '../../composables/useCollapsibleSidebar'
+import { formatBytes as formatFileSize, formatDate } from '@renderer/utils'
+import { getFileExtension as getExtFromName } from '@renderer/utils/fileUtils'
 
 // 使用控制器
 // fileInfo 仅在嵌入 FilePreviewView 时传入：侧边栏/搜索等入口没有 mediaStore
@@ -213,49 +215,9 @@ const infoBindings = computed(() => ({
   currentTime: controller.currentTime.value,
 }))
 
-// 格式化文件大小
-const formatFileSize = (bytes?: number): string => {
-  if (!bytes) return 'Unknown'
-  const units = ['B', 'KB', 'MB', 'GB']
-  let size = bytes
-  let unitIndex = 0
-
-  while (size >= 1024 && unitIndex < units.length - 1) {
-    size /= 1024
-    unitIndex++
-  }
-
-  return `${size.toFixed(1)} ${units[unitIndex]}`
-}
-
 const getFileFormat = (fileName?: string): string => {
   if (!fileName) return 'Unknown'
-  const extension = fileName.split('.').pop()?.toUpperCase()
-  return extension || 'Unknown'
-}
-
-const formatDate = (date?: Date | string): string => {
-  if (!date) return 'Unknown'
-
-  try {
-    const dateObj = date instanceof Date ? date : new Date(date)
-
-    // Check if the date is valid
-    if (isNaN(dateObj.getTime())) {
-      return 'Invalid Date'
-    }
-
-    return dateObj.toLocaleDateString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  } catch (error) {
-    console.error('Error formatting date:', error)
-    return 'Invalid Date'
-  }
+  return getExtFromName(fileName).toUpperCase() || 'Unknown'
 }
 
 // 键盘快捷键支持

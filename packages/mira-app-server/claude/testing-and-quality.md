@@ -4,23 +4,21 @@
 
 | 命令 | 执行 | 说明 |
 |------|------|------|
-| `pnpm test` | `jest --config sdk/jest.config.js` | 单元测试（必须指定 `sdk/jest.config.js`） |
-| `pnpm run test:watch` | `jest --config sdk/jest.config.js --watch` | 监视模式 |
-| `pnpm run test:coverage` | `jest --config sdk/jest.config.js --coverage` | 覆盖率报告 |
-| `pnpm run test:integration` | `node sdk/scripts/test-and-fix.js` | 集成测试脚本 |
-| `pnpm run test:paths` | `node --test -r ts-node/register src/sync/*.test.ts`（2026-08 新增） | `src/sync/` 下用 node:test 跑的测试（FilePathSet / ImportedFileEvents） |
-| `pnpm run build:sdk` | `tsc --project sdk/tsconfig.json` | 构建 SDK（独立 tsconfig） |
-| `pnpm run sdk:example` | `ts-node sdk/examples/usage-examples.ts` | 运行 SDK 使用示例 |
+| `pnpm test` | `jest --config sdk/jest.config.js` | ⚠️ 失效：`sdk/` 目录已不存在（git 全历史未跟踪） |
+| `pnpm run test:watch` | `jest --config sdk/jest.config.js --watch` | ⚠️ 失效（同上） |
+| `pnpm run test:coverage` | `jest --config sdk/jest.config.js --coverage` | ⚠️ 失效（同上） |
+| `pnpm run test:integration` | `node sdk/scripts/test-and-fix.js` | ⚠️ 失效（同上） |
+| `pnpm run test:paths` | `node --test -r ts-node/register` 跑 6 个测试文件（2026-08 新增，2026-11 扩容） | `src/sync/`（FilePathSet / ImportedFileEvents）+ `src/routes/FileAssociationResolver.test.ts` + `src/routes/UploadImportMode.test.ts` + `src/services/ThumbnailService.test.ts` + `src/services/MetadataService.test.ts` |
+| `pnpm run build:sdk` | `tsc --project sdk/tsconfig.json` | ⚠️ 失效：`sdk/` 目录已不存在 |
+| `pnpm run sdk:example` | `ts-node sdk/examples/usage-examples.ts` | ⚠️ 失效（同上） |
 
-> 另有 `src/services/DuplicateScanner.test.ts`（jest 风格，随 `pnpm test` 跑）。SDK 本体的 vitest 测试在 `mira-app-core`（见该包文档）。
+> 包内 jest 风格单测（当前无 runner 自动挂载）：`src/services/DuplicateScanner.test.ts`、`src/routes/FileRoutes.rename.test.ts`、`src/routes/LibraryRoutes.test.ts`、`src/services/LibraryRelocationService.test.ts`（2026-11 新增 3 个）与 `tests/MetadataService.test.ts`。SDK 本体的 vitest 测试在 `mira-app-core`（见该包文档）。
 
 ## Jest 配置
 
-- 配置文件：`sdk/jest.config.js`（**不在包根**）。
-- 测试框架：`jest ^29.7.0` + `ts-jest ^29.1.1`（TypeScript 转译）。
-- 类型：`@types/jest ^29.5.8`。
-
-> 未发现：`sdk/jest.config.js` 的具体内容（testMatch / moduleNameMapper / coverage 阈值 / 转发到 ts-jest 的 tsconfig 等）—— 当前会话未读取 `sdk/` 目录任何文件。`sdk/scripts/test-and-fix.js` 的修复逻辑也未读取。
+- 脚本引用 `sdk/jest.config.js`，但 `sdk/` 目录在工作区与 git 全历史中均不存在（2026-08 扫描时它是未跟踪的本地目录，现已不在）——所有 jest 入口脚本当前失效，实际可用的测试入口只有 `test:paths`（node --test，6 个文件）。
+- 测试框架依赖仍在：`jest ^29.7.0` + `ts-jest ^29.1.1`（TypeScript 转译）、`@types/jest ^29.5.8`。
+- 仓库内 jest 风格测试文件：`tests/MetadataService.test.ts`（包根 `tests/` 目录，git 跟踪）与 `src/**/*.test.ts` 中未列入 test:paths 的（FileRoutes.rename / LibraryRoutes / LibraryRelocationService / DuplicateScanner），当前无 runner 挂载它们。
 
 ## 质量工具
 

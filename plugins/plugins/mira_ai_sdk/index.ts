@@ -284,392 +284,426 @@ class MiraAiSdkPlugin {
     const router = this.backend.getHttpServer().httpRouter;
     const libraryId = this.libraryId;
 
-    router.registerRounter(libraryId, '/ai-sdk/presets/list', 'get', async (_req: any, res: any) => {
+    router.registerRounter(libraryId, '/ai-sdk/presets/list', 'get', this.handlePresetsList);
+    router.registerRounter(libraryId, '/ai-sdk/presets/models', 'post', this.handlePresetsModels);
+    router.registerRounter(libraryId, '/ai-sdk/presets/refresh', 'post', this.handlePresetsRefresh);
+    // 注意: HttpRouter 同一 path 只支持一种 method，各操作使用独立路径
+    router.registerRounter(libraryId, '/ai-sdk/providers/list', 'get', this.handleProvidersList);
+    router.registerRounter(libraryId, '/ai-sdk/providers/create', 'post', this.handleProvidersCreate);
+    router.registerRounter(libraryId, '/ai-sdk/providers/update', 'post', this.handleProvidersUpdate);
+    router.registerRounter(libraryId, '/ai-sdk/providers/delete', 'post', this.handleProvidersDelete);
+    router.registerRounter(libraryId, '/ai-sdk/providers/default', 'post', this.handleProvidersDefault);
+    router.registerRounter(libraryId, '/ai-sdk/providers/default-model', 'post', this.handleProvidersDefaultModel);
+    router.registerRounter(libraryId, '/ai-sdk/providers/default-image', 'post', this.handleProvidersDefaultImage);
+    router.registerRounter(libraryId, '/ai-sdk/providers/test', 'post', this.handleProvidersTest);
+    router.registerRounter(libraryId, '/ai-sdk/chat', 'post', this.handleChat);
+    // 图片生成（参考 ai-image 的参数设计；结果写入 data/images/ 并经 /api/plugins 静态路由访问）
+    router.registerRounter(libraryId, '/ai-sdk/image/generate', 'post', this.handleImageGenerate);
+  }
+
+  // ============================== /ai-sdk/presets/* ==============================
+
+  /** GET /ai-sdk/presets/list — 预设服务商目录（不含模型明细） */
+  private handlePresetsList = async (_req: any, res: any) => {
+    const presets = this.loadPresets();
+    res.json({
+      success: true,
+      updatedAt: presets?.updatedAt || '',
+      source: presets?.source || '',
+      providers: (presets?.providers || []).map(item => ({
+        id: item.id,
+        name: item.name,
+        baseUrl: item.baseUrl,
+        sdk: item.sdk,
+        modelCount: item.modelCount,
+      })),
+    });
+  };
+
+  /** POST /ai-sdk/presets/models — 按预设 id 查询模型清单 */
+  private handlePresetsModels = async (req: any, res: any) => {
+    try {
       const presets = this.loadPresets();
-      res.json({
-        success: true,
-        updatedAt: presets?.updatedAt || '',
-        source: presets?.source || '',
-        providers: (presets?.providers || []).map(item => ({
-          id: item.id,
-          name: item.name,
-          baseUrl: item.baseUrl,
-          sdk: item.sdk,
-          modelCount: item.modelCount,
-        })),
-      });
-    });
+      const preset = presets?.providers.find(item => item.id === String(req.body?.id || ''));
+      if (!preset) throw new Error('预设服务商不存在');
+      res.json({ success: true, models: preset.models });
+    } catch (error) {
+      res.status(400).json({ success: false, error: this.errorMessage(error) });
+    }
+  };
 
-    router.registerRounter(libraryId, '/ai-sdk/presets/models', 'post', async (req: any, res: any) => {
-      try {
+  /** POST /ai-sdk/presets/refresh — 子进程重拉 models.dev 快照并清缓存 */
+  private handlePresetsRefresh = async (_req: any, res: any) => {
+    execFile(
+      process.execPath,
+      [path.join(this.pluginDir, 'scripts', 'fetch-presets.mjs')],
+      { timeout: 120000, cwd: this.pluginDir },
+      (error, _stdout, stderr) => {
+        if (error) {
+          return res.status(502).json({
+            success: false,
+            error: `刷新预设失败（服务器可能无法直连 models.dev，可设置 HTTPS_PROXY 后重试）: ${stderr || error.message}`,
+          });
+        }
+        this.presetsCache = null;
         const presets = this.loadPresets();
-        const preset = presets?.providers.find(item => item.id === String(req.body?.id || ''));
-        if (!preset) throw new Error('预设服务商不存在');
-        res.json({ success: true, models: preset.models });
-      } catch (error) {
-        res.status(400).json({ success: false, error: this.errorMessage(error) });
-      }
-    });
-
-    router.registerRounter(libraryId, '/ai-sdk/presets/refresh', 'post', async (_req: any, res: any) => {
-      execFile(
-        process.execPath,
-        [path.join(this.pluginDir, 'scripts', 'fetch-presets.mjs')],
-        { timeout: 120000, cwd: this.pluginDir },
-        (error, _stdout, stderr) => {
-          if (error) {
-            return res.status(502).json({
-              success: false,
-              error: `刷新预设失败（服务器可能无法直连 models.dev，可设置 HTTPS_PROXY 后重试）: ${stderr || error.message}`,
-            });
-          }
-          this.presetsCache = null;
-          const presets = this.loadPresets();
-          res.json({ success: true, updatedAt: presets?.updatedAt || '', providers: presets?.providers.length || 0 });
-        },
-      );
-    });
+        res.json({ success: true, updatedAt: presets?.updatedAt || '', providers: presets?.providers.length || 0 });
+      },
+    );
+  };
 
     // 注意: HttpRouter 同一 path 只支持一种 method，各操作使用独立路径
-    router.registerRounter(libraryId, '/ai-sdk/providers/list', 'get', async (_req: any, res: any) => {
-      res.json({
-        success: true,
-        providers: this.maskedProviders(),
-        defaultProviderId: this.store.defaultProviderId,
-        defaultModelId: this.store.defaultModelId,
-        defaultImageProviderId: this.store.defaultImageProviderId,
-        defaultImageModelId: this.store.defaultImageModelId,
-      });
-    });
+  // ============================== /ai-sdk/providers/* ==============================
 
-    router.registerRounter(libraryId, '/ai-sdk/providers/create', 'post', async (req: any, res: any) => {
-      try {
-        const body = req.body || {};
+  /** GET /ai-sdk/providers/list — 已保存服务商（apiKey 脱敏）与默认模型 */
+  private handleProvidersList = async (_req: any, res: any) => {
+    res.json({
+      success: true,
+      providers: this.maskedProviders(),
+      defaultProviderId: this.store.defaultProviderId,
+      defaultModelId: this.store.defaultModelId,
+      defaultImageProviderId: this.store.defaultImageProviderId,
+      defaultImageModelId: this.store.defaultImageModelId,
+    });
+  };
+
+  /** POST /ai-sdk/providers/create — 新建服务商（首个或 setDefault 时设为默认） */
+  private handleProvidersCreate = async (req: any, res: any) => {
+    try {
+      const body = req.body || {};
+      const name = String(body.name || '').trim();
+      const baseUrl = String(body.baseUrl || '').trim().replace(/\/+$/, '');
+      if (!name) throw new Error('名称不能为空');
+      if (!/^https?:\/\//i.test(baseUrl)) throw new Error('Base URL 必须以 http:// 或 https:// 开头');
+      const models = parseModels(body.models);
+      if (!models.length) throw new Error('至少配置一个模型');
+      const provider: ProviderConfig = {
+        id: newId(),
+        name,
+        baseUrl,
+        apiKey: String(body.apiKey || '').trim(),
+        models,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+      this.store.providers.push(provider);
+      if (!this.store.defaultProviderId || body.setDefault) this.store.defaultProviderId = provider.id;
+      this.saveStore();
+      res.json({ success: true, id: provider.id });
+    } catch (error) {
+      res.status(400).json({ success: false, error: this.errorMessage(error) });
+    }
+  };
+
+  /** POST /ai-sdk/providers/update — 按 id 局部更新（apiKey 留空/掩码时保留原值） */
+  private handleProvidersUpdate = async (req: any, res: any) => {
+    try {
+      const body = req.body || {};
+      const provider = this.findProvider(body.id);
+      if (body.name !== undefined) {
         const name = String(body.name || '').trim();
-        const baseUrl = String(body.baseUrl || '').trim().replace(/\/+$/, '');
         if (!name) throw new Error('名称不能为空');
+        provider.name = name;
+      }
+      if (body.baseUrl !== undefined) {
+        const baseUrl = String(body.baseUrl || '').trim().replace(/\/+$/, '');
         if (!/^https?:\/\//i.test(baseUrl)) throw new Error('Base URL 必须以 http:// 或 https:// 开头');
+        provider.baseUrl = baseUrl;
+      }
+      // apiKey 留空或提交的是掩码时保留原值
+      if (body.apiKey !== undefined) {
+        const apiKey = String(body.apiKey || '').trim();
+        if (apiKey && apiKey !== maskApiKey(provider.apiKey)) provider.apiKey = apiKey;
+      }
+      if (body.models !== undefined) {
         const models = parseModels(body.models);
         if (!models.length) throw new Error('至少配置一个模型');
-        const provider: ProviderConfig = {
-          id: newId(),
-          name,
-          baseUrl,
-          apiKey: String(body.apiKey || '').trim(),
-          models,
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-        };
-        this.store.providers.push(provider);
-        if (!this.store.defaultProviderId || body.setDefault) this.store.defaultProviderId = provider.id;
-        this.saveStore();
-        res.json({ success: true, id: provider.id });
-      } catch (error) {
-        res.status(400).json({ success: false, error: this.errorMessage(error) });
-      }
-    });
-
-    router.registerRounter(libraryId, '/ai-sdk/providers/update', 'post', async (req: any, res: any) => {
-      try {
-        const body = req.body || {};
-        const provider = this.findProvider(body.id);
-        if (body.name !== undefined) {
-          const name = String(body.name || '').trim();
-          if (!name) throw new Error('名称不能为空');
-          provider.name = name;
+        provider.models = models;
+        if (this.store.defaultProviderId === provider.id && !models.includes(this.store.defaultModelId || '')) {
+          this.store.defaultModelId = models[0];
         }
-        if (body.baseUrl !== undefined) {
-          const baseUrl = String(body.baseUrl || '').trim().replace(/\/+$/, '');
-          if (!/^https?:\/\//i.test(baseUrl)) throw new Error('Base URL 必须以 http:// 或 https:// 开头');
-          provider.baseUrl = baseUrl;
+        if (this.store.defaultImageProviderId === provider.id && !models.includes(this.store.defaultImageModelId || '')) {
+          this.store.defaultImageModelId = models[0];
         }
-        // apiKey 留空或提交的是掩码时保留原值
-        if (body.apiKey !== undefined) {
-          const apiKey = String(body.apiKey || '').trim();
-          if (apiKey && apiKey !== maskApiKey(provider.apiKey)) provider.apiKey = apiKey;
-        }
-        if (body.models !== undefined) {
-          const models = parseModels(body.models);
-          if (!models.length) throw new Error('至少配置一个模型');
-          provider.models = models;
-          if (this.store.defaultProviderId === provider.id && !models.includes(this.store.defaultModelId || '')) {
-            this.store.defaultModelId = models[0];
-          }
-          if (this.store.defaultImageProviderId === provider.id && !models.includes(this.store.defaultImageModelId || '')) {
-            this.store.defaultImageModelId = models[0];
-          }
-        }
-        provider.updatedAt = Date.now();
-        this.saveStore();
-        res.json({ success: true });
-      } catch (error) {
-        res.status(400).json({ success: false, error: this.errorMessage(error) });
       }
-    });
+      provider.updatedAt = Date.now();
+      this.saveStore();
+      res.json({ success: true });
+    } catch (error) {
+      res.status(400).json({ success: false, error: this.errorMessage(error) });
+    }
+  };
 
-    router.registerRounter(libraryId, '/ai-sdk/providers/delete', 'post', async (req: any, res: any) => {
-      try {
-        const provider = this.findProvider(req.body?.id);
-        this.store.providers = this.store.providers.filter(item => item.id !== provider.id);
-        if (this.store.defaultProviderId === provider.id) {
-          this.store.defaultProviderId = this.store.providers[0]?.id ?? null;
-          this.store.defaultModelId = this.store.providers[0]?.models[0] ?? null;
-        }
-        if (this.store.defaultImageProviderId === provider.id) {
-          this.store.defaultImageProviderId = null;
-          this.store.defaultImageModelId = null;
-        }
-        this.saveStore();
-        res.json({ success: true });
-      } catch (error) {
-        res.status(400).json({ success: false, error: this.errorMessage(error) });
+  /** POST /ai-sdk/providers/delete — 删除服务商并回收其默认指向 */
+  private handleProvidersDelete = async (req: any, res: any) => {
+    try {
+      const provider = this.findProvider(req.body?.id);
+      this.store.providers = this.store.providers.filter(item => item.id !== provider.id);
+      if (this.store.defaultProviderId === provider.id) {
+        this.store.defaultProviderId = this.store.providers[0]?.id ?? null;
+        this.store.defaultModelId = this.store.providers[0]?.models[0] ?? null;
       }
-    });
-
-    router.registerRounter(libraryId, '/ai-sdk/providers/default', 'post', async (req: any, res: any) => {
-      try {
-        const provider = this.findProvider(req.body?.id);
-        this.store.defaultProviderId = provider.id;
-        this.store.defaultModelId = provider.models[0] ?? null;
-        this.saveStore();
-        res.json({ success: true });
-      } catch (error) {
-        res.status(400).json({ success: false, error: this.errorMessage(error) });
+      if (this.store.defaultImageProviderId === provider.id) {
+        this.store.defaultImageProviderId = null;
+        this.store.defaultImageModelId = null;
       }
-    });
+      this.saveStore();
+      res.json({ success: true });
+    } catch (error) {
+      res.status(400).json({ success: false, error: this.errorMessage(error) });
+    }
+  };
 
-    router.registerRounter(libraryId, '/ai-sdk/providers/default-model', 'post', async (req: any, res: any) => {
-      try {
-        const provider = this.findProvider(req.body?.id);
-        const model = String(req.body?.model || '').trim();
-        if (!provider.models.includes(model)) throw new Error('文本模型不属于该服务商');
-        this.store.defaultProviderId = provider.id;
-        this.store.defaultModelId = model;
-        this.saveStore();
-        res.json({ success: true });
-      } catch (error) {
-        res.status(400).json({ success: false, error: this.errorMessage(error) });
+  /** POST /ai-sdk/providers/default — 设置默认服务商（默认文本模型取其第一个） */
+  private handleProvidersDefault = async (req: any, res: any) => {
+    try {
+      const provider = this.findProvider(req.body?.id);
+      this.store.defaultProviderId = provider.id;
+      this.store.defaultModelId = provider.models[0] ?? null;
+      this.saveStore();
+      res.json({ success: true });
+    } catch (error) {
+      res.status(400).json({ success: false, error: this.errorMessage(error) });
+    }
+  };
+
+  /** POST /ai-sdk/providers/default-model — 设置默认文本模型 */
+  private handleProvidersDefaultModel = async (req: any, res: any) => {
+    try {
+      const provider = this.findProvider(req.body?.id);
+      const model = String(req.body?.model || '').trim();
+      if (!provider.models.includes(model)) throw new Error('文本模型不属于该服务商');
+      this.store.defaultProviderId = provider.id;
+      this.store.defaultModelId = model;
+      this.saveStore();
+      res.json({ success: true });
+    } catch (error) {
+      res.status(400).json({ success: false, error: this.errorMessage(error) });
+    }
+  };
+
+  /** POST /ai-sdk/providers/default-image — 设置默认生图服务商/模型 */
+  private handleProvidersDefaultImage = async (req: any, res: any) => {
+    try {
+      const provider = this.findProvider(req.body?.id);
+      const model = String(req.body?.model || '').trim();
+      if (!provider.models.includes(model)) throw new Error('生图模型不属于该服务商');
+      this.store.defaultImageProviderId = provider.id;
+      this.store.defaultImageModelId = model;
+      this.saveStore();
+      res.json({ success: true });
+    } catch (error) {
+      res.status(400).json({ success: false, error: this.errorMessage(error) });
+    }
+  };
+
+  /** POST /ai-sdk/providers/test — 用指定服务商/模型发一条探测对话 */
+  private handleProvidersTest = async (req: any, res: any) => {
+    try {
+      const provider = this.findProvider(req.body?.id);
+      const model = this.buildModel(provider, req.body?.model);
+      const startedAt = Date.now();
+      const result = await generateText({
+        model,
+        prompt: 'Reply with exactly: ok',
+        maxOutputTokens: 512,
+        abortSignal: AbortSignal.timeout(TEST_TIMEOUT_MS),
+      });
+      res.json({
+        success: true,
+        model: String(req.body?.model || '').trim() || provider.models[0],
+        latencyMs: Date.now() - startedAt,
+        reply: result.text.trim(),
+        usage: result.usage,
+      });
+    } catch (error) {
+      res.status(502).json({ success: false, error: this.errorMessage(error) });
+    }
+  };
+
+  // ============================== /ai-sdk/chat 与 /ai-sdk/image/generate ==============================
+
+  /** POST /ai-sdk/chat — 流式/非流式聊天；请求自带 baseUrl/apiKey 时直连，不经过已保存的服务商 */
+  private handleChat = async (req: any, res: any) => {
+    let stream = false;
+    try {
+      const body = req.body || {};
+      stream = body.stream === true;
+      const messages = normalizeMessages(body.messages);
+
+      let providerId: string | null = null;
+      let providerName: string;
+      let modelId: string;
+      let model: ReturnType<ReturnType<typeof createOpenAICompatible>>;
+      if (String(body.baseUrl || '').trim()) {
+        const baseUrl = String(body.baseUrl).trim().replace(/\/+$/, '');
+        if (!/^https?:\/\//i.test(baseUrl)) throw new Error('baseUrl 必须以 http:// 或 https:// 开头');
+        modelId = String(body.model || '').trim();
+        if (!modelId) throw new Error('自带 baseUrl 调用时必须指定 model');
+        providerName = String(body.name || '自定义').trim() || '自定义';
+        model = createOpenAICompatible({
+          name: providerName,
+          apiKey: String(body.apiKey || '').trim() || undefined,
+          baseURL: baseUrl,
+        })(modelId);
+      } else {
+        const provider = this.resolveProvider(body.providerId);
+        providerId = provider.id;
+        providerName = provider.name;
+        const requestedModel = body.model || (provider.id === this.store.defaultProviderId ? this.store.defaultModelId : undefined);
+        model = this.buildModel(provider, requestedModel);
+        modelId = String(requestedModel || '').trim() || provider.models[0];
       }
-    });
 
-    router.registerRounter(libraryId, '/ai-sdk/providers/default-image', 'post', async (req: any, res: any) => {
-      try {
-        const provider = this.findProvider(req.body?.id);
-        const model = String(req.body?.model || '').trim();
-        if (!provider.models.includes(model)) throw new Error('生图模型不属于该服务商');
-        this.store.defaultImageProviderId = provider.id;
-        this.store.defaultImageModelId = model;
-        this.saveStore();
-        res.json({ success: true });
-      } catch (error) {
-        res.status(400).json({ success: false, error: this.errorMessage(error) });
-      }
-    });
-
-    router.registerRounter(libraryId, '/ai-sdk/providers/test', 'post', async (req: any, res: any) => {
-      try {
-        const provider = this.findProvider(req.body?.id);
-        const model = this.buildModel(provider, req.body?.model);
-        const startedAt = Date.now();
+      if (!stream) {
         const result = await generateText({
           model,
-          prompt: 'Reply with exactly: ok',
-          maxOutputTokens: 512,
-          abortSignal: AbortSignal.timeout(TEST_TIMEOUT_MS),
-        });
-        res.json({
-          success: true,
-          model: String(req.body?.model || '').trim() || provider.models[0],
-          latencyMs: Date.now() - startedAt,
-          reply: result.text.trim(),
-          usage: result.usage,
-        });
-      } catch (error) {
-        res.status(502).json({ success: false, error: this.errorMessage(error) });
-      }
-    });
-
-    router.registerRounter(libraryId, '/ai-sdk/chat', 'post', async (req: any, res: any) => {
-      let stream = false;
-      try {
-        const body = req.body || {};
-        stream = body.stream === true;
-        const messages = normalizeMessages(body.messages);
-
-        // 请求自带 baseUrl/apiKey 时直连，不经过已保存的服务商
-        let providerId: string | null = null;
-        let providerName: string;
-        let modelId: string;
-        let model: ReturnType<ReturnType<typeof createOpenAICompatible>>;
-        if (String(body.baseUrl || '').trim()) {
-          const baseUrl = String(body.baseUrl).trim().replace(/\/+$/, '');
-          if (!/^https?:\/\//i.test(baseUrl)) throw new Error('baseUrl 必须以 http:// 或 https:// 开头');
-          modelId = String(body.model || '').trim();
-          if (!modelId) throw new Error('自带 baseUrl 调用时必须指定 model');
-          providerName = String(body.name || '自定义').trim() || '自定义';
-          model = createOpenAICompatible({
-            name: providerName,
-            apiKey: String(body.apiKey || '').trim() || undefined,
-            baseURL: baseUrl,
-          })(modelId);
-        } else {
-          const provider = this.resolveProvider(body.providerId);
-          providerId = provider.id;
-          providerName = provider.name;
-          const requestedModel = body.model || (provider.id === this.store.defaultProviderId ? this.store.defaultModelId : undefined);
-          model = this.buildModel(provider, requestedModel);
-          modelId = String(requestedModel || '').trim() || provider.models[0];
-        }
-
-        if (!stream) {
-          const result = await generateText({
-            model,
-            messages,
-            abortSignal: AbortSignal.timeout(300000),
-          });
-          return res.json({
-            success: true,
-            providerId,
-            providerName,
-            model: modelId,
-            text: result.text,
-            usage: result.usage,
-          });
-        }
-
-        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-        res.setHeader('Cache-Control', 'no-cache');
-        res.setHeader('X-Accel-Buffering', 'no');
-        res.setHeader('X-Mira-Provider', encodeURIComponent(providerName));
-        res.setHeader('X-Mira-Model', encodeURIComponent(modelId));
-        res.flushHeaders();
-
-        let streamError = '';
-        let received = false;
-        const result = streamText({
-          model,
           messages,
-          onError({ error }) {
-            streamError = error instanceof Error ? error.message : String(error);
-          },
+          abortSignal: AbortSignal.timeout(300000),
         });
-        try {
-          for await (const chunk of result.textStream) {
-            received = true;
-            res.write(chunk);
-          }
-        } catch (error) {
-          streamError = streamError || (error instanceof Error ? error.message : String(error));
-        }
-        if (streamError && !received) {
-          res.write(`[AI SDK 错误] ${streamError}`);
-        }
-        res.end();
-      } catch (error) {
-        if (stream && res.headersSent) {
-          res.write(`[AI SDK 错误] ${this.errorMessage(error)}`);
-          return res.end();
-        }
-        res.status(400).json({ success: false, error: this.errorMessage(error) });
-      }
-    });
-
-    // 图片生成（参考 ai-image 的参数设计；结果写入 data/images/ 并经 /api/plugins 静态路由访问）
-    router.registerRounter(libraryId, '/ai-sdk/image/generate', 'post', async (req: any, res: any) => {
-      try {
-        const body = req.body || {};
-        const prompt = String(body.prompt || '').trim();
-        if (!prompt) throw new Error('prompt 不能为空');
-
-        // 与 /ai-sdk/chat 一致：请求自带 baseUrl/apiKey 时直连，否则用已保存服务商
-        let providerId: string | null = null;
-        let providerName: string;
-        let modelId: string;
-        let imageModel: ReturnType<ReturnType<typeof createOpenAICompatible>['imageModel']>;
-        if (String(body.baseUrl || '').trim()) {
-          const baseUrl = String(body.baseUrl).trim().replace(/\/+$/, '');
-          if (!/^https?:\/\//i.test(baseUrl)) throw new Error('baseUrl 必须以 http:// 或 https:// 开头');
-          modelId = String(body.model || '').trim();
-          if (!modelId) throw new Error('自带 baseUrl 调用时必须指定 model');
-          providerName = String(body.name || '自定义').trim() || '自定义';
-          imageModel = createOpenAICompatible({
-            name: providerName,
-            apiKey: String(body.apiKey || '').trim() || undefined,
-            baseURL: baseUrl,
-            fetch: imageResponseFetch,
-          }).imageModel(modelId);
-        } else {
-          const imageProviderId = body.providerId || this.store.defaultImageProviderId;
-          const provider = this.resolveProvider(imageProviderId);
-          providerId = provider.id;
-          providerName = provider.name;
-          const requestedModel = body.model || (provider.id === this.store.defaultImageProviderId ? this.store.defaultImageModelId : undefined);
-          imageModel = this.buildImageModel(provider, requestedModel);
-          modelId = String(requestedModel || '').trim() || provider.models[0];
-        }
-
-        const n = Math.min(Math.max(1, Number(body.n) || 1), 10);
-        const size = String(body.size || '').trim();
-        if (size && !/^\d{2,5}x\d{2,5}$/.test(size)) throw new Error('size 格式必须为 {width}x{height}，如 1024x1024');
-        const seed = body.seed === undefined || body.seed === null || body.seed === '' ? undefined : Number(body.seed);
-        if (seed !== undefined && (!Number.isFinite(seed) || seed < 0)) throw new Error('seed 必须是非负数字');
-        const providerOptions = body.providerOptions && typeof body.providerOptions === 'object' && !Array.isArray(body.providerOptions)
-          ? body.providerOptions
-          : undefined;
-
-        // 传入 images（base64 数组，可选）时走图片编辑（/images/edits），否则文生图（/images/generations）
-        const inputImages: DataContent[] = Array.isArray(body.images)
-          ? body.images.map((item: unknown) => toBase64Content(item)).filter(Boolean)
-          : [];
-        const mask: DataContent | undefined = body.mask ? toBase64Content(body.mask) : undefined;
-        const generatePrompt = inputImages.length ? { text: prompt, images: inputImages, mask } : prompt;
-
-        const startedAt = Date.now();
-        const result = await generateImage({
-          model: imageModel,
-          prompt: generatePrompt,
-          n,
-          size: (size || undefined) as `${number}x${number}` | undefined,
-          seed,
-          providerOptions,
-          abortSignal: AbortSignal.timeout(IMAGE_TIMEOUT_MS),
-        });
-
-        const imageDir = path.join(this.pluginDir, IMAGE_DIR_NAME);
-        fs.mkdirSync(imageDir, { recursive: true });
-        const returnBase64 = body.returnBase64 === true;
-        const slug = slugifyPrompt(prompt) || 'image';
-        const images = result.images.map(image => {
-          const extension = imageExtensionOf(image.mediaType);
-          const fileName = `${slug}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}.${extension}`;
-          fs.writeFileSync(path.join(imageDir, fileName), image.uint8Array);
-          const item: Record<string, unknown> = {
-            url: `plugins/${libraryId}/${PLUGIN_NAME}/${IMAGE_DIR_NAME.split(path.sep).join('/')}/${fileName}`,
-            file: `${IMAGE_DIR_NAME.split(path.sep).join('/')}/${fileName}`,
-            mediaType: image.mediaType,
-          };
-          if (returnBase64) item.base64 = image.base64;
-          return item;
-        });
-
-        res.json({
+        return res.json({
           success: true,
           providerId,
           providerName,
           model: modelId,
-          prompt,
-          n,
-          size: size || null,
-          elapsed: Date.now() - startedAt,
-          images,
-          warnings: result.warnings,
+          text: result.text,
           usage: result.usage,
         });
-      } catch (error) {
-        res.status(502).json({ success: false, error: this.errorMessage(error) });
       }
-    });
-  }
+
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('X-Accel-Buffering', 'no');
+      res.setHeader('X-Mira-Provider', encodeURIComponent(providerName));
+      res.setHeader('X-Mira-Model', encodeURIComponent(modelId));
+      res.flushHeaders();
+
+      let streamError = '';
+      let received = false;
+      const result = streamText({
+        model,
+        messages,
+        onError({ error }) {
+          streamError = error instanceof Error ? error.message : String(error);
+        },
+      });
+      try {
+        for await (const chunk of result.textStream) {
+          received = true;
+          res.write(chunk);
+        }
+      } catch (error) {
+        streamError = streamError || (error instanceof Error ? error.message : String(error));
+      }
+      if (streamError && !received) {
+        res.write(`[AI SDK 错误] ${streamError}`);
+      }
+      res.end();
+    } catch (error) {
+      if (stream && res.headersSent) {
+        res.write(`[AI SDK 错误] ${this.errorMessage(error)}`);
+        return res.end();
+      }
+      res.status(400).json({ success: false, error: this.errorMessage(error) });
+    }
+  };
+
+  /** POST /ai-sdk/image/generate — 文生图/图生图/蒙版重绘；结果写入 data/images/ 并经 /api/plugins 静态路由访问 */
+  private handleImageGenerate = async (req: any, res: any) => {
+    try {
+      const body = req.body || {};
+      const prompt = String(body.prompt || '').trim();
+      if (!prompt) throw new Error('prompt 不能为空');
+
+      // 与 /ai-sdk/chat 一致：请求自带 baseUrl/apiKey 时直连，否则用已保存服务商
+      let providerId: string | null = null;
+      let providerName: string;
+      let modelId: string;
+      let imageModel: ReturnType<ReturnType<typeof createOpenAICompatible>['imageModel']>;
+      if (String(body.baseUrl || '').trim()) {
+        const baseUrl = String(body.baseUrl).trim().replace(/\/+$/, '');
+        if (!/^https?:\/\//i.test(baseUrl)) throw new Error('baseUrl 必须以 http:// 或 https:// 开头');
+        modelId = String(body.model || '').trim();
+        if (!modelId) throw new Error('自带 baseUrl 调用时必须指定 model');
+        providerName = String(body.name || '自定义').trim() || '自定义';
+        imageModel = createOpenAICompatible({
+          name: providerName,
+          apiKey: String(body.apiKey || '').trim() || undefined,
+          baseURL: baseUrl,
+          fetch: imageResponseFetch,
+        }).imageModel(modelId);
+      } else {
+        const imageProviderId = body.providerId || this.store.defaultImageProviderId;
+        const provider = this.resolveProvider(imageProviderId);
+        providerId = provider.id;
+        providerName = provider.name;
+        const requestedModel = body.model || (provider.id === this.store.defaultImageProviderId ? this.store.defaultImageModelId : undefined);
+        imageModel = this.buildImageModel(provider, requestedModel);
+        modelId = String(requestedModel || '').trim() || provider.models[0];
+      }
+
+      const n = Math.min(Math.max(1, Number(body.n) || 1), 10);
+      const size = String(body.size || '').trim();
+      if (size && !/^\d{2,5}x\d{2,5}$/.test(size)) throw new Error('size 格式必须为 {width}x{height}，如 1024x1024');
+      const seed = body.seed === undefined || body.seed === null || body.seed === '' ? undefined : Number(body.seed);
+      if (seed !== undefined && (!Number.isFinite(seed) || seed < 0)) throw new Error('seed 必须是非负数字');
+      const providerOptions = body.providerOptions && typeof body.providerOptions === 'object' && !Array.isArray(body.providerOptions)
+        ? body.providerOptions
+        : undefined;
+
+      // 传入 images（base64 数组，可选）时走图片编辑（/images/edits），否则文生图（/images/generations）
+      const inputImages: DataContent[] = Array.isArray(body.images)
+        ? body.images.map((item: unknown) => toBase64Content(item)).filter(Boolean)
+        : [];
+      const mask: DataContent | undefined = body.mask ? toBase64Content(body.mask) : undefined;
+      const generatePrompt = inputImages.length ? { text: prompt, images: inputImages, mask } : prompt;
+
+      const startedAt = Date.now();
+      const result = await generateImage({
+        model: imageModel,
+        prompt: generatePrompt,
+        n,
+        size: (size || undefined) as `${number}x${number}` | undefined,
+        seed,
+        providerOptions,
+        abortSignal: AbortSignal.timeout(IMAGE_TIMEOUT_MS),
+      });
+
+      const imageDir = path.join(this.pluginDir, IMAGE_DIR_NAME);
+      fs.mkdirSync(imageDir, { recursive: true });
+      const returnBase64 = body.returnBase64 === true;
+      const slug = slugifyPrompt(prompt) || 'image';
+      const libraryId = this.libraryId;
+      const images = result.images.map(image => {
+        const extension = imageExtensionOf(image.mediaType);
+        const fileName = `${slug}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}.${extension}`;
+        fs.writeFileSync(path.join(imageDir, fileName), image.uint8Array);
+        const item: Record<string, unknown> = {
+          url: `plugins/${libraryId}/${PLUGIN_NAME}/${IMAGE_DIR_NAME.split(path.sep).join('/')}/${fileName}`,
+          file: `${IMAGE_DIR_NAME.split(path.sep).join('/')}/${fileName}`,
+          mediaType: image.mediaType,
+        };
+        if (returnBase64) item.base64 = image.base64;
+        return item;
+      });
+
+      res.json({
+        success: true,
+        providerId,
+        providerName,
+        model: modelId,
+        prompt,
+        n,
+        size: size || null,
+        elapsed: Date.now() - startedAt,
+        images,
+        warnings: result.warnings,
+        usage: result.usage,
+      });
+    } catch (error) {
+      res.status(502).json({ success: false, error: this.errorMessage(error) });
+    }
+  };
 
   private errorMessage(error: unknown): string {
     const message = error instanceof Error ? error.message : String(error);

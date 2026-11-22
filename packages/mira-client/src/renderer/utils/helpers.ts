@@ -194,9 +194,10 @@ export function deepClone<T>(obj: T): T {
  * 格式化日期
  */
 export function formatDate(
-  date: string | Date,
+  date?: string | Date,
   format: 'short' | 'long' | 'time' | 'datetime' = 'datetime'
 ): string {
+  if (date == null) return '无效日期'
   const d = typeof date === 'string' ? new Date(date) : date
   
   if (isNaN(d.getTime())) {

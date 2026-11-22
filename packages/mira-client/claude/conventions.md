@@ -19,6 +19,12 @@
 - Pinia 3,15 个 Store(见 public-interfaces.md)
 - 持久化由各 Store 自行决定
 
+## 事件总线(v3.0.2 起)
+
+- 渲染进程跨组件事件一律用类型化 `miraEventBus`(`src/renderer/services/EventBus.ts`,MiraEventMap 14 种事件)
+- **禁止**再 `window.dispatchEvent(new CustomEvent(...))`(存量已全部迁移)
+- 新增事件先在 `MiraEventMap` 补类型;emit 支持 weight 优先级,另有 emitAsync
+
 ## Electron 安全
 
 - Context Isolation 启用,Node Integration 禁用
@@ -46,8 +52,10 @@ pnpm run build:prod          # 生产构建(cross-env NODE_ENV=production)
 pnpm run electron:build:win  # Windows 打包(electron-builder)
 pnpm run electron:build:mac  # macOS 打包
 pnpm run type-check          # vue-tsc 类型检查(主门禁)
-pnpm run test:ui:remote      # procm 远程 UI 测试,如 `pnpm run test:ui:remote createFolder`(需 dev 构建运行中 + procm server)
-pnpm run lint                # ESLint 9 --fix
+pnpm run lint                # ESLint 9 flat config
+# v3.0.2 起 test:ui:remote / test:split-tabs 脚本已删,直跑:
+#   node scripts/test-ui.mjs <testName>                          # procm 远程 UI 测试(需 dev 构建运行中 + procm server)
+#   node --experimental-strip-types --test <file.test.ts>        # node 纯函数测试
 pnpm run clean               # 清理 dist*/build/docs 产物
 ```
 

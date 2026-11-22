@@ -8,6 +8,7 @@
 
 | 日期 | 操作 | 说明 |
 |------|------|------|
+| 2026-11-21 | 增量更新 | v3.0.2:新增 services/EventBus.ts(miraEventBus 类型化事件总线,取代 window.dispatchEvent);上传重构(/upload 路由与 FileUploadView 删除,收进 FileUploadDialog+UploadQueueDialog);FilterBar 语义搜索过滤(消费 window.pluginSystem.filterSearchProviders);plugins/instanceManager 增 initializeGlobalPluginSystem;settings store 增 uploadMax*/maxVisibleNotifications;utils/localFilePath.ts 新增 |
 | 2026-08-20 | 增量更新 | 新增 i18n/(vue-i18n) 与 procm-ui-tests/(远程 UI 测试);Store 10→15;UI 框架更正为 shadcn-vue(原文误记 PrimeVue);路由新增 image/video-preview、playground |
 | 2026-05-12 | 架构扫描更新 | 补充入口分析、路由清单、子模块索引 |
 
@@ -86,8 +87,9 @@ src/renderer/
 ├── router/                    # 路由配置 (257 行)
 ├── services/                  # 业务服务
 │   ├── InitializationService.ts # 初始化
-│   ├── MiraSDKService.ts     # SDK 集成
-│   ├── PluginService.ts      # 插件服务
+│   ├── MiraSDKService.ts     # SDK 集成(v3.0.2:onUnauthorized 自动重登、importLocalFilePath 本地路径导入)
+│   ├── PluginService.ts      # 插件服务(v3.0.2:getAuthToken/authPost)
+│   ├── EventBus.ts           # miraEventBus 类型化事件总线(v3.0.2 新增,MiraEventMap 14 事件)
 │   ├── SearchHandlers.ts     # 搜索处理
 │   ├── ShortcutService.ts    # 快捷键
 │   ├── WebSocketService.ts   # WebSocket
@@ -96,16 +98,15 @@ src/renderer/
 │   └── search/               # 搜索子服务
 ├── stores/                    # Pinia 状态管理 (15 个 Store)
 ├── types/                     # 类型定义
-├── utils/                     # 工具函数
+├── utils/                     # 工具函数(localFilePath.ts v3.0.2 新增)
 └── views/                     # 页面视图
     ├── HomeView/             # 首页模块 (含 ImportDropdown 等子组件)
     ├── LoginView/            # 登录模块
     ├── SettingsView.vue
-    ├── FileUploadView.vue
     ├── FilePreviewView.vue
     ├── PlaygroundView.vue    # UI Playground
     ├── NotFoundView.vue
-    └── settings/             # 设置子面板(含 playground/ 演练场)
+    └── settings/             # 设置子面板(7 分区,含 playground/ 演练场)
 ```
 
 ## 核心系统详解
@@ -157,7 +158,7 @@ src/renderer/
 ### 4. 插件系统
 
 `plugins/` 完整的插件架构:
-- `instanceManager.ts` (260 行): 插件实例管理
+- `instanceManager.ts`: 插件实例管理;v3.0.2 新增 `initializeGlobalPluginSystem`(注册 `window.pluginSystem` 全局:plugins/instancesFactory/instances Map + registerPlugin,供 FilterBar 消费 filterSearchProviders 做语义搜索)
 - `operationManager.ts` (244 行): 插件操作管理
 - `scriptManager.ts` (135 行): 脚本加载管理
 - `storage.ts` (79 行): 插件数据存储
@@ -170,6 +171,7 @@ src/renderer/
 - `v-viewer` / `vue3-lazyload`: 图片/媒体
 - `plyr`: 视频播放器
 - `@hunmer/vue-selection-box`(workspace): 框选
+- `event-emitter-adv`: miraEventBus(v3.0.2)
 
 ## 数据模型
 
@@ -177,9 +179,10 @@ src/renderer/
 
 ## 测试与质量
 
-- 远程真实页面 UI 测试: `procm-ui-tests/`(约 30 用例,`pnpm run test:ui:remote <name>` 经 procm-mcp 驱动,仅开发构建)
-- 类型检查: `vue-tsc --noEmit`
-- ESLint: `eslint . --ext .vue,.ts,.tsx --fix`
+- 远程真实页面 UI 测试: `procm-ui-tests/`(约 30 用例,`test:ui:remote` 脚本已删,可 `node scripts/test-ui.mjs <name>` 经 procm-mcp 驱动,仅开发构建)
+- node 纯函数测试: `node --experimental-strip-types --test <file>`(mediaTabRuntime/splitPaneRestore/localFilePath 三个 .test.ts)
+- 类型检查: `vue-tsc --noEmit`(主门禁)
+- ESLint 9 flat config: `pnpm run lint`
 
 ## 子模块文档
 

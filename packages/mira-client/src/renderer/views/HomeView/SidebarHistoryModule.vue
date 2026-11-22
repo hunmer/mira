@@ -23,6 +23,8 @@ import { Empty, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import StatusImage from '@renderer/components/common/StatusImage.vue'
 import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card'
 import type { FileInfo } from '../../../shared/types'
+import { formatBytes as formatSize } from '@renderer/utils'
+import { classifyMedia } from 'mira-app-core/shared/sdk'
 
 const { t } = useI18n()
 
@@ -43,7 +45,7 @@ const recentAdded = ref<FileInfo[]>([])
 const loadingAdded = ref(false)
 const addedError = ref('')
 
-const isImageType = (mimeType?: string) => !!mimeType && mimeType.startsWith('image/')
+const isImageType = (mimeType?: string) => classifyMedia(mimeType).isImage
 
 const fetchRecentAdded = async (libraryId: string) => {
   if (!libraryId) {
@@ -141,17 +143,6 @@ const handleRowClick = (row: DisplayRow) => {
 // 相对时间格式化（共享实现，见 useRelativeTime.ts）
 const { formatRelative } = useRelativeTime()
 
-const formatSize = (bytes?: number): string => {
-  if (!bytes) return ''
-  const units = ['B', 'KB', 'MB', 'GB']
-  let size = bytes
-  let i = 0
-  while (size >= 1024 && i < units.length - 1) {
-    size /= 1024
-    i++
-  }
-  return `${size.toFixed(1)} ${units[i]}`
-}
 
 // recent_added 模式：切库重新加载
 watch(

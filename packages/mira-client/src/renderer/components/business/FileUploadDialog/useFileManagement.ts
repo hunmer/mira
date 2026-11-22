@@ -3,6 +3,8 @@ import { useI18n } from 'vue-i18n'
 import { useToast } from '@/renderer/composables/useToast'
 import { useSettingsStore } from '@/renderer/stores/settings'
 import type { PendingFile, LocalFsNode } from './types'
+import { classifyMedia } from 'mira-app-core/shared/sdk'
+import { formatBytes as formatFileSize } from '@renderer/utils'
 
 type DroppedFileNode = LocalFsNode & {
   mimeType?: string
@@ -191,7 +193,7 @@ export function useFileManagement() {
         const pf = files[i]
         // Electron nativeImage 已负责本地路径缩略图，避免再次读取完整文件；失败时仍可由后续回退逻辑处理。
         if (pf.localPath && window.electronAPI?.fs) continue
-        if (!pf.file.type || (!pf.file.type.startsWith('image/') && !pf.file.type.startsWith('video/'))) {
+        if (!classifyMedia(pf.file.type).isImage && !classifyMedia(pf.file.type).isVideo) {
           continue
         }
         try {
@@ -239,8 +241,9 @@ export function useFileManagement() {
   }
 
   async function createPreviewUrl(file: File): Promise<string | undefined> {
-    if (file.type.startsWith('image/')) return URL.createObjectURL(file)
-    if (file.type.startsWith('video/')) {
+    const kind = classifyMedia(file.type).kind
+    if (kind === 'image') return URL.createObjectURL(file)
+    if (kind === 'video') {
       const { createVideoThumbnail } = await import('@renderer/utils/fileUtils')
       return createVideoThumbnail(file, undefined, 320)
     }
@@ -275,30 +278,16 @@ export function useFileManagement() {
   }
 }
 
-// 文件类型判断
+// 文件类型判断（正源 mira-app-core/shared/sdk classifyMedia）
 export function isImageFile(mimeType: string): boolean {
-  return mimeType.startsWith('image/')
+  return classifyMedia(mimeType).isImage
 }
 export function isVideoFile(mimeType: string): boolean {
-  return mimeType.startsWith('video/')
+  return classifyMedia(mimeType).isVideo
 }
 export function isAudioFile(mimeType: string): boolean {
-  return mimeType.startsWith('audio/')
+  return classifyMedia(mimeType).isAudio
 }
 export function isDocumentFile(mimeType: string): boolean {
-  return (
-    mimeType.includes('pdf') ||
-    mimeType.includes('document') ||
-    mimeType.includes('text') ||
-    mimeType.includes('spreadsheet') ||
-    mimeType.includes('presentation')
-  )
-}
-
-export function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  return classifyMedia(mimeType).isDocument
 }

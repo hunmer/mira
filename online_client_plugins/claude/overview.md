@@ -15,5 +15,5 @@
 
 ## 规模
 
-- git 跟踪 5 个插件目录，索引收录 **5 个**（generatedAt 2026-08-24T11:21:06Z）
+- git 跟踪 6 个插件目录，索引收录 **6 个**（generatedAt 2026-09-09T03:21:57Z；09-09 新增 mira-font-actions 字体操作）
 - 磁盘另有 4 个仅剩 node_modules 的空壳目录（3d/spine/psd/pinterest-v2，git 已移除）

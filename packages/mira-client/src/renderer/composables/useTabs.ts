@@ -1,11 +1,14 @@
-import { ref, computed, watch, nextTick, markRaw, type Component } from 'vue'
-import { tabRegistry, type TabContext, type TabViewConfig } from './TabRegistry'
+import { ref, computed, type Component } from 'vue'
+import { tabRegistry } from './TabRegistry'
 import { quickInitTabSystem } from './initTabSystem'
 import { tabPersistence, type TabState } from './TabPersistence'
-import { restoreTabViewMode, restoreTabAppliedFilterId, registerViewModeChangeCallback, clearTabCache } from './useMediaTabData'
+import { restoreTabViewMode, restoreTabAppliedFilterId, clearTabCache } from './useMediaTabData'
 import { loadLibraryPrefs } from './LibraryPrefs'
 import { tabHistory } from './TabHistory'
 import i18n from '../i18n'
+import { useTabActivation } from './useTabActivation'
+import { useTabLifecycle } from './useTabLifecycle'
+import { useTabPersistence } from './useTabPersistence'
 
 // ============================================
 // 类型定义
@@ -50,17 +53,6 @@ const globalIsRestoringState = ref(true) // 初始为 true，阻止自动创建 
 const globalHasInitialized = ref(false) // 标记是否已经初始化过
 let globalHasSetupEffects = false // 标记是否已设置副作用（watch和初始化）
 let tabsResetVersion = 0
-
-/** 将文件夹/标签的数字颜色转换为可直接用于 CSS 的十六进制颜色。 */
-const normalizeTabColor = (color: unknown): string | undefined => {
-  if (typeof color === 'number' && color > 0) return `#${color.toString(16).padStart(6, '0')}`
-  if (typeof color === 'string') {
-    if (color.startsWith('#') || color.startsWith('rgb') || color.startsWith('hsl')) return color
-    const numericColor = Number(color)
-    if (Number.isFinite(numericColor) && numericColor > 0) return `#${numericColor.toString(16).padStart(6, '0')}`
-  }
-  return undefined
-}
 
 const createHomeTab = (): TabItem => ({
   id: 'home',
@@ -251,6 +243,11 @@ export async function resetTabsForLibrary(libraryId: string | null): Promise<voi
 
 /**
  * Tabs 功能 Composable
+ *
+ * 组合根：聚合三个子 composable 并保持对外返回形状不变
+ * - useTabActivation   激活策略（切换/激活历史回退）
+ * - useTabLifecycle    生命周期（创建/关闭/钩子/视图配置/更新标记）
+ * - useTabPersistence  持久化（保存/恢复/自动保存副作用）
  */
 export function useTabs() {
   // 确保Tab系统已初始化
@@ -263,9 +260,56 @@ export function useTabs() {
   const hasInitialized = globalHasInitialized
 
   // ============================================
+  // 激活策略
+  // ============================================
+  const {
+    getCurrentTab,
+    switchToTab,
+    switchToTabSimple,
+    activateLastTab,
+    canActivateLastTab
+  } = useTabActivation({ tabs, activeTabId })
+
+  // ============================================
+  // 持久化
+  // ============================================
+  const {
+    saveTabsState,
+    restoreTabsState,
+    clearTabsState,
+    setupPersistenceEffects
+  } = useTabPersistence({ tabs, activeTabId, isRestoringState, hasInitialized, createHomeTab })
+
+  // ============================================
+  // 生命周期
+  // ============================================
+  const {
+    createDefaultHomeTab,
+    closeTab,
+    createTabFromFolder,
+    createTabFromTag,
+    cloneTab,
+    closeOtherTabs,
+    setTabNeedUpdate,
+    setAllTabsNeedUpdate,
+    markTabsForEvent,
+    createTabFromRegisteredType,
+    createWebviewTab,
+    createCustomTab,
+    executeTabLifecycle,
+    setDefaultTab,
+    ensureDefaultTabExists,
+    isTabClosable,
+    getTabViewConfig,
+    getCurrentTabViewConfig,
+    refreshTabViewConfig,
+    reopenLastClosedTab
+  } = useTabLifecycle({ tabs, activeTabId, switchToTab })
+
+  // ============================================
   // 计算属性
   // ============================================
-  
+
   // 活动的 tabs
   const activeTabs = computed(() => {
     // 如果没有任何tab且不在恢复状态，自动创建home tab
@@ -284,20 +328,6 @@ export function useTabs() {
     }
     return tabs.value
   })
-
-  // 创建默认home tab的异步方法
-  const createDefaultHomeTab = async () => {
-    if (tabs.value.length === 0) {
-      try {
-        await createTabFromRegisteredType('home', {
-          id: 'home',
-          label: i18n.global.t('composables.useTabs.homeLabel')
-        })
-      } catch (error) {
-        console.error('❌ 创建默认home tab失败:', error)
-      }
-    }
-  }
 
   // 当前 tab 内容
   const currentTabContent = computed(() => {
@@ -323,780 +353,10 @@ export function useTabs() {
     return activeTab
   })
 
-  // ============================================
-  // Tab 操作方法
-  // ============================================
-  
-  /**
-   * 切换到指定的tab，支持懒加载
-   */
-  const switchToTab = (
-    tabId: string,
-    options?: {
-      onSwitchCallback?: (tab: TabItem) => void
-      lazyLoadHandler?: (tab: TabItem) => Promise<void>
-    }
-  ) => {
-    const { onSwitchCallback, lazyLoadHandler } = options || {}
-    // 初始化阶段可能重复切换到已激活的首页，直接短路避免触发响应式重算。
-    const currentActiveTab = tabs.value.find(tab => tab.active)
-    if (currentActiveTab?.id === tabId && currentActiveTab.type === 'home') {
-      currentActiveTab.needUpdate = false
-      return
-    }
-
-    tabs.value.forEach(tab => {
-      tab.active = tab.id === tabId
-    })
-    activeTabId.value = tabId
-
-    const activeTab = tabs.value.find(tab => tab.id === tabId)
-    if (activeTab) {
-      const isHomeTab = activeTab.type === 'home'
-      // 记录Tab激活历史
-      tabHistory.recordTabAction(activeTab, 'activate')
-
-      // 首页由自身视图初始化，不执行媒体 Tab 的切换回调。
-      if (onSwitchCallback && !isHomeTab) {
-        onSwitchCallback(activeTab)
-      }
-
-      // 首页由 HomeTabView 自己初始化，不参与媒体 Tab 的懒加载。
-      if (isHomeTab) {
-        activeTab.needUpdate = false
-      } else if (lazyLoadHandler && activeTab.needUpdate) {
-        lazyLoadHandler(activeTab).then(() => {
-          // 数据加载完成后，标记为不需要更新
-          activeTab.needUpdate = false
-        }).catch(error => {
-          console.error('Tab lazy loading failed:', error)
-        })
-      }
-    }
-  }
-
-  /**
-   * 切换到指定的tab（简化版本，保持向后兼容）
-   */
-  const switchToTabSimple = (tabId: string, onSwitchCallback?: (tab: TabItem) => void) => {
-    switchToTab(tabId, { onSwitchCallback })
-  }
-
-  /**
-   * 关闭指定的tab
-   */
-  const closeTab = async (
-    tabId: string,
-    options?: {
-      onSwitchCallback?: (tab: TabItem) => void
-      lazyLoadHandler?: (tab: TabItem) => Promise<void>
-    }
-  ) => {
-    const tabIndex = tabs.value.findIndex(tab => tab.id === tabId)
-    if (tabIndex === -1) return
-
-    const wasActive = tabs.value[tabIndex].active
-    const closingTab = tabs.value[tabIndex]
-
-    // 检查tab是否允许关闭
-    const tabType = tabRegistry.getType(closingTab.type)
-    if (tabType && tabType.allowClose === false) {
-      console.warn(`⚠️ Tab "${closingTab.label}" 不允许关闭`)
-      return
-    }
-
-    // 记录Tab关闭历史
-    await tabHistory.recordTabAction(closingTab, 'close')
-
-    // 清理被关闭Tab的数据
-    try {
-      // 动态导入避免循环依赖
-      const { useMediaStore } = await import('../stores/media')
-      const mediaStore = useMediaStore()
-
-      // 清理mediaStore中该tab的数据
-      mediaStore.clearFilesForTab(tabId)
-    } catch (error) {
-      console.warn('⚠️ 清理Tab数据时出错:', error)
-    }
-
-    // 移除Tab
-    tabs.value.splice(tabIndex, 1)
-
-    if (wasActive && tabs.value.length > 0) {
-      const newActiveIndex = Math.min(tabIndex, tabs.value.length - 1)
-      const newActiveTab = tabs.value[newActiveIndex]
-
-      // 传递完整的切换选项，确保数据正确同步
-      switchToTab(newActiveTab.id, options)
-    }
-  }
-
-  /**
-   * 从文件夹创建 Tab
-   */
-  const createTabFromFolder = (folder: any, libraryId?: string) => {
-    // 确保tab ID不会重复添加前缀
-    const folderId = String(folder.id)
-    const tabId = folderId.startsWith('folder-') ? folderId : `folder-${folderId}`
-
-    const existingTab = tabs.value.find(tab => tab.id === tabId)
-    if (existingTab) {
-      switchToTab(existingTab.id)
-      return existingTab
-    }
-
-    tabs.value.forEach(tab => tab.active = false)
-
-    // 获取正确的标签名，优先级: title > label > name > id
-    const tabLabel = folder.title || folder.label || folder.name || folderId
-
-    // 识别特殊的文件夹类型
-    let tabType = 'folder'
-    if (folderId === 'all') {
-      tabType = 'all'
-    } else if (folderId === 'trash') {
-      tabType = 'trash'
-    } else if (folderId === 'uncategorized') {
-      tabType = 'uncategorized'
-    } else if (folderId === 'untagged') {
-      tabType = 'untagged'
-    }
-
-    const newTab: TabItem = {
-      id: tabId, // 使用唯一的 tab ID
-      label: tabLabel,
-      icon: folder.icon || 'folder',
-      iconColor: normalizeTabColor(folder.iconColor ?? folder.color),
-      type: tabType, // 使用识别后的类型
-      data: { ...folder, libraryId }, // libraryId 存储在 data 中
-      active: true,
-      needUpdate: true // 新创建的tab需要加载数据
-    }
-
-    tabs.value.push(newTab)
-    activeTabId.value = tabId
-
-    // 记录Tab打开历史
-    tabHistory.recordTabAction(newTab, 'open')
-
-    return newTab
-  }
-
-  /**
-   * 从标签创建 Tab（使用注册系统）
-   */
-  const createTabFromTag = async (tag: any, libraryId?: string) => {
-    // 获取正确的标签名，优先级: title > name > label > id
-    const originalTagId = String(tag.id || tag.name)
-    const normalizedTagId = originalTagId.replace(/^tag-/, '')
-    const tagName = tag.title || tag.name || tag.label || normalizedTagId
-    const tabLabel = i18n.global.t('composables.tagTab.tabLabel', { name: tagName })
-
-    // 确保tab ID不会重复添加前缀
-    const tagId = `tag-${normalizedTagId}`
-    const tagData = { ...tag, id: normalizedTagId }
-
-    // 使用注册系统创建Tab
-    return await createTabFromRegisteredType('tag', {
-      id: tagId,
-      label: tabLabel,
-      data: tagData,
-      libraryId,
-      context: {
-        // 明确传递标签上下文信息
-        id: normalizedTagId,
-        tagId: normalizedTagId,
-        name: tagName,
-        tagName,
-        title: tag.title,
-        color: tag.color,
-        fileCount: tag.fileCount,
-        tabData: tagData
-      },
-      iconColor: normalizeTabColor(tag.color)
-    })
-  }
-
-  /**
-   * 克隆 Tab
-   */
-  const cloneTab = (tab: TabItem) => {
-    tabs.value.forEach(t => t.active = false)
-    
-    const clonedTab: TabItem = {
-      id: `${tab.id}-clone-${Date.now()}`,
-      label: `${tab.label} ${i18n.global.t('composables.useTabs.copySuffix')}`,
-      icon: tab.icon,
-      iconColor: tab.iconColor,
-      type: tab.type,
-      data: tab.data,
-      active: true,
-      needUpdate: true,
-      transient: tab.transient
-    }
-    
-    tabs.value.push(clonedTab)
-    activeTabId.value = clonedTab.id
-    return clonedTab
-  }
-
-  /**
-   * 关闭其他 Tab
-   */
-  const closeOtherTabs = (keepTabId: string) => {
-    tabs.value = tabs.value.filter(tab => tab.id === keepTabId || tab.id === 'home')
-    const keepTab = tabs.value.find(tab => tab.id === keepTabId)
-    if (keepTab) {
-      tabs.value.forEach(tab => tab.active = tab.id === keepTabId)
-      activeTabId.value = keepTabId
-    }
-  }
-
-  /**
-   * 获取当前活动的tab
-   */
-  const getCurrentTab = () => {
-    return tabs.value.find(tab => tab.active)
-  }
-
-
-  /**
-   * 设置tab需要更新数据
-   */
-  const setTabNeedUpdate = (tabId: string, needUpdate = true) => {
-    const tab = tabs.value.find(t => t.id === tabId)
-    if (tab) {
-      tab.needUpdate = needUpdate
-    }
-  }
-
-  /**
-   * 设置所有tabs需要更新数据
-   */
-  const setAllTabsNeedUpdate = (needUpdate = true) => {
-    tabs.value.forEach(tab => {
-      tab.needUpdate = needUpdate
-    })
-  }
-
-  /**
-   * 根据 WebSocket 事件标记需要更新的 tab
-   * 返回被标记的 tabId 列表
-   */
-  const markTabsForEvent = (eventData: any, _eventType: string): string[] => {
-    const markedIds: string[] = []
-    // 文件属性更新由详情组件/WebSocket 局部同步，禁止标记 tab 重载，避免列表闪烁
-    // 例外1：folder 归属变化影响列表成员构成（FolderTabType 等已按 old_data.folder_id 匹配）
-    const folderChanged = !!eventData?.old_data
-      && String(eventData.old_data.folder_id ?? '') !== String(eventData.folder_id ?? '')
-    // 例外2：tags 变化影响标签类 tab 的列表成员构成（进入/离开/换标签），
-    // 由各 TabType.shouldUpdateForEvent 精确匹配新旧 tags，不受影响的 tabType 应自行排除
-    const tagsChanged = !!eventData?.old_data
-      && String(eventData.old_data.tags ?? '') !== String(eventData.tags ?? '')
-    if (_eventType === 'updated' && !folderChanged && !tagsChanged) return markedIds
-    for (const tab of tabs.value) {
-      const tabType = tabRegistry.getType(tab.type)
-      if (!tabType?.shouldUpdateForEvent) continue
-      const matched = tabType.shouldUpdateForEvent(tab.data, eventData)
-      if (matched) {
-        tab.needUpdate = true
-        markedIds.push(tab.id)
-      }
-    }
-    return markedIds
-  }
-
-
-  // ============================================
-  // Tab注册系统集成
-  // ============================================
-
-  /**
-   * 创建基于注册类型的Tab
-   */
-  const createTabFromRegisteredType = async (
-    typeName: string,
-    options: {
-      id?: string
-      label?: string
-      data?: any
-      libraryId?: string
-      context?: Record<string, any>
-      transient?: boolean
-      icon?: string
-      iconColor?: string
-    } = {}
-  ) => {
-    const tabType = tabRegistry.getType(typeName)
-    if (!tabType) {
-      console.error(`❌ Tab类型 "${typeName}" 未注册`)
-      return null
-    }
-
-    const { id, label, data, libraryId, context = {} } = options
-    const tabId = id || `${typeName}-${Date.now()}`
-
-    // 同 ID 去重：已存在相同 tabId 则直接切换
-    const existingTab = tabs.value.find(tab => tab.id === tabId)
-    if (existingTab) {
-      switchToTab(existingTab.id)
-      return existingTab
-    }
-
-    // 同类型去重：不允许同类型多实例时，复用已有 tab
-    if (!tabType.allowMultipleInstances) {
-      const sameTypeTab = tabs.value.find(tab => tab.type === typeName)
-      if (sameTypeTab) {
-        switchToTab(sameTypeTab.id)
-        return sameTypeTab
-      }
-    }
-
-    tabs.value.forEach(tab => tab.active = false)
-
-    const newTab: TabItem = {
-      id: tabId,
-      label: label || tabType.displayName,
-      icon: options.icon || tabType.icon,
-      iconColor: options.iconColor || tabType.iconColor,
-      type: typeName,
-      data: { ...data, libraryId },
-      active: true,
-      needUpdate: true, // 新创建的tab需要加载数据
-      transient: options.transient
-    }
-
-    // 创建Tab上下文
-    const tabContext: TabContext = {
-      libraryId,
-      ...context,
-      ...data
-    }
-
-    try {
-      // 调用onInit生命周期
-      const initResult = await tabType.onInit?.(tabContext)
-      if (initResult && !initResult.success) {
-        console.error(`❌ Tab ${typeName} 初始化失败:`, initResult.error)
-        return null
-      }
-
-      tabs.value.push(newTab)
-      activeTabId.value = tabId
-
-      // 记录Tab打开历史
-      await tabHistory.recordTabAction(newTab, 'open')
-
-      // 调用onActive生命周期
-      await tabType.onActive?.(tabContext)
-
-      return newTab
-    } catch (error) {
-      console.error(`❌ 创建Tab ${typeName} 失败:`, error)
-      return null
-    }
-  }
-
-  const createWebviewTab = async (url: string, options: WebviewTabOptions = {}) => {
-    return await createTabFromRegisteredType('webview', {
-      ...options,
-      data: { ...options.data, url }
-    })
-  }
-
-  const createCustomTab = async (component: CustomTabView, options: CustomTabOptions = {}) => {
-    return await createTabFromRegisteredType('custom', {
-      ...options,
-      data: {
-        ...options.data,
-        component: options.renderMode === 'dom' ? component : markRaw(component as Component),
-        props: options.props,
-        renderContext: options.context,
-        renderMode: options.renderMode
-      },
-      context: options.context,
-      transient: true
-    })
-  }
-
-  /**
-   * 执行Tab的生命周期钩子
-   */
-  const executeTabLifecycle = async (
-    tabId: string,
-    lifecycle: 'onActive' | 'onInactive' | 'onClose' | 'onDataLoad',
-    additionalContext: Record<string, any> = {},
-    pagination?: { limit?: number; offset?: number }
-  ) => {
-    const tab = tabs.value.find(t => t.id === tabId)
-    if (!tab) {
-      console.warn(`⚠️ Tab ${tabId} not found`)
-      return { success: false, error: 'Tab not found' }
-    }
-
-    const tabType = tabRegistry.getType(tab.type)
-    if (!tabType) {
-      console.warn(`⚠️ Tab类型 ${tab.type} 未注册`)
-      return { success: false, error: 'Tab type not registered' }
-    }
-
-    const context: TabContext = {
-      libraryId: tab.data?.libraryId,
-      ...tab.data,
-      ...additionalContext
-    }
-
-    try {
-      const lifecycleMethod = tabType[lifecycle]
-      if (lifecycleMethod) {
-        if (lifecycle === 'onDataLoad') {
-          return await lifecycleMethod.call(tabType, context, pagination)
-        } else {
-          return await lifecycleMethod.call(tabType, context)
-        }
-      }
-      return { success: true }
-    } catch (error) {
-      console.error(`❌ Tab ${tabId} 生命周期 ${lifecycle} 执行失败:`, error)
-      return { success: false, error: String(error) }
-    }
-  }
-
-  /**
-   * 设置默认Tab类型
-   */
-  const setDefaultTab = async (typeName: string, options: Record<string, any> = {}) => {
-    if (tabs.value.length === 0) {
-      const defaultTab = await createTabFromRegisteredType(typeName, {
-        id: typeName,
-        ...options
-      })
-      return defaultTab
-    }
-    return null
-  }
-
-  /**
-   * 确保有默认Tab存在（如果没有Tab则自动创建home类型）
-   */
-  const ensureDefaultTabExists = async () => {
-    if (tabs.value.length === 0) {
-      return await setDefaultTab('home')
-    }
-    return tabs.value[0]
-  }
-
-  // ============================================
-  // 持久化相关方法
-  // ============================================
-
-  /**
-   * 保存Tab状态到localStorage
-   */
-  const saveTabsState = async () => {
-    await tabPersistence.saveTabsState(tabs.value, activeTabId.value)
-  }
-
-  /**
-   * 从localStorage恢复Tab状态
-   * @param force - 强制恢复（用于素材库切换后重新加载对应库的 tabs）
-   */
-  const restoreTabsState = async (force = false): Promise<boolean> => {
-    // 如果已经初始化过且非强制，跳过恢复
-    if (hasInitialized.value && !force) {
-      return true
-    }
-
-    try {
-      isRestoringState.value = true
-      const scopeAtStart = tabPersistence.getScopeId()
-
-      await loadLibraryPrefs()
-      const savedState = await tabPersistence.loadTabsState()
-      if (scopeAtStart !== tabPersistence.getScopeId()) {
-        return false
-      }
-      if (!savedState || savedState.tabs.length === 0) {
-        // 目标服务器/素材库没有已保存状态时，必须清空旧作用域的内存 tabs。
-        // 仅返回 false 会让服务器切换后继续显示上一个服务器的 tabs。
-        tabs.value = [createHomeTab()]
-        activeTabId.value = 'home'
-        return false
-      }
-
-      // 清空当前tabs
-      tabs.value = []
-
-      // 恢复每个tab
-      const restoredTabs: TabItem[] = []
-      for (const tabState of savedState.tabs) {
-        try {
-          // 检查tab类型是否已注册
-          if (!tabRegistry.isRegistered(tabState.type)) {
-            console.warn(`⚠️ Tab类型 "${tabState.type}" 未注册，跳过恢复 tab: ${tabState.label}`)
-            continue
-          }
-
-          // 重建tab对象
-          const restoredTab: TabItem = {
-            id: tabState.id,
-            label: tabState.label,
-            icon: tabState.icon,
-            iconColor: tabState.iconColor,
-            type: tabState.type,
-            data: tabState.data,
-            active: false, // 先设为false，后面统一设置active
-            needUpdate: true, // 恢复的tab需要重新加载数据
-            filters: tabState.filters // 恢复每个 tab 的筛选条件
-          }
-
-          // 恢复per-tab viewMode
-          if (tabState.viewMode) {
-            restoreTabViewMode(tabState.id, tabState.viewMode)
-          }
-          // 恢复per-tab 已应用过滤器 id
-          if (tabState.appliedFilterId !== undefined) {
-            restoreTabAppliedFilterId(tabState.id, tabState.appliedFilterId)
-          }
-
-          restoredTabs.push(restoredTab)
-        } catch (error) {
-          console.error(`❌ 恢复Tab失败: ${tabState.label}`, error)
-        }
-      }
-
-      if (restoredTabs.length === 0) {
-        return false
-      }
-
-      // 设置tabs
-      tabs.value = restoredTabs
-
-      // 恢复活跃状态
-      const targetActiveId = savedState.activeTabId
-      const activeTabIndex = tabs.value.findIndex(tab => tab.id === targetActiveId)
-
-      if (activeTabIndex >= 0) {
-        tabs.value[activeTabIndex].active = true
-        activeTabId.value = targetActiveId
-      } else if (tabs.value.length > 0) {
-        // 如果目标活跃tab不存在，激活第一个tab
-        tabs.value[0].active = true
-        activeTabId.value = tabs.value[0].id
-      }
-
-      return true
-    } catch (error) {
-      console.error('❌ 恢复Tab状态失败:', error)
-      return false
-    } finally {
-      isRestoringState.value = false
-    }
-  }
-
-  /**
-   * 清除保存的Tab状态
-   */
-  const clearTabsState = async () => {
-    await tabPersistence.clearTabsState()
-  }
-
-  /**
-   * 检查Tab是否可以关闭
-   */
-  const isTabClosable = (tabId: string): boolean => {
-    const tab = tabs.value.find(t => t.id === tabId)
-    if (!tab) return false
-
-    const tabType = tabRegistry.getType(tab.type)
-    if (!tabType) return true // 如果类型未注册，默认可关闭
-
-    return tabType.allowClose !== false
-  }
-
-  // ============================================
-  // 视图配置相关方法
-  // ============================================
-
-  /**
-   * 获取Tab的视图配置
-   */
-  const getTabViewConfig = async (tabId: string): Promise<TabViewConfig | null> => {
-    const tab = tabs.value.find(t => t.id === tabId)
-    if (!tab) {
-      console.warn(`⚠️ Tab ${tabId} not found`)
-      return null
-    }
-
-    const tabType = tabRegistry.getType(tab.type)
-    if (!tabType) {
-      console.warn(`⚠️ Tab类型 ${tab.type} 未注册`)
-      return null
-    }
-
-    if (!tabType.getViewConfig) {
-      console.warn(`⚠️ Tab类型 ${tab.type} 未实现getViewConfig方法`)
-      return null
-    }
-
-    try {
-      // 构建Tab上下文
-      const context: TabContext = {
-        tabId: tab.id,
-        libraryId: tab.data?.libraryId,
-        tabData: tab.data,
-        mediaStore: null, // 这里可以注入mediaStore
-        ...tab.data
-      }
-
-      // 获取视图配置
-      const viewConfig = await tabType.getViewConfig(context)
-
-      return viewConfig
-    } catch (error) {
-      console.error(`❌ 获取Tab ${tabId} 视图配置失败:`, error)
-      return null
-    }
-  }
-
-  /**
-   * 获取当前活跃Tab的视图配置
-   */
-  const getCurrentTabViewConfig = async (): Promise<TabViewConfig | null> => {
-    const currentTab = tabs.value.find(tab => tab.active)
-    if (!currentTab) return null
-
-    return await getTabViewConfig(currentTab.id)
-  }
-
-  /**
-   * 刷新Tab的视图配置
-   */
-  const refreshTabViewConfig = async (tabId: string): Promise<TabViewConfig | null> => {
-    const tab = tabs.value.find(t => t.id === tabId)
-    if (!tab) return null
-
-    // 标记需要更新
-    tab.needUpdate = true
-
-    return await getTabViewConfig(tabId)
-  }
-
-  // ============================================
-  // Tab历史相关方法
-  // ============================================
-
-  /**
-   * 激活上一次的tab
-   */
-  const activateLastTab = () => {
-    const currentActiveTab = getCurrentTab()
-    const lastActivatedTab = tabHistory.getLastActivatedTab(currentActiveTab?.id)
-
-    if (!lastActivatedTab) {
-      return false
-    }
-
-    // 检查该tab是否仍然存在
-    const tabExists = tabs.value.find(tab => tab.id === lastActivatedTab.id)
-    if (tabExists) {
-      switchToTab(lastActivatedTab.id)
-      return true
-    } else {
-      return false
-    }
-  }
-
-  /**
-   * 是否可以激活上一次的tab（供 UI 显示禁用态）
-   * 依赖响应式的 tabs，激活/关闭等操作都会改变 tabs 从而触发重新计算
-   */
-  const canActivateLastTab = computed(() => {
-    const currentActiveTab = getCurrentTab()
-    const lastActivatedTab = tabHistory.getLastActivatedTab(currentActiveTab?.id)
-    if (!lastActivatedTab) return false
-    // 上一次激活的 tab 必须仍然存在
-    return tabs.value.some(tab => tab.id === lastActivatedTab.id)
-  })
-
-  /**
-   * 重新打开最后关闭的tab
-   */
-  const reopenLastClosedTab = async () => {
-    const lastClosedTab = tabHistory.getLastClosedTab()
-
-    if (!lastClosedTab) {
-      return null
-    }
-
-    // 根据tab类型重新创建tab
-    try {
-      let newTab: TabItem | null = null
-
-      if (lastClosedTab.type === 'folder' || lastClosedTab.type === 'trash' ||
-          lastClosedTab.type === 'uncategorized' || lastClosedTab.type === 'untagged') {
-        // 文件夹类型的tab
-        newTab = createTabFromFolder(
-          {
-            id: lastClosedTab.id.replace('folder-', ''),
-            ...lastClosedTab.data
-          },
-          lastClosedTab.data?.libraryId
-        )
-      } else if (lastClosedTab.type === 'tag') {
-        // 标签类型的tab
-        newTab = await createTabFromTag(
-          lastClosedTab.data,
-          lastClosedTab.data?.libraryId
-        )
-      } else {
-        // 使用注册系统创建其他类型的tab
-        newTab = await createTabFromRegisteredType(lastClosedTab.type, {
-          id: lastClosedTab.id,
-          label: lastClosedTab.label,
-          data: lastClosedTab.data,
-          libraryId: lastClosedTab.data?.libraryId
-        })
-      }
-
-      if (newTab) {
-        return newTab
-      }
-    } catch (error) {
-      console.error('❌ 重新打开Tab失败:', error)
-    }
-
-    return null
-  }
-
-
   // 仅在首次调用时设置 watch 监听器（初始化已在模块级别完成）
   if (!globalHasSetupEffects) {
     globalHasSetupEffects = true
-
-    // 监听tabs变化，自动保存状态
-    watch(
-      [tabs, activeTabId],
-      () => {
-        // 防抖保存，避免频繁写入
-        if (!isRestoringState.value && tabs.value.length > 0) {
-          nextTick(() => {
-            saveTabsState()
-          })
-        }
-      },
-      { deep: true }
-    )
-
-    // 注册viewMode变化回调，触发tab状态保存
-    registerViewModeChangeCallback(() => {
-      if (!isRestoringState.value && tabs.value.length > 0) {
-        nextTick(() => {
-          saveTabsState()
-        })
-      }
-    })
+    setupPersistenceEffects()
   }
 
   // ============================================

@@ -10,7 +10,7 @@
 
 ## 命令约定
 
-- 构建 = `copy-dashboard + copy-web + tsc`（`pnpm run build`，前端静态资源先拷贝再编译）；测试 = `jest --config sdk/jest.config.js`（必须带 `sdk/` 前缀）；`test:paths` 用 `node --test` 跑 `src/sync/` 测试。
+- 构建 = `copy-dashboard + copy-web + tsc`（`pnpm run build`，前端静态资源先拷贝再编译；`build:plugin-ui` 为独立脚本）；实际可用测试入口 = `test:paths`（`node --test` 跑 6 个测试：`src/sync/` 2 个 + FileAssociationResolver / UploadImportMode / ThumbnailService / MetadataService）——`pnpm test` 引用的 `sdk/jest.config.js` 已不存在，脚本失效。
 - `pnpm run dev` 与 `start:ts` 都用 `node --inspect -r ts-node/register src/index.ts`。
 - CLI：顶层子命令 `start`（`-p/--http-port`、`-w/--ws-port`、`-d/--data-path`、`--env`）、`stop`、`restart`、`version`、`health`、`doctor`；域子命令 auth/user/libraries/files/tags/folders/plugins/devices/database/system/autostart（`src/cli/commands/`）；`--mcp` 进入 MCP 服务模式。
 - CLI 凭证：多 profile，存 `~/.mira/credentials.json`。
@@ -20,6 +20,8 @@
 - 所有路由继承 `routes/BaseRouter.ts`，构造接收 `backend: MiraServer`；统一返回 `ApiResponse<T> = { code, message, data }`。
 - 路由在 `HttpServer.ts` 中 import 并 mount（路径前缀见 `public-interfaces.md`）。
 - 验证库统一走 `BaseRouter.validateLibrary(libraryId)`（返回 `{ success, library?, error? }`）。
+- 标签/文件夹关联统一走 `routes/FileAssociationResolver.ts` 的 `resolveTagIds` / `resolveFolderId`（名称或 ID，名称不存在则创建）；上传导入模式统一走 `routes/UploadImportMode.ts` 的 `resolveUploadImport`。
+- 回收站文件只读：`recycled=1` 的文件在 rename/update/设标签/设文件夹等写操作统一 409 `'Cannot update a recycled file'`。
 
 ## 权限约定
 
@@ -35,7 +37,7 @@
 
 ## 插件约定
 
-- 插件继承 `ServerPlugin`，目录 `src/plugins/`，注册清单 `src/plugins/plugins.json`（`[{ name, enabled, path, status? }]`）。
+- 插件继承 `ServerPlugin`，目录 `src/plugins/`，注册清单 `src/plugins/plugins.json`（15 条，v3.0.2 起 +mira_html_format/mira_font_format/mira_office_viewer/mira_semantic_search）。
 - 通过 `ServerPluginManager` 管理生命周期；可用 `registerHttpHook({ method?, path, handler })` 拦截 HTTP。
 - 缩略图扩展实现 `ThumbnailGenerator` 接口（`{ name, supportedExtensions, generate(src, dest) }`），调用 `ThumbnailService.registerGenerator()` 注册。
 

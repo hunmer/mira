@@ -7,6 +7,7 @@
  *   - 批量入库走 /api/files/upload（multipart，batchImport 标记）。
  */
 import { resolveMiraServerConfig, type MiraServerConfig } from 'mira-plugin-ui/src/library/serverAuth'
+import { classifyMedia } from 'mira-app-core/shared/sdk'
 
 export interface ServerConfig extends MiraServerConfig {
   libraryId: string
@@ -73,7 +74,7 @@ export async function fetchAuthorizedImage(url: string): Promise<string> {
     const resp = await fetch(absolute, { headers: authHeaders() })
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
     const blob = await resp.blob()
-    if (!blob.type.startsWith('image/')) throw new Error(`非图片响应: ${blob.type}`)
+    if (!classifyMedia(blob.type).isImage) throw new Error(`非图片响应: ${blob.type}`)
     return URL.createObjectURL(blob)
   } catch {
     return tokenizedUrl(url)

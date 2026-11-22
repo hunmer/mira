@@ -129,8 +129,10 @@ import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { useViewHistoryStore } from '@renderer/stores/viewHistory'
 import { useLibraryStore } from '@renderer/stores/library'
 import { useRelativeTime } from '@renderer/composables/useRelativeTime'
+import { formatBytes as formatSize } from '@renderer/utils'
 import { getExtIconUrl } from '@renderer/utils/extIconHelper'
 import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card'
+import { classifyMedia } from 'mira-app-core/shared/sdk'
 
 /**
  * 历史列表小组件：UI 复用 HomeSidebar 的 SidebarHistoryModule。
@@ -168,7 +170,7 @@ const recentAdded = ref<any[]>([])
 const loading = ref(false)
 const error = ref('')
 
-const isImageType = (mimeType?: string) => !!mimeType && mimeType.startsWith('image/')
+const isImageType = (mimeType?: string) => classifyMedia(mimeType).isImage
 
 async function load() {
   if (!isRecentAdded.value) return
@@ -256,17 +258,7 @@ function openPreview(row: DisplayRow) {
   })
 }
 
-function formatSize(bytes?: number): string {
-  if (!bytes) return ''
-  const units = ['B', 'KB', 'MB', 'GB']
-  let size = bytes
-  let i = 0
-  while (size >= 1024 && i < units.length - 1) {
-    size /= 1024
-    i++
-  }
-  return `${size.toFixed(1)} ${units[i]}`
-}
+
 
 // ====== 宽高比自适应：宽 > 高 时进入横向模式 ======
 const rootEl = ref<HTMLElement | null>(null)

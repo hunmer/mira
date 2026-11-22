@@ -57,7 +57,7 @@
 ## 包元信息
 
 - name: mira-app-core
-- version: 2.0.8
+- version: 3.0.2
 - main: dist/index.js
 - types: dist/index.d.ts
 - author: hunmer，license: ISC

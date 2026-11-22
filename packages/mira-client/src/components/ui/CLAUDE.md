@@ -8,6 +8,7 @@
 
 | 日期 | 操作 | 说明 |
 |------|------|------|
+| 2026-11-21 | 增量更新 | 组件目录 58→**60**:+pagination(上传待传列表/上传队列分页)、+images-badge、+scrollbar(2026-09 移植 scrollbar-but-cooler:形态机+波纹悬停+标注点,吸收合并 chapter-scrubber,后者删除)。08-25 批次(此前文档漏记):+attachment/dropzone/interactive-hover-button/spinner/terminal-view。 |
 | 2026-08-23 | 增量更新 | 组件目录 52→53:+chart(@unovis/vue 图表封装,配合 Dashboard 统计卡片) |
 | 2026-08-20 | 增量更新 | 组件目录 34→52:v2.x 新增 carousel/chapter-scrubber/color-picker 系列/command(回归)/expandable-gallery/file-card/file-icon/file-system/folder/form/glowing-*/input-group/notification-list/skeleton/collapsible(回归) 等 18 个 |
 | 2026-08-05 | 架构迁移 | 统一到 shadcn-vue `new-york-v4` 默认样式；删除自定义 `volt/` 组件库与未引用组件；清理 mira-* 自定义样式系统。详见仓库根 `task_plan.md` / `progress.md`。 |
@@ -32,18 +33,20 @@ import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 
 ## 对外接口
 
-### 组件目录（53 个，08-20 后新增 chart）
+### 组件目录（60 个；08-25 批次 +attachment/dropzone/interactive-hover-button/spinner/terminal-view，v3.0.2 +images-badge/pagination/scrollbar、-chapter-scrubber）
 
 | 分类 | 组件 |
 |------|------|
 | `alert` | Alert, AlertTitle, AlertDescription |
 | `alert-dialog` | AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, ... |
+| `attachment` | Attachment（08-25 新增，设备分享附件） |
 | `avatar` | Avatar, AvatarImage, AvatarFallback |
 | `badge` | Badge |
 | `button` | Button |
 | `calendar` | Calendar, CalendarCell, CalendarGrid, CalendarHeader, ...（被 `date-picker` 复用） |
 | `card` | Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, CardAction |
 | `carousel` | Carousel（v2.x 新增） |
+| `chart` | Chart（08-23 新增，@unovis/vue 图表封装） |
 | `checkbox` | Checkbox |
 | `collapsible` | Collapsible 系列（v2.x 回归） |
 | `color-picker` | ColorPicker（v2.x 新增，业务复合） |
@@ -53,6 +56,7 @@ import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 | `date-picker` | DatePicker（本地组合：Input + Popover + Calendar；从原 volt 迁入） |
 | `dialog` | Dialog, DialogTrigger, DialogContent, DialogHeader, DialogFooter, DialogTitle, ... |
 | `dropdown-menu` | DropdownMenu, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuContent, ... |
+| `dropzone` | Dropzone（08-25 新增，拖拽投放区） |
 | `empty` | Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle |
 | `expandable-gallery` | 可展开画廊（v2.x 新增，业务复合） |
 | `file-card` | 文件卡片（v2.x 新增，业务复合） |
@@ -62,11 +66,14 @@ import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 | `form` | Form 系列（v2.x 新增） |
 | `glowing-button` / `glowing-shadow` | 发光按钮/阴影（v2.x 新增，动效） |
 | `hover-card` | HoverCard, HoverCardTrigger, HoverCardContent |
+| `images-badge` | ImagesBadge（v3.0.2 新增，图片数量徽标） |
 | `input` | Input |
 | `input-group` | InputGroup（v2.x 新增） |
+| `interactive-hover-button` | InteractiveHoverButton（08-25 新增，悬停滑动按钮） |
 | `label` | Label |
 | `native-select` | NativeSelect, NativeSelectOption（calendar 内部用） |
 | `notification-list` | 通知列表（v2.x 新增，业务复合） |
+| `pagination` | Pagination 系列（First/Last/Ellipsis 等 9 文件；曾删后回归，v3.0.2 用于上传待传列表/上传队列分页） |
 | `popover` | Popover, PopoverTrigger, PopoverContent, PopoverAnchor |
 | `progress` | Progress |
 | `radio-group` | RadioGroup, RadioGroupItem |
@@ -78,16 +85,18 @@ import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 | `skeleton` | Skeleton（v2.x 新增） |
 | `slider` | Slider |
 | `sonner` | Toaster（导出名 `Toaster`，源文件 Sonner.vue） |
+| `spinner` | Spinner（08-25 新增，加载指示） |
 | `stepper` | Stepper, StepperItem, StepperTrigger, StepperIndicator, StepperTitle, ... |
 | `switch` | Switch |
 | `table` | Table, TableHeader, TableBody, TableRow, TableCell, TableHead, TableEmpty, ... |
 | `tabs` | Tabs, TabsList, TabsTrigger, TabsContent |
+| `terminal-view` | TerminalView（08-25 新增，终端展示） |
 | `textarea` | Textarea |
 | `toggle` | Toggle |
 | `toggle-group` | ToggleGroup, ToggleGroupItem |
 | `tooltip` | Tooltip, TooltipTrigger, TooltipContent, TooltipProvider |
 
-> v2.x 新增的 18 个:carousel、chapter-scrubber、collapsible、color-picker、color-slider、color-swatch、command、expandable-gallery、file-card、file-icon、file-system、folder、form、glowing-button、glowing-shadow、input-group、notification-list、skeleton。其中带「业务复合」标记的不是 shadcn 官方目录,而是本地扩展(同早期 date-picker 的做法)。
+> v2.x 新增的 18 个:carousel、collapsible、color-picker、color-slider、color-swatch、command、expandable-gallery、file-card、file-icon、file-system、folder、form、glowing-button、glowing-shadow、input-group、notification-list、skeleton(chapter-scrubber 曾在此列,v3.0.2 已并入 scrollbar 删除)。其中带「业务复合」标记的不是 shadcn 官方目录,而是本地扩展(同早期 date-picker 的做法)。
 
 ## 关键依赖与配置
 
@@ -102,7 +111,7 @@ import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog'
 ## 已移除（迁移说明）
 
 - **`volt/`** 自定义组件库已整体删除；业务消费方迁至 `@/components/ui`（Chip→Badge、DataTable→Table、Dropdown→Popover/Select、IconField→内联、DatePicker→`ui/date-picker`、FilterBar→`@/components/business/FilterBar`）。
-- 已删除未引用的组件目录：accordion、drawer、navigation-menu、pagination、scroll-area（collapsible、command 曾在此列,v2.x 已按需加回）。
+- 已删除未引用的组件目录：accordion、drawer、navigation-menu、scroll-area(collapsible、command、pagination 曾在此列,后已按需加回;pagination 于 v3.0.2 回归);chapter-scrubber 于 v3.0.2 并入 scrollbar 后删除。
 - 自定义 `--mira-*` / `--surface-*` 样式系统已删除，统一用 shadcn 语义 token（`bg-background`、`text-muted-foreground` 等）。
 
 ## 数据模型

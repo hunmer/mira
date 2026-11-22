@@ -1,21 +1,19 @@
 /**
- * 插件状态管理 Store
- * 重构后的版本，使用模块化架构
+ * 插件状态管理 Store（组合根）
+ * 市场安装 / 本地启用 / 更新检查三个切片分别位于 stores/plugin/ 目录，
+ * 经由 createPluginXxxSlice 在此处组合为单一 usePluginStore。
+ * 对外返回形状与拆分前完全一致。
  */
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { MockDataGenerator } from '../utils/mockData'
 import { pluginService } from '../services/PluginService'
-import { useSettingsStore } from './settings'
-import type { MarketplacePluginEntry, PluginInstallProgress } from '../../shared/types'
 
 // 导入分离的插件模块
-import i18n from '../i18n'
 import {
   // 类型
   type ExtendedPluginInfo,
   type PluginRuntime,
-  type PluginManagerConfig,
   type OperationResult,
   type PluginOperation,
 
@@ -29,26 +27,24 @@ import {
   injectPluginScript,
 
   // 实例管理
-  initializeGlobalPluginSystem,
   registerPluginInstance,
   getPluginInstance,
   loadPluginInstance,
   unloadPluginInstance,
   getPluginInstanceFactory,
-  syncPluginStates,
-  startPluginStateMonitoring,
-  stopPluginStateMonitoring,
 
   // 操作管理
-  enableLocalPluginNew,
-  disableLocalPluginNew,
-  reloadLocalPlugin,
   executeLocalPluginOperation,
 
   // 状态持久化
   persistPluginState,
   restorePluginState
 } from '../plugins'
+
+// 导入插件 store 切片
+import { createPluginMarketSlice } from './plugin/marketSlice'
+import { createPluginLocalSlice } from './plugin/localSlice'
+import { createPluginUpdateSlice } from './plugin/updateSlice'
 
 /**
  * 插件状态管理
@@ -66,28 +62,6 @@ export const usePluginStore = defineStore('plugin', () => {
   const lastUpdated = ref<Date | null>(null)
   const pendingOperations = ref<Set<string>>(new Set())
   const isLocalPluginSystemInitialized = computed(() => pluginService.initialized)
-
-  // 插件市场状态
-  const marketplacePlugins = ref<MarketplacePluginEntry[]>([])
-  const isMarketplaceLoading = ref(false)
-  const marketplaceError = ref<string | null>(null)
-  const marketplaceLastUpdated = ref<Date | null>(null)
-
-  // 插件更新检查状态
-  // key: pluginId；value: { entry: 市场条目, versionOutdated: 版本落后, fileMismatch: 文件不一致 }
-  const pluginUpdates = ref<Map<string, { entry: MarketplacePluginEntry; versionOutdated: boolean; fileMismatch: boolean }>>(new Map())
-  const isCheckingUpdates = ref(false)
-
-  // 插件市场安装进度：key: pluginId，value: { percent, phase, transferred, total }
-  // 由主进程逐块下载时回推，驱动 UI 进度条
-  const marketInstallProgress = ref<Map<string, { percent: number; phase: PluginInstallProgress['phase']; transferred: number; total: number }>>(new Map())
-
-  // 订阅主进程安装进度事件（仅注册一次）
-  pluginService.onInstallProgress((p: PluginInstallProgress) => {
-    const next = new Map(marketInstallProgress.value)
-    next.set(p.pluginId, { percent: p.percent, phase: p.phase, transferred: p.transferred, total: p.total })
-    marketInstallProgress.value = next
-  })
 
   // 搜索和过滤状态
   const searchQuery = ref('')
@@ -272,6 +246,32 @@ export const usePluginStore = defineStore('plugin', () => {
       lastUpdated.value = stateData.lastUpdated ? new Date(stateData.lastUpdated) : null
     }
   }
+
+  // ==================== 切片组合（本地启用 → 市场安装 → 更新检查） ====================
+
+  // 本地启用切片：依赖共享 refs 与持久化/操作包装器
+  const localSlice = createPluginLocalSlice({
+    localPlugins,
+    serverPlugins,
+    pendingOperations,
+    setError,
+    persistState,
+    wrappedWithOperation
+  })
+
+  // 市场安装切片：安装成功后需要刷新本地插件列表
+  const marketSlice = createPluginMarketSlice({
+    pendingOperations,
+    loadLocalPlugins: localSlice.loadLocalPlugins
+  })
+
+  // 更新检查切片：对比本地插件与市场目录，自动更新走市场安装
+  const updateSlice = createPluginUpdateSlice({
+    localPlugins,
+    marketplacePlugins: marketSlice.marketplacePlugins,
+    fetchMarketplaceCatalog: marketSlice.fetchMarketplaceCatalog,
+    installMarketplacePlugin: marketSlice.installMarketplacePlugin
+  })
 
   // ==================== 插件管理操作 ====================
 
@@ -488,494 +488,6 @@ export const usePluginStore = defineStore('plugin', () => {
     }
   }
 
-  // ==================== 本地插件操作（使用分离的模块） ====================
-
-  /**
-   * 初始化本地插件系统
-   */
-  const initializeLocalPlugins = async (config: PluginManagerConfig) => {
-    return wrappedWithOperation('initialize', async () => {
-      // 初始化全局插件系统API
-      initializeGlobalPluginSystem()
-
-      // 使用renderer进程PluginService
-      const result = await pluginService.initialize(config)
-      if (result.success) {
-        await loadLocalPlugins()
-      }
-
-      return result
-    }, 'Failed to initialize local plugins')
-  }
-
-  /**
-   * 从持久化状态恢复本地插件的启用/禁用状态
-   */
-  const restoreLocalPluginStates = async (plugins: PluginRuntime[]) => {
-    try {
-      const stateData = await restorePluginState()
-      if (!stateData || !stateData.plugins) return
-
-      // 创建一个映射，便于快速查找保存的插件状态
-      const savedStatesMap = new Map<string, boolean>()
-      stateData.plugins.forEach(plugin => {
-        if (plugin.isLocal) {
-          savedStatesMap.set(plugin.id, plugin.enabled)
-        }
-      })
-
-      // 应用保存的状态到当前插件
-      for (const plugin of plugins) {
-        const savedEnabled = savedStatesMap.get(plugin.config.pluginId)
-        if (savedEnabled !== undefined) {
-          // 根据保存的enabled状态设置插件的status
-          const oldStatus = plugin.status
-          plugin.status = savedEnabled ? 'loaded' : 'disabled'
-          // 如果插件从enabled变为disabled，需要清理实例和脚本
-          if (oldStatus === 'loaded' && plugin.status === 'disabled') {
-            try {
-              // 卸载插件实例
-              await unloadPluginInstance(plugin.config.pluginId)
-              // 清理插件脚本
-              cleanupPluginScript(plugin.config.pluginId)
-            } catch (err) {
-              console.warn(`Failed to cleanup plugin ${plugin.config.pluginName}:`, err)
-            }
-          }
-        }
-      }
-    } catch (err) {
-      console.warn('Failed to restore local plugin states:', err)
-    }
-  }
-
-  /**
-   * 加载本地插件列表
-   */
-  const loadLocalPlugins = async () => {
-    try {
-      // 使用renderer进程PluginService
-      const plugins = pluginService.getAllPlugins()
-      const local = plugins.filter(plugin => plugin.config.source !== 'server')
-
-      // 从持久化状态恢复插件的enabled状态
-      await restoreLocalPluginStates(local)
-
-      localPlugins.value = local
-      serverPlugins.value = plugins.filter(plugin => plugin.config.source === 'server')
-
-      // 将本地插件注入到document中
-      await injectPluginsToDocument(plugins)
-
-      return { success: true, data: plugins }
-    } catch (err) {
-      const errorMessage = handleError(err, 'Failed to load local plugins')
-      return { success: false, message: errorMessage }
-    }
-  }
-
-  const syncServerPlugins = async (libraryId: string) => {
-    const previousPlugins = [...serverPlugins.value]
-    const result = await pluginService.syncServerPlugins(libraryId)
-    if (!result.success) return result
-
-    for (const plugin of previousPlugins) {
-      if (plugin.status !== 'disabled') {
-        await disableLocalPluginNew(plugin.config.pluginId, { value: previousPlugins }, pendingOperations.value, setError)
-      }
-      cleanupPluginScript(plugin.config.pluginId)
-    }
-
-    serverPlugins.value = pluginService.getServerPlugins()
-    const enabledPlugins = serverPlugins.value.filter(plugin => plugin.status !== 'disabled')
-    await injectPluginsToDocument(enabledPlugins)
-    for (const plugin of enabledPlugins) {
-      await enableLocalPluginNew(plugin.config.pluginId, serverPlugins, pendingOperations.value, setError)
-    }
-    return { success: true, data: serverPlugins.value, message: result.message }
-  }
-
-  const enableServerPlugin = async (pluginId: string) => {
-    const result = await enableLocalPluginNew(pluginId, serverPlugins, pendingOperations.value, setError)
-    if (result.success) await pluginService.setServerPluginEnabled(pluginId, true)
-    return result
-  }
-
-  const disableServerPlugin = async (pluginId: string) => {
-    const result = await disableLocalPluginNew(pluginId, serverPlugins, pendingOperations.value, setError)
-    if (result.success) await pluginService.setServerPluginEnabled(pluginId, false)
-    return result
-  }
-
-  /**
-   * 启用本地插件
-   */
-  const enableLocalPlugin = async (pluginId: string) => {
-    const result = await executeLocalPluginOperation(
-      'enable',
-      pluginId,
-      pluginService,
-      localPlugins,
-      pendingOperations.value,
-      setError
-    )
-    if (result.success) {
-      await persistState()
-    }
-    return result
-  }
-
-  /**
-   * 禁用本地插件
-   */
-  const disableLocalPlugin = async (pluginId: string) => {
-    const result = await executeLocalPluginOperation(
-      'disable',
-      pluginId,
-      pluginService,
-      localPlugins,
-      pendingOperations.value,
-      setError
-    )
-    if (result.success) {
-      await persistState()
-    }
-    return result
-  }
-
-  /**
-   * 重新加载本地插件
-   */
-  const reloadLocalPluginWrapped = async (pluginId: string) => {
-    const result = await reloadLocalPlugin(
-      pluginId,
-      pluginService,
-      localPlugins,
-      pendingOperations.value,
-      setError
-    )
-    if (result.success) {
-      await persistState()
-    }
-    return result
-  }
-
-  /**
-   * 从文件导入本地插件
-   */
-  const importPluginFromFile = async (targetDirectory: string) => {
-    const result = await executeLocalPluginOperation(
-      'import-file',
-      'import',
-      pluginService,
-      localPlugins,
-      pendingOperations.value,
-      setError,
-      targetDirectory
-    )
-    if (result.success) {
-      await persistState()
-    }
-    return result
-  }
-
-  /**
-   * 从URL导入本地插件
-   */
-  const importPluginFromUrl = async (url: string, targetDirectory: string) => {
-    const result = await executeLocalPluginOperation(
-      'import-url',
-      'import',
-      pluginService,
-      localPlugins,
-      pendingOperations.value,
-      setError,
-      url,
-      targetDirectory
-    )
-    if (result.success) {
-      await persistState()
-    }
-    return result
-  }
-
-  /**
-   * 卸载本地插件
-   */
-  const uninstallLocalPlugin = async (pluginId: string, pluginDirectory: string, pluginName: string) => {
-    // 在卸载前清理插件脚本
-    cleanupPluginScript(pluginId)
-
-    const result = await executeLocalPluginOperation(
-      'uninstall',
-      pluginId,
-      pluginService,
-      localPlugins,
-      pendingOperations.value,
-      setError,
-      pluginDirectory,
-      pluginName
-    )
-    if (result.success) {
-      // 卸载成功后立即移除本地运行时记录，避免通用操作管理器的刷新结果
-      // 将已卸载插件再次写入持久化状态。
-      localPlugins.value = localPlugins.value.filter(plugin => plugin.config.pluginId !== pluginId)
-      await persistState()
-    }
-    return result
-  }
-
-  /**
-   * 重新发现本地插件
-   */
-  const discoverLocalPlugins = async () => {
-    const result = await executeLocalPluginOperation(
-      'discover',
-      '',
-      pluginService,
-      localPlugins,
-      pendingOperations.value,
-      setError
-    )
-    if (result.success) {
-      await persistState()
-    }
-    return result
-  }
-
-  /**
-   * 选择插件目录
-   */
-  const selectPluginDirectory = async (title?: string) => {
-    return wrappedWithOperation('select-directory', async () => {
-      return await pluginService.selectPluginDirectory(title)
-    }, 'Failed to select directory')
-  }
-
-  /**
-   * 选择ZIP文件
-   */
-  const selectZipFile = async () => {
-    return wrappedWithOperation('select-zip', async () => {
-      return await pluginService.selectZipFile()
-    }, 'Failed to select ZIP file')
-  }
-
-  // ==================== 插件市场操作 ====================
-
-  /**
-   * 拉取插件市场目录
-   * 从 settings.clientPluginMarketUrl 指向的 HTTP 静态服务获取 plugins.json
-   */
-  const fetchMarketplaceCatalog = async () => {
-    const settingsStore = useSettingsStore()
-    const marketUrl = (settingsStore.settings.clientPluginMarketUrl || '').trim()
-
-    if (!marketUrl) {
-      marketplacePlugins.value = []
-      marketplaceError.value = i18n.global.t('stores.plugin.marketUrlNotConfigured')
-      return { success: false, message: i18n.global.t('stores.plugin.marketUrlNotConfigured') }
-    }
-
-    isMarketplaceLoading.value = true
-    marketplaceError.value = null
-    try {
-      const result = await pluginService.fetchMarketplaceCatalog(marketUrl)
-      if (result.success && result.data) {
-        const catalog = result.data as { plugins: MarketplacePluginEntry[] }
-        marketplacePlugins.value = catalog.plugins || []
-        marketplaceLastUpdated.value = new Date()
-        return { success: true, data: catalog }
-      } else {
-        marketplaceError.value = result.message || i18n.global.t('stores.plugin.fetchCatalogFailed')
-        return { success: false, message: marketplaceError.value }
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch marketplace catalog'
-      marketplaceError.value = errorMessage
-      return { success: false, error: errorMessage }
-    } finally {
-      isMarketplaceLoading.value = false
-    }
-  }
-
-  /**
-   * 从插件市场安装/更新插件
-   * 安装成功后会刷新本地插件列表。
-   */
-  const installMarketplacePlugin = async (entry: MarketplacePluginEntry) => {
-    const operationId = `market-install-${entry.pluginId}`
-    if (pendingOperations.value.has(operationId)) {
-      return { success: false, message: i18n.global.t('stores.plugin.pluginInstalling') }
-    }
-    pendingOperations.value.add(operationId)
-
-    // 初始化进度
-    const initProgress = new Map(marketInstallProgress.value)
-    initProgress.set(entry.pluginId, { percent: 0, phase: 'downloading', transferred: 0, total: 0 })
-    marketInstallProgress.value = initProgress
-
-    try {
-      const settingsStore = useSettingsStore()
-      const marketUrl = (settingsStore.settings.clientPluginMarketUrl || '').trim()
-      if (!marketUrl) {
-        return { success: false, message: i18n.global.t('stores.plugin.marketUrlNotConfigured') }
-      }
-
-      // 构建产物可能在市场列表打开后发生变化。安装前重拉目录，确保传给
-      // 主进程的文件清单与当前静态源内容属于同一次索引生成结果。
-      const catalogResult = await fetchMarketplaceCatalog()
-      if (!catalogResult.success) {
-        const detail = 'message' in catalogResult ? catalogResult.message : catalogResult.error
-        return { success: false, message: detail || i18n.global.t('stores.plugin.refreshCatalogFailed') }
-      }
-      const latestEntry = marketplacePlugins.value.find(item => item.pluginId === entry.pluginId)
-      if (!latestEntry) {
-        return { success: false, message: i18n.global.t('stores.plugin.pluginNotInCatalog') }
-      }
-
-      const result = await pluginService.installMarketplacePlugin(marketUrl, latestEntry)
-      if (result.success) {
-        // 安装成功后刷新本地插件列表
-        await loadLocalPlugins()
-      }
-      return result
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to install marketplace plugin'
-      return { success: false, error: errorMessage }
-    } finally {
-      pendingOperations.value.delete(operationId)
-      // 清除进度（延迟一点，避免进度条在 100% 之前闪烁消失）
-      const clear = () => {
-        const next = new Map(marketInstallProgress.value)
-        next.delete(entry.pluginId)
-        marketInstallProgress.value = next
-      }
-      setTimeout(clear, 300)
-    }
-  }
-
-  /**
-   * 取消正在进行的插件市场安装
-   */
-  const cancelMarketInstall = async (pluginId: string) => {
-    return await pluginService.cancelInstall(pluginId)
-  }
-
-  /**
-   * 简单的语义化版本比较：返回正数表示 a 更新，负数表示 b 更新，0 表示相等
-   */
-  const compareVersions = (a: string, b: string): number => {
-    const pa = (a || '').split('.').map((n) => parseInt(n, 10) || 0)
-    const pb = (b || '').split('.').map((n) => parseInt(n, 10) || 0)
-    const len = Math.max(pa.length, pb.length)
-    for (let i = 0; i < len; i++) {
-      const da = pa[i] || 0
-      const db = pb[i] || 0
-      if (da !== db) return da - db
-    }
-    return 0
-  }
-
-  /**
-   * 检查本地已安装插件是否有更新。
-   * 判定条件（满足任一即标记可更新）：
-   *   1. 市场条目版本 > 本地版本；
-   *   2. 市场条目提供 files 清单，且同一路径文件的内容 sha256 不一致。
-   * 无市场源 / 无市场目录时静默返回空。
-   * 结果写入 pluginUpdates。
-   */
-  const checkPluginUpdates = async () => {
-    // 清空旧结果
-    pluginUpdates.value = new Map()
-
-    const settingsStore = useSettingsStore()
-    const marketUrl = (settingsStore.settings.clientPluginMarketUrl || '').trim()
-    if (!marketUrl) return { success: false, message: i18n.global.t('stores.plugin.marketUrlNotConfigured') }
-
-    // 每次检查都刷新市场目录，避免复用打开插件窗口时缓存的旧索引。
-    const catalogResult = await fetchMarketplaceCatalog()
-    if (!catalogResult.success) return catalogResult
-    const catalog = marketplacePlugins.value || []
-    if (catalog.length === 0) return { success: false, message: i18n.global.t('stores.plugin.catalogEmpty') }
-
-    isCheckingUpdates.value = true
-    try {
-      const updates = new Map<string, { entry: MarketplacePluginEntry; versionOutdated: boolean; fileMismatch: boolean }>()
-      const localList = localPlugins.value || []
-
-      for (const local of localList) {
-        const entry = catalog.find((e) => e.pluginId === local.config.pluginId)
-        if (!entry) continue // 市场无此插件，跳过
-
-        let versionOutdated = false
-        let fileMismatch = false
-
-        // 1. 版本对比：市场版本 > 本地版本
-        if (compareVersions(entry.version, local.config.version) > 0) {
-          versionOutdated = true
-        }
-
-        // 2. 文件内容 sha256 对比：仅比较市场和本地都存在的同一路径文件
-        if (!versionOutdated && entry.files && entry.files.length > 0) {
-          const localFiles = await pluginService.getLocalFileChecksums(local.config.pluginId)
-          // 数量差异、文件新增/删除、校验失败都不等同于已有文件内容发生变化。
-          // 只有同一路径文件的 checksum 明确不一致时，才标记为文件已改动。
-          const marketMap = new Map(entry.files.map((f) => [f.path, f.checksum]))
-          for (const lf of localFiles) {
-            const expected = marketMap.get(lf.path)
-            if (expected !== undefined && expected !== lf.checksum) {
-              fileMismatch = true
-              break
-            }
-          }
-        }
-
-        if (versionOutdated || fileMismatch) {
-          updates.set(local.config.pluginId, { entry, versionOutdated, fileMismatch })
-        }
-      }
-
-      pluginUpdates.value = updates
-      return { success: true, data: { count: updates.size } }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to check plugin updates'
-      return { success: false, error: errorMessage }
-    } finally {
-      isCheckingUpdates.value = false
-    }
-  }
-
-  /**
-   * 启动时自动更新：检查本地插件更新并逐个静默安装（无需用户确认）。
-   * 仅当设置开启「自动更新插件」时执行；未配置市场源 / 无更新 / 失败均静默返回，
-   * 不打断应用启动流程。
-   */
-  const runAutoPluginUpdates = async () => {
-    const settingsStore = useSettingsStore()
-    if (!settingsStore.settings.autoUpdatePlugins) {
-      return { success: true, data: { updated: 0 } }
-    }
-
-    const checkResult = await checkPluginUpdates()
-    if (!checkResult.success) return checkResult
-
-    const entries = [...pluginUpdates.value.entries()]
-    let updated = 0
-    for (const [pluginId, { entry }] of entries) {
-      const installResult = await installMarketplacePlugin(entry)
-      if (installResult.success) {
-        updated++
-        pluginUpdates.value.delete(pluginId)
-      } else {
-        console.warn(`[autoUpdate] Failed to update plugin ${entry.pluginName}:`, (installResult as any).message || (installResult as any).error)
-      }
-    }
-    return { success: true, data: { updated } }
-  }
-
-  // ==================== 状态管理操作 ====================
-
   /**
    * 设置当前选中的插件
    */
@@ -1048,20 +560,6 @@ export const usePluginStore = defineStore('plugin', () => {
     return await fetchPlugins()
   }
 
-  // ==================== 插件状态监控（使用分离的模块） ====================
-
-  const wrappedSyncPluginStates = () => {
-    syncPluginStates(pluginService, localPlugins, injectPluginsToDocument)
-  }
-
-  const wrappedStartPluginStateMonitoring = (intervalMs = 5000) => {
-    return startPluginStateMonitoring(intervalMs, wrappedSyncPluginStates)
-  }
-
-  const wrappedStopPluginStateMonitoring = () => {
-    stopPluginStateMonitoring()
-  }
-
   // ==================== 返回store接口 ====================
   return {
     // 状态
@@ -1081,17 +579,17 @@ export const usePluginStore = defineStore('plugin', () => {
     isLocalPluginSystemInitialized,
 
     // 插件市场状态
-    marketplacePlugins,
-    isMarketplaceLoading,
-    marketplaceError,
-    marketplaceLastUpdated,
+    marketplacePlugins: marketSlice.marketplacePlugins,
+    isMarketplaceLoading: marketSlice.isMarketplaceLoading,
+    marketplaceError: marketSlice.marketplaceError,
+    marketplaceLastUpdated: marketSlice.marketplaceLastUpdated,
 
     // 插件更新检查状态
-    pluginUpdates,
-    isCheckingUpdates,
+    pluginUpdates: updateSlice.pluginUpdates,
+    isCheckingUpdates: updateSlice.isCheckingUpdates,
 
     // 插件市场安装进度
-    marketInstallProgress,
+    marketInstallProgress: marketSlice.marketInstallProgress,
 
     // 计算属性
     totalPlugins,
@@ -1127,27 +625,27 @@ export const usePluginStore = defineStore('plugin', () => {
     restoreState,
 
     // 本地插件操作
-    initializeLocalPlugins,
-    loadLocalPlugins,
-    enableLocalPlugin,
-    disableLocalPlugin,
-    reloadLocalPlugin: reloadLocalPluginWrapped,
-    importPluginFromFile,
-    importPluginFromUrl,
-    uninstallLocalPlugin,
-    discoverLocalPlugins,
-    syncServerPlugins,
-    enableServerPlugin,
-    disableServerPlugin,
-    selectPluginDirectory,
-    selectZipFile,
+    initializeLocalPlugins: localSlice.initializeLocalPlugins,
+    loadLocalPlugins: localSlice.loadLocalPlugins,
+    enableLocalPlugin: localSlice.enableLocalPlugin,
+    disableLocalPlugin: localSlice.disableLocalPlugin,
+    reloadLocalPlugin: localSlice.reloadLocalPlugin,
+    importPluginFromFile: localSlice.importPluginFromFile,
+    importPluginFromUrl: localSlice.importPluginFromUrl,
+    uninstallLocalPlugin: localSlice.uninstallLocalPlugin,
+    discoverLocalPlugins: localSlice.discoverLocalPlugins,
+    syncServerPlugins: localSlice.syncServerPlugins,
+    enableServerPlugin: localSlice.enableServerPlugin,
+    disableServerPlugin: localSlice.disableServerPlugin,
+    selectPluginDirectory: localSlice.selectPluginDirectory,
+    selectZipFile: localSlice.selectZipFile,
 
     // 插件市场操作
-    fetchMarketplaceCatalog,
-    installMarketplacePlugin,
-    cancelMarketInstall,
-    checkPluginUpdates,
-    runAutoPluginUpdates,
+    fetchMarketplaceCatalog: marketSlice.fetchMarketplaceCatalog,
+    installMarketplacePlugin: marketSlice.installMarketplacePlugin,
+    cancelMarketInstall: marketSlice.cancelMarketInstall,
+    checkPluginUpdates: updateSlice.checkPluginUpdates,
+    runAutoPluginUpdates: updateSlice.runAutoPluginUpdates,
 
     // 脚本管理（从模块导入）
     injectPluginsToDocument,
@@ -1160,25 +658,13 @@ export const usePluginStore = defineStore('plugin', () => {
     loadPluginInstance,
     unloadPluginInstance,
     getPluginInstanceFactory,
-    enableLocalPluginNew: async (pluginId: string) => {
-      const result = await enableLocalPluginNew(pluginId, localPlugins, pendingOperations.value, setError)
-      if (result.success) {
-        await persistState()
-      }
-      return result
-    },
-    disableLocalPluginNew: async (pluginId: string) => {
-      const result = await disableLocalPluginNew(pluginId, localPlugins, pendingOperations.value, setError)
-      if (result.success) {
-        await persistState()
-      }
-      return result
-    },
+    enableLocalPluginNew: localSlice.enableLocalPluginNewWrapped,
+    disableLocalPluginNew: localSlice.disableLocalPluginNewWrapped,
 
     // 状态监控（从模块导入）
-    syncPluginStates: wrappedSyncPluginStates,
-    startPluginStateMonitoring: wrappedStartPluginStateMonitoring,
-    stopPluginStateMonitoring: wrappedStopPluginStateMonitoring,
+    syncPluginStates: localSlice.wrappedSyncPluginStates,
+    startPluginStateMonitoring: localSlice.wrappedStartPluginStateMonitoring,
+    stopPluginStateMonitoring: localSlice.wrappedStopPluginStateMonitoring,
 
     // 工具函数（从模块导入）
     handleError,

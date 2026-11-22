@@ -10,11 +10,12 @@ dependencies（构建时全部打进 bundle，消费方无需安装）：
 |------|------|
 | `@hunmer/vue-masonry`（workspace:*） | MediaBrowser 瀑布流 |
 | `@hunmer/vue-selection-box`（workspace:*） | BatchUploadForm / MediaBrowser 框选 |
-| `@lucide/vue ^1.32.0` | UI 图标 |
+| `@lucide/vue ^1.32.0` | UI 图标（FilterBar 按 filter.type 映射） |
 | `@vueuse/core ^14.4.0` | 组合式工具 |
 | `class-variance-authority ^0.7.1` / `clsx ^2.1.1` / `tailwind-merge ^3.3.0` | shadcn cva/cn 体系 |
 | `motion-v ^2.2.1` | 动效 |
 | `reka-ui ^2.9.7` | 无头组件底层 |
+| `vue-draggable-plus ^0.6.1`（2026-11 新增） | `components/ui/draggable` 转发（树拖拽排序等宿主可用） |
 
 devDependencies：`@tailwindcss/vite` + `tailwindcss ^4.3.3`（v4）、`tw-animate-css`、`@vitejs/plugin-vue ^5.2.3`、`vite ^6.3.2`、`vite-plugin-vue-devtools`（仅 dev）、`typescript ~5.8.3`、`vue 3.5.13`（锁定版本）。
 
@@ -44,3 +45,4 @@ style `new-york`、typescript、tailwind css 指向 `src/assets/tailwind.css`、
 - `tsconfig.json`：strict TypeScript（未逐项核对编译选项）。
 - 根 `ui_rule.md`：本包样式规则的权威来源。
 - 包内含 `package-lock.json`（npm 形态，历史遗留；monorepo 主体用 pnpm）。
+- scripts 仅 `dev` / `build` / `build:watch`（无 test/lint/type-check，2026-11 复核未变）。

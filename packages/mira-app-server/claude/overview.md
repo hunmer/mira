@@ -1,12 +1,12 @@
 # overview
 
-`mira-app-server` 是 pnpm monorepo 的服务端包（`name=mira-app-server`, `version=2.0.9`, `description: "Mira Server - standalone server application using mira-app-core"`），独立可运行，依赖同仓 `mira-app-core`（`workspace:*`）。
+`mira-app-server` 是 pnpm monorepo 的服务端包（`name=mira-app-server`, `version=3.0.2`, `description: "Mira Server - standalone server application using mira-app-core"`），独立可运行，依赖同仓 `mira-app-core`（`workspace:*`）。
 
 ## 模块职责
 
 提供完整的 Mira 后端能力：
 
-1. **HTTP REST API** — 基于 Express，路由位于 `src/routes/`（19 个 .ts，含 `BaseRouter` 与 `WebSocketRouter`；2026-08 新增 `CookieSitesRouter`、`DownloadRoutes`）。
+1. **HTTP REST API** — 基于 Express，路由位于 `src/routes/`（21 个 .ts = 19 个 Router（含 `BaseRouter`、`WebSocketRouter`）+ 2 个非路由辅助模块；2026-08 新增 `CookieSitesRouter`、`DownloadRoutes`，2026-11 新增辅助 `FileAssociationResolver`、`UploadImportMode`）。
 2. **WebSocket 实时通信** — 基于 `ws`，按素材库分组管理连接，`handlers/` 下分发（6 个 Handler）。
 3. **多素材库管理** — `LibraryStorage` 动态加载/卸载多个 SQLite 素材库，元数据集中在 `data/librarys.json`。
 4. **插件系统** — `ServerPluginManager` + `ServerPlugin` 基类，支持 HTTP Hook 拦截，配置见 `src/plugins/plugins.json`。
@@ -15,7 +15,7 @@
 7. **用户认证** — `UserStorage` + SQLite（`data/users.db`），角色 `super/admin/user`。
 8. **库文件监视** — `LibraryWatcher`（chokidar）+ `src/sync/`（FilePathSet / ImportedFileEvents / SyncFilter，同步过滤）。
 9. **缩略图服务** — `services/ThumbnailService`，内置 Image/Video Generator，可注册扩展；另有 `MetadataService`（元数据规则）。
-10. **下载/备份/查重等后台服务** — `services/DownloadExecutorService`、`DatabaseBackupService`、`DuplicateScanner`、`LogRingBuffer`、`procm`。
+10. **下载/备份/查重/导入/迁移等后台服务** — `services/DownloadExecutorService`、`DatabaseBackupService`、`DuplicateScanner`、`LibraryImportService`（Eagle/Billfish 跨库导入）、`LibraryRelocationService`（素材库物理迁移，2026-11 新增）、`LogRingBuffer`、`procm`。
 11. **设置管理** — `SettingsManager`，`data/settings.json`。
 
 ## 入口与启动
@@ -32,17 +32,18 @@
 | `pnpm run build` | `pnpm run build:dashboard && pnpm run build:web && tsc` | 拷贝前端静态资源 + 编译到 `dist/` |
 | `pnpm run build:dashboard` | `node scripts/copy-dashboard.mjs` | 拷贝 dashboard 静态资源 |
 | `pnpm run build:web` | `node scripts/copy-web.mjs` | 拷贝 web 静态资源 |
+| `pnpm run build:plugin-ui` | `node scripts/copy-plugin-ui.mjs` | 拷贝 mira-plugin-ui（独立脚本，不在 build 链中） |
 | `pnpm run rebuild` | `pnpm run build` | 别名 |
 | `pnpm run start` | `node dist/index.js` | 生产启动 |
 | `pnpm run dev` / `start:ts` | `node --inspect -r ts-node/register src/index.ts` | 开发模式 |
 | `pnpm run cli` / `cli:start` / `cli:health` / `cli:version` | `ts-node src/cli.ts [...]` | CLI 调试 |
-| `pnpm test` | `jest --config sdk/jest.config.js` | 单元测试 |
-| `pnpm run test:watch` | `jest --config sdk/jest.config.js --watch` | 监视测试 |
-| `pnpm run test:coverage` | `jest --config sdk/jest.config.js --coverage` | 覆盖率 |
-| `pnpm run test:integration` | `node sdk/scripts/test-and-fix.js` | 集成测试 |
-| `pnpm run test:paths` | `node --test` 跑 `src/sync/FilePathSet.test.ts` 等 | sync 模块测试 |
-| `pnpm run build:sdk` | `tsc --project sdk/tsconfig.json` | 构建 SDK |
-| `pnpm run sdk:example` | `ts-node sdk/examples/usage-examples.ts` | 运行 SDK 示例 |
+| `pnpm test` | `jest --config sdk/jest.config.js` | ⚠️ 失效：`sdk/` 目录已不存在（git 未跟踪过） |
+| `pnpm run test:watch` | `jest --config sdk/jest.config.js --watch` | ⚠️ 失效（同上） |
+| `pnpm run test:coverage` | `jest --config sdk/jest.config.js --coverage` | ⚠️ 失效（同上） |
+| `pnpm run test:integration` | `node sdk/scripts/test-and-fix.js` | ⚠️ 失效（同上） |
+| `pnpm run test:paths` | `node --test` 跑 6 个测试文件 | `src/sync/` 2 个 + FileAssociationResolver / UploadImportMode / ThumbnailService / MetadataService |
+| `pnpm run build:sdk` | `tsc --project sdk/tsconfig.json` | ⚠️ 失效：`sdk/` 目录已不存在 |
+| `pnpm run sdk:example` | `ts-node sdk/examples/usage-examples.ts` | ⚠️ 失效（同上） |
 | `pnpm prepublish` / `prepack` | `npm run build` | 发布前编译 |
 
 ## 关键依赖

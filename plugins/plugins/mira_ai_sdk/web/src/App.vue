@@ -8,6 +8,7 @@
  */
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { Brush, Download, ImagePlus, Library, Loader2, Plus, Sparkles } from '@lucide/vue'
+import { classifyMedia } from 'mira-app-core/shared/sdk'
 import { Badge } from 'mira-plugin-ui/src/components/ui/badge'
 import { Button } from 'mira-plugin-ui/src/components/ui/button'
 import { Checkbox } from 'mira-plugin-ui/src/components/ui/checkbox'
@@ -132,7 +133,7 @@ function removeRefImage(index: number) {
 function onLocalFiles(e: Event) {
   const files = Array.from((e.target as HTMLInputElement).files || [])
   for (const file of files) {
-    if (!file.type.startsWith('image/')) continue
+    if (!classifyMedia(file.type).isImage) continue
     const reader = new FileReader()
     reader.onload = () => addRefImage(file.name, String(reader.result || ''))
     reader.readAsDataURL(file)

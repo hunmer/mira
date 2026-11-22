@@ -19,6 +19,7 @@ export type DropzoneItem = File | { name: string; size: number; type?: string; p
 import { computed, onBeforeUnmount, ref } from 'vue';
 import { CheckIcon, FileImage, FileText, FileWarningIcon, Film, Music, X } from '@lucide/vue';
 import { canAcceptDrop } from './drag-data';
+import { classifyMedia } from 'mira-app-core/shared/sdk';
 import { Spinner } from '../spinner/index';
 import {
   Attachment,
@@ -30,6 +31,8 @@ import {
   AttachmentMedia,
   AttachmentTitle,
 } from '../attachment/index';
+import { formatBytes } from '@renderer/utils';
+import { getFileExtension } from '@renderer/utils/fileUtils';
 
 type FileState = 'idle' | 'processing' | 'uploading' | 'done' | 'error';
 
@@ -74,7 +77,7 @@ function stateOf(file: DropzoneItem): FileState {
 
 function descriptionOf(file: DropzoneItem): string {
   return props.fileDescription?.(file)
-    ?? `${extOf(file)} · ${formatSize(file.size)}`;
+    ?? `${extOf(file)} · ${formatBytes(file.size)}`;
 }
 
 // ---- 图片预览:元数据条目直接用 previewUrl;本地 File 走 objectURL(移除/卸载时回收) ----
@@ -123,14 +126,15 @@ function removeFile(file: DropzoneItem) {
 
 // ---- 类型图标 / 大小格式化 ----
 function iconOf(file: DropzoneItem) {
-  if (file.type?.startsWith('image/')) return FileImage;
-  if (file.type?.startsWith('video/')) return Film;
-  if (file.type?.startsWith('audio/')) return Music;
+  const kind = classifyMedia(file.type).kind;
+  if (kind === 'image') return FileImage;
+  if (kind === 'video') return Film;
+  if (kind === 'audio') return Music;
   return FileText;
 }
 
 function isImage(file: DropzoneItem) {
-  return !!file.type?.startsWith('image/');
+  return classifyMedia(file.type).isImage;
 }
 
 function mediaVariantOf(file: DropzoneItem): 'icon' | 'image' {
@@ -140,15 +144,11 @@ function mediaVariantOf(file: DropzoneItem): 'icon' | 'image' {
   return props.mediaVariant === 'image' && isImage(file) ? 'image' : 'icon'
 }
 
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-}
+
 
 /** 扩展名大写(无扩展名显示 FILE) */
 function extOf(file: DropzoneItem) {
-  return (file.name.split('.').pop() || 'FILE').toUpperCase();
+  return (getFileExtension(file.name) || 'FILE').toUpperCase();
 }
 
 /** 列表 key:元数据条目无 lastModified */

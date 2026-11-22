@@ -9,8 +9,9 @@
 | 渲染根组件 | `src/renderer/App.vue` | SPA 根 |
 | 预加载 | `src/preload/preload.ts` | contextBridge 暴露安全 API |
 | 悬浮球窗口 | `src/floating-ball-window/main.ts` + `floating-ball-window.html` | 悬浮球(v2.x 新增) |
-| 通知窗口 | `src/notification-window/` + `notification-window.html` | |
+| 通知窗口 | `src/notification-window/` + `notification-window.html` | v3.0.2:内容下发收敛为 sendSlotContent(),按 __maxVisible 动态分页 |
 | 搜索窗口 | `src/search-window/` + `search-window.html` | |
+| 截图窗口 | `src/screenshot-window/` + `screenshot-window.html` | 屏幕截图采集(配合 ScreenshotHandlers) |
 | package.json main | `dist-main/main.js` | Electron 启动指向的构建产物 |
 
 > 注:浮动窗口(floating-window)的独立入口与 `build:float` 构建段已移除,目录仅剩 `bridge.ts`。

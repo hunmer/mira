@@ -18,8 +18,8 @@
 | `FOLDER_LIST` / `TAG_LIST` | `{libraryId}` | `Folder[]`/`Tag[]` | 全量文件夹/标签 |
 | `NODE_CREATE` / `NODE_DELETE` / `NODE_UPDATE` / `NODE_MOVE` / `NODE_SORT_INDEX` | 节点 payloads | 节点/结果 | 文件夹/标签节点 CRUD + 排序(新增) |
 | `UPLOAD_FILES` | `{files: StagedFile[], libraryId, tags?, folderId?}` | `{enqueued}` | stagedToFile → uploader |
-| `UPLOAD_FROM_URL` | `{url, kind, libraryId, folderId?}` | `{enqueued}` | fetch → Blob → File → uploader |
-| `BATCH_IMPORT` | URL 列表 + 目标(文件夹/标签) | 进度 Event | 批量导入(新增,配 `batchImportConcurrency`) |
+| `UPLOAD_FROM_URL` | `{url, kind, libraryId, folderId?, tags?}` | `{enqueued}` | fetch → Blob → File → uploader;touch last-used |
+| `BATCH_IMPORT` | `{items: {urls, fallbackUrl, filename, referrer?}[], libraryId, folderId?: number, tags?}` | `{batchId, total}` + 进度 Event | 批量导入(逐条并发下载+上传,配 `batchImportConcurrency`;urls 为 IMU 升级候选、fallbackUrl 原图兜底) |
 | `DOWNLOAD_RESOURCES` | 资源列表 | — | 下载资源(新增,resource-fetch) |
 | `OPEN_URL_IN_TAB` | `{url}` | — | 新标签打开(新增) |
 | `CUSTOM_UPLOAD_SIDEPANEL_OPEN` / `CUSTOM_UPLOAD_SESSION_GET` / `CUSTOM_UPLOAD_SESSION_CLOSE` | 批量上传会话 | 会话状态 | popup ↔ upload 独立窗口协同(新增) |
@@ -49,7 +49,7 @@
 |------|---------|--------------|
 | `SNIFFER_START` | `{kinds}` | sniffer.start |
 | `SNIFFER_STOP` | — | sniffer.stop |
-| `DISPATCH_DRAGDROP` | `{enabled}` | dragdrop.setEnabled |
+| `DISPATCH_DRAGDROP` | `{enabled, mode?: DragPopoverMode, hosts?: string[]}` | dragdrop.setEnabled(content 按 `location.host` + `isDragPopoverHostAllowed` 过滤;mode/hosts 缺省不过滤) |
 | `DISPATCH_HOVER_BUTTON` | `{enabled}` | hover-button.setEnabled(新增) |
 | `AUTOSCROLL_START` | `{delay}` | scroller.start |
 | `AUTOSCROLL_STOP` | — | scroller.stop |
@@ -74,9 +74,10 @@
 
 ## Chrome API 依赖
 
-- `permissions`:activeTab, tabs, storage, scripting, contextMenus, sidePanel, offscreen, commands
+- `permissions`(13 项):activeTab, tabs, storage, scripting, contextMenus, sidePanel, offscreen, commands, **downloads, notifications, cookies, declarativeNetRequestWithHostAccess**
 - `host_permissions`:`<all_urls>`
-- 关键 API:`chrome.tabs.captureVisibleTab`(截图)、`chrome.offscreen.createDocument`(BLOBS)、`chrome.scripting.executeScript`(注入兜底)、`chrome.contextMenus`(右键)、`chrome.storage.local`(设置)/`.session`(token)、`chrome.commands`(快捷键)
+- 关键 API:`chrome.tabs.captureVisibleTab`(截图)、`chrome.offscreen.createDocument`(BLOBS)、`chrome.scripting.executeScript`(注入兜底)、`chrome.contextMenus`(右键;onClicked 顶层注册)、`chrome.storage.local`(设置/缓存/last-used)/`.session`(token)、`chrome.commands`(快捷键)
+- 右键菜单项:截图三件套(可视/整页/选区)、图片「收藏到素材库」、「从选中批量导入」、「Mira · 切换当前网站是否开启图片拖拽快速上传」(增删 dragPopoverHosts)、扩展图标右键截图入口
 
 ## maxurl bridge(页面 MAIN world ↔ content)
 

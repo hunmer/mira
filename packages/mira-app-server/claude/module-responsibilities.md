@@ -47,13 +47,13 @@
 | `AuthRouter.ts` | 13K | 认证（登录/登出/token/注册）。 |
 | `AdminsRouter.ts` | 7.7K | 管理员管理。 |
 | `UserRouter.ts` | 10K | 用户信息。 |
-| `LibraryRoutes.ts` | 29K | 素材库 CRUD + 启用/禁用/插件。 |
+| `LibraryRoutes.ts` | 29K | 素材库 CRUD + 启用/禁用/插件 + 跨库导入（`LibraryImportService`）+ 物理迁移 `POST /:id/relocate`（`LibraryRelocationService`，2026-11）；导出 `resolveLibraryPath()` 规范化库路径。 |
 | `PluginRoutes.ts` | 43K | 插件管理（安装/卸载/配置/路由）。 |
 | `DatabaseRoutes.ts` | 5.2K | 数据库操作。 |
-| `FileRoutes.ts` | 38K | 文件上传/下载/管理/ZIP 导入。 |
+| `FileRoutes.ts` | 38K | 文件上传/下载/管理/ZIP 导入 + 本机路径导入 `/import-path`（仅 loopback）+ 重名检查 `/checkDuplicates`；回收站文件改名为只读（409）。 |
 | `DeviceRoutes.ts` | 17K | 设备管理。 |
-| `TagRouter.ts` | 5.9K | 标签 CRUD。 |
-| `FolderRouter.ts` | 6.3K | 文件夹 CRUD。 |
+| `TagRouter.ts` | 5.9K | 标签 CRUD + `/file/set`、`/file/set-batch`（批量，2026-11）；`resolveTagIds` 名称/ID 关联，回收站文件 409。 |
+| `FolderRouter.ts` | 6.3K | 文件夹 CRUD + `/file/set` 经 `resolveFolderId`（名称/ID），回收站文件 409。 |
 | `FsRouter.ts` | 29K | 文件系统操作。 |
 | `ThumbRouter.ts` | 4.4K | 缩略图管理。 |
 | `StatisticsRouter.ts` | 8.4K | 统计。 |
@@ -62,6 +62,8 @@
 | `DownloadRoutes.ts` | 3.5K | 下载任务（`/api/download`，2026-08 新增，配合 `DownloadExecutorService`）。 |
 | `HttpRouter.ts` | 8.4K | 插件静态资源 + 动态路由。 |
 | `WebSocketRouter.ts` | 1.5K | WebSocket 消息分发。 |
+| `FileAssociationResolver.ts` | 59 行 | 非路由辅助（2026-11）：`resolveTagIds` / `resolveFolderId` — 标签/文件夹按名称或 ID 关联，名称不存在则创建。 |
+| `UploadImportMode.ts` | 31 行 | 非路由辅助（2026-11）：`resolveUploadImport` — 上传时源文件存在则按库 importType 用源文件，否则回退临时副本 + copy。 |
 
 ## 处理器 (`src/handlers/`)
 
@@ -84,11 +86,13 @@
 
 | 文件 | 职责 |
 |------|------|
-| `ThumbnailService.ts` | 内置缩略图服务（11K），`ThumbnailGenerator` 接口、Image/Video Generator、`registerGenerator()`、`setWebSocketServer()` 广播进度。 |
-| `MetadataService.ts` | 元数据解析规则注册（`registerRule` / `unregisterRule`），与协议 B 格式插件联动。 |
+| `ThumbnailService.ts` | 内置缩略图服务（11K），`ThumbnailGenerator` 接口、Image/Video Generator、`registerGenerator()`、`setWebSocketServer()` 广播进度；数据层钩子 `onFileImported/onFileDeleted`，物理路径经 `getItemFilePath` 解析（适配 copy 模式 `path=NULL`）。 |
+| `MetadataService.ts` | 元数据解析规则注册（`registerRule` / `unregisterRule`），与协议 B 格式插件联动；exif 合并写入，物理路径经 `getItemFilePath({isUrlFile:false})` 解析（适配 copy 模式）。 |
 | `DownloadExecutorService.ts` | 下载任务执行（配合 `DownloadRoutes` / SDK `DownloadModule`）。 |
 | `DuplicateScanner.ts` | 重复文件扫描（原 mira_duplicate_scanner 插件功能内置，含测试）。 |
 | `DatabaseBackupService.ts` | 数据库备份（archiver 打包）。 |
+| `LibraryImportService.ts` | Eagle/Billfish 跨库导入（484 行，异步任务/进度/取消，复制素材/文件夹/标签与缩略图）。 |
+| `LibraryRelocationService.ts` | 素材库物理迁移（221 行，2026-11）：`copyLibraryDirectory` 流式复制（字节级进度）+ `start()` 停库→复制→改写 `librarys.json` path→删源目录→重启，失败回滚。 |
 | `LogRingBuffer.ts` | 环形日志缓冲（配合 SSE 日志流）。 |
 | `procm.ts` | 进程管理相关服务。 |
 
@@ -102,7 +106,7 @@
 
 ## 插件目录 (`src/plugins/`)
 
-- `plugins.json` — 插件注册清单。
+- `plugins.json` — 插件注册清单（2026-11 起共 15 条：+mira_html_format / mira_font_format / mira_office_viewer / mira_semantic_search）。
 - `package.json` / `package-lock.json` / `node_modules/` — 插件依赖（npm 安装）。
 - `mira_thumb/`、`mira_user/` — 内置示例插件目录（含 `data/`）。
 - 重复文件扫描已内置到 `FsRouter` 与 `DuplicateScanner` 服务，不再依赖插件。

@@ -2,6 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { toast } from 'vue-sonner'
+import { formatBytes as formatSize } from '@renderer/utils'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import {
@@ -57,12 +58,7 @@ const fileIcon = (name?: string) => {
   return 'description'
 }
 
-const formatSize = (n?: number) => {
-  if (!n) return ''
-  if (n > 1048576) return (n / 1048576).toFixed(1) + ' MB'
-  if (n > 1024) return (n / 1024).toFixed(1) + ' KB'
-  return n + ' B'
-}
+
 
 const selectSaveDir = async () => {
   const result = await (window as any).electronAPI?.fs?.selectDirectory(t('business.deviceShare.selectSaveDir'))

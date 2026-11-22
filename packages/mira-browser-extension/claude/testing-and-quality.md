@@ -4,32 +4,38 @@
 
 - `pnpm --filter mira-browser-extension test` → `vitest run`(单次)
 - `pnpm --filter mira-browser-extension test:watch` → watch
-- 配置:`vitest.config.ts`,**environment: node**(纯逻辑测试,无 DOM),别名 `@ → ./src`,include `src/**/*.test.ts`
+- 配置:`vitest.config.ts`,**environment: node**(默认),别名 `@ → ./src`,include `src/**/*.test.ts`;需要 DOM 的用例在文件头用 `// @vitest-environment jsdom` 覆盖(DragDropOverlay/BatchUploadForm/default-drop-upload 等)
 
 ## 覆盖情况
 
-**19 个测试文件,约 137 个用例**(grep it/test 统计)。覆盖纯逻辑层(shared + 部分 background/content/offscreen/ui composables),**不覆盖** Chrome API / Vue 组件渲染 / 跨上下文(无法自动化)。
+**26 个测试文件,约 169 个用例**(grep it/test 统计)。覆盖纯逻辑层(shared + 部分 background/content/offscreen/ui composables)+ 少量 jsdom 挂载的组件测试;**不覆盖** Chrome API 真机 / 跨上下文(无法自动化)。
 
 | 测试文件 | 覆盖 |
 |----------|------|
 | `shared/staged-file.test.ts` | fileToStaged/stagedToFile/normalizeBytes(**含类数组对象回归**)、bufferToDataUrl、dataUrlToBlob |
 | `shared/messages.test.ts` | isRequest/isContentCommand/isEvent 类型守卫 |
-| `shared/storage.test.ts` | loadSettings/saveSettings 合并默认值、session |
+| `shared/storage.test.ts` | loadSettings/saveSettings 合并默认值、session、**dragPopoverMode 迁移**(旧非空 host 列表→whitelist) |
 | `shared/concurrency.test.ts` | 并发控制工具 |
-| `shared/drag-data.test.ts` | 拖拽数据解析 |
+| `shared/drag-data.test.ts` | 拖拽数据解析(DOMParser、`&amp;` 还原、data-* 属性、srcset、Pinterest、uri-list 回退) |
+| `shared/drag-popover.test.ts` | isDragPopoverHostAllowed 黑白名单判定 |
+| `shared/node-last-used.test.ts` | touchNodeLastUsed 200ms 合并写、key 生成、读回 |
 | `shared/resource-filename.test.ts` | 资源文件名生成 |
 | `shared/imu.test.ts` | maxurl 封装/候选排序 |
 | `shared/debug.test.ts` | 日志开关 |
 | `background/uploader.test.ts` | enqueue/并发/重试/取消/idle |
 | `background/mira-client.test.ts` | ensureClient/login/withAuth/autoRelogin |
 | `background/resource-fetch.test.ts` | 资源抓取 |
+| `background/context-menus.test.ts` | 菜单项构建、mira-toggle-drag-upload 分发、顶层监听注册 |
 | `content/sniffer.test.ts` | urlToId/extractFromDOM/dedupe/merge/createSniffer |
 | `content/autoscroll.test.ts` | 滚动到位/到底停止/帧上限 |
-| `content/dragdrop.test.ts` | 拖拽浮层 |
+| `content/dragdrop.test.ts` | 拖拽浮层宿主逻辑:Shadow DOM 挂载、collectImagesUnder、库切换持久化等 |
+| `content/default-drop-upload.test.ts`(jsdom) | mira-plugin-ui parseDrop 解码 `&amp;`;defaultDropUpload File 优先于 URL |
 | `content/hover-button.test.ts` | 悬停按钮 |
 | `content/overlay/import-dialog.test.ts` | 批量导入对话框 |
+| `content/overlay/DragDropOverlay.test.ts`(jsdom) | 挂载 Vue 浮层组件:根区/批量 zone/树渲染/库切换/未连接空态 |
 | `offscreen/image-ops.test.ts` | computeStitchSize/scaleRect(纯函数) |
-| `ui/composables/useLibraryTree.test.ts`、`libraryTreeSearch.test.ts` | 文件夹树/搜索 |
+| `ui/composables/useLibraryTree.test.ts`、`libraryTreeSearch.test.ts`、`libraryTreeHover.test.ts` | 文件夹树构建/搜索/防抖 hover |
+| `ui/components/upload/BatchUploadForm.test.ts`(jsdom) | 挂 mira-plugin-ui BatchUploadForm:提交标签用 ID 不转标题 |
 
 ## 类型检查 / Lint
 
@@ -45,6 +51,8 @@
 4. **SW 回收**:模块级状态不持久,测试不覆盖「SW 重启后恢复」场景。
 5. **无 E2E**:Chrome 扩展 E2E(puppeteer + 扩展加载)未配置。
 6. **双 vue 实例**:mira-plugin-ui(npm 实体目录)依赖链可能解析出第二份 vue → slot/inject 崩溃;已靠 vite alias 钉死,若调整依赖/别名需手动验证。
+7. **dev 模式浮层 CSS 依赖 5174 端口**:DragDropOverlay 的 CSS 回退拼接 `http://localhost:5174`(vite strictPort),改 dev 端口浮层会裸奔;仅 dev 影响,prod 走 chrome.runtime.getURL。
+8. **暗色主题验收未完成**:handoff/2026-09-02 记录 `--muted` 修复后「尚未完成扩展构建和真实 Chrome 暗色模式验收」,dist 仍为 08-24 旧构建。
 
 ## 测试约定
 

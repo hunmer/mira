@@ -3,6 +3,25 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { AuthRouter } from './AuthRouter';
 
+// 角色 → 权限码/用户组 查表（缺省为普通用户）
+const ROLE_PROFILES: Record<string, { permissions: string[]; userGroup: string }> = {
+    super: {
+        permissions: ['*'], // 超级管理员拥有所有权限
+        userGroup: '超级管理员',
+    },
+    admin: {
+        permissions: [
+            'AC_100100', // 系统管理权限
+            'AC_100010', // 资源库管理权限
+            'AC_100020', // 用户管理权限
+            'AC_200000', // 数据库访问权限
+            'AC_300000', // 设备管理权限
+        ],
+        userGroup: '管理员',
+    },
+};
+const DEFAULT_ROLE_PROFILE = { permissions: ['AC_000100'], userGroup: '普通用户' };
+
 export class UserRouter {
     private router: Router;
     private authRouter: AuthRouter;
@@ -49,29 +68,8 @@ export class UserRouter {
                 if (user) {
                     const userInfo = authService.getUserInfo(user);
 
-                    // 根据用户角色生成权限码
-                    let permissions: string[] = [];
-                    let userGroup = '';
-
-                    switch (userInfo.role) {
-                        case 'super':
-                            permissions = ['*']; // 超级管理员拥有所有权限
-                            userGroup = '超级管理员';
-                            break;
-                        case 'admin':
-                            permissions = [
-                                'AC_100100', // 系统管理权限
-                                'AC_100010', // 资源库管理权限
-                                'AC_100020', // 用户管理权限
-                                'AC_200000', // 数据库访问权限
-                                'AC_300000'  // 设备管理权限
-                            ];
-                            userGroup = '管理员';
-                            break;
-                        default:
-                            permissions = ['AC_000100']; // 基础权限
-                            userGroup = '普通用户';
-                    }
+                    // 根据用户角色查表得到权限码与用户组
+                    const { permissions, userGroup } = ROLE_PROFILES[userInfo.role] ?? DEFAULT_ROLE_PROFILE;
 
                     // 符合vben标准的用户信息格式
                     const vbenUserInfo = {

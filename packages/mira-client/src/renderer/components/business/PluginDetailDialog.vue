@@ -237,6 +237,7 @@
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useToast } from '@/renderer/composables/useToast'
+import { formatBytes as formatFileSize, formatDate } from '@renderer/utils'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 // Props
@@ -377,28 +378,13 @@ const nextScreenshot = () => {
     : 0
 }
 
-const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-}
+
 
 const formatNumber = (num: number | undefined): string => {
   if (!num) return '0'
   if (num >= 1000000) return Math.floor(num / 100000) / 10 + 'M'
   if (num >= 1000) return Math.floor(num / 100) / 10 + 'k'
   return num.toString()
-}
-
-const formatDate = (dateString: string): string => {
-  try {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('zh-CN')
-  } catch {
-    return dateString
-  }
 }
 
 // 监听插件变化，重置状态

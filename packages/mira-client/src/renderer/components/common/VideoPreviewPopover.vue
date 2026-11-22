@@ -65,6 +65,7 @@
 <script setup lang="ts">
 import { ref, watch, onUnmounted, type Ref } from 'vue'
 import StatusImage from './StatusImage.vue'
+import { formatDuration } from '@renderer/utils'
 
 interface Props {
   /** 视频 URL */
@@ -244,16 +245,6 @@ const handleMouseMove = (event: MouseEvent) => {
   } catch (error) {
     console.error('Error in VideoPreviewPopover handleMouseMove:', error)
   }
-}
-
-// 格式化时长
-const formatDuration = (seconds: number): string => {
-  if (isNaN(seconds) || !isFinite(seconds)) {
-    return '0:00'
-  }
-  const minutes = Math.floor(seconds / 60)
-  const remainingSeconds = Math.floor(seconds % 60)
-  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
 }
 
 // 监听 videoUrl 变化，重置状态

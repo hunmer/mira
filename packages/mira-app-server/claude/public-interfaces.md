@@ -2,7 +2,7 @@
 
 公开接口（HTTP REST + WebSocket）。详细端点签名未逐条扫描，以下为模块级路径前缀与职责；具体请求/响应字段需查阅各 Router 文件。
 
-## HTTP API 路由（19 个文件，含 `BaseRouter` / `WebSocketRouter`）
+## HTTP API 路由（21 个文件 = 19 Router（含 `BaseRouter` / `WebSocketRouter`）+ 2 个非路由辅助）
 
 | 路径前缀 | 路由文件 | 说明 |
 |----------|----------|------|
@@ -10,13 +10,13 @@
 | `/api/auth` | `routes/AuthRouter.ts` | 登录 / 登出 / token 验证 / 注册 |
 | `/api/admins` | `routes/AdminsRouter.ts` | 管理员管理 |
 | `/api/user` | `routes/UserRouter.ts` | 用户信息（`/user/avatar/` 为公开前缀） |
-| `/api/libraries` | `routes/LibraryRoutes.ts` | 素材库 CRUD + 启用/禁用/插件管理 |
+| `/api/libraries` | `routes/LibraryRoutes.ts` | 素材库 CRUD + 启用/禁用/插件管理 + 跨库导入 + 物理迁移 `/relocate` |
 | `/api/plugins` | `routes/PluginRoutes.ts` | 插件安装/卸载/配置/路由 |
 | `/api/database` | `routes/DatabaseRoutes.ts` | 数据库操作（库级校验） |
-| `/api/files` | `routes/FileRoutes.ts` | 文件上传/下载/管理/ZIP 导入（库级校验） |
+| `/api/files` | `routes/FileRoutes.ts` | 文件上传/下载/管理/ZIP 导入 + `/import-path`（仅 loopback）+ `/checkDuplicates`（库级校验） |
 | `/api/devices` | `routes/DeviceRoutes.ts` | 设备管理（库级校验） |
-| `/api/tags` | `routes/TagRouter.ts` | 标签 CRUD（库级校验） |
-| `/api/folders` | `routes/FolderRouter.ts` | 文件夹 CRUD（库级校验） |
+| `/api/tags` | `routes/TagRouter.ts` | 标签 CRUD + `/file/set`、`/file/set-batch` 批量（库级校验） |
+| `/api/folders` | `routes/FolderRouter.ts` | 文件夹 CRUD + `/file/set` 名称/ID 关联（库级校验） |
 | `/api/fs` | `routes/FsRouter.ts` | 文件系统操作（库级校验） |
 | `/api/cookie-sites` | `routes/CookieSitesRouter.ts` | Cookie 站点管理（2026-08 新增，SDK `CookieSiteModule`） |
 | `/api/download` | `routes/DownloadRoutes.ts` | 下载任务（2026-08 新增，SDK `DownloadModule`） |
@@ -26,9 +26,22 @@
 | `/plugins/:libraryId/:pluginName/*` | `routes/HttpRouter.ts` | 插件静态资源 + 动态路由 |
 | — | `routes/WebSocketRouter.ts` | WebSocket 消息分发（非 HTTP） |
 
-> 完整端点级清单见仓库根 `.audit/server-api-manifest.json`（128 条固定 JSON API）与 `.audit/sdk-coverage-report.md`（SDK 覆盖：117 covered / 11 missing / 13 excluded / 7 dynamic）。
+> 完整端点级清单见仓库根 `.audit/server-api-manifest.json` 与 `.audit/sdk-coverage-report.md`（2026-09-09 生成：固定 JSON API 共 141 条，covered 128 / missing 13 / excluded 13 / dynamic 7；missing 主要是插件动态路由与 `:param` 通配端点）。
 
 > 响应统一为 `ApiResponse<T> = { code: number; message: string; data: T | null }`（`BaseRouter.ts`）。
+
+### v3.0.2 新增端点（2026-11 增量确认）
+
+| 端点 | 说明 |
+|------|------|
+| `POST /api/libraries/:id/relocate` | 素材库物理迁移，body `{destinationPath}`，202 返回 `{relocationId}`；同库防并发 |
+| `GET /api/libraries/:id/relocate/:relocationId` | 迁移进度（`status/totalFiles/movedFiles/totalBytes/movedBytes/current`） |
+| `POST /api/files/import-path` | 本机绝对路径导入，仅接受 loopback 客户端；走库级 importType，支持 folderId/tags |
+| `POST /api/files/checkDuplicates` | body `{libraryId, names}`，返回 `{duplicates}`（已存在文件名集合） |
+| `POST /api/tags/file/set-batch` | 批量设置多文件标签，返回 `{updated, failed, results[], tags}` |
+
+- 行为约定：`FileRoutes /rename /update`、`TagRouter /file/set(-batch)`、`FolderRouter /file/set` 对 `recycled=1` 的文件统一返回 409 `'Cannot update a recycled file'`。
+- 标签/文件夹参数在上述路由及 `POST /api/download` 中均接受名称或 ID（`FileAssociationResolver.resolveTagIds/resolveFolderId`，名称不存在则创建）。
 
 ## 权限分层 (`middleware/permission.ts`)
 

@@ -18,13 +18,13 @@ Mira TypeScript 是一个基于 TypeScript 的 monorepo 项目,目标是构建�
 
 pnpm workspace monorepo,分为以下层次:
 
-- **核心层** `mira-app-core`(v3.0.1):事件管理、库列表管理、SQLite 存储实现(文件导入三模式 copy/move/link)、TypeScript SDK(17 模块)、共享类型
-- **服务层** `mira-app-server`(v3.0.1):HTTP REST API(19 路由)+ WebSocket(二进制端到端转发)、素材库管理、插件管理器(双协议)、用户认证、内置 ThumbnailService / SettingsManager / LibraryImportService(Eagle/Billfish 导入)、MCP 服务、多命令 CLI、`public/pair.html` 设备配对页
-- **客户端层** `mira-client`(v3.0.1,mira-web):Electron 38 + Vue 3.5 桌面客户端,shadcn-vue(58 组件目录)、i18n、悬浮球窗口、设备间分享、按库多开窗口
+- **核心层** `mira-app-core`(v3.0.2):事件管理、库列表管理、SQLite 存储实现(文件导入三模式 copy/move/link)、TypeScript SDK(17 模块,HttpClient 401 自动重认证)、共享类型
+- **服务层** `mira-app-server`(v3.0.2):HTTP REST API(19 路由)+ WebSocket(二进制端到端转发)、素材库管理(含 LibraryRelocationService 路径迁移)、插件管理器(双协议)、用户认证、内置 ThumbnailService / SettingsManager / LibraryImportService(Eagle/Billfish 导入)、MCP 服务、多命令 CLI、`public/pair.html` 设备配对页
+- **客户端层** `mira-client`(v3.0.2,mira-web):Electron 38 + Vue 3.5 桌面客户端,shadcn-vue(60 组件目录)、i18n、悬浮球窗口、设备间分享、按库多开窗口、miraEventBus 类型化事件总线
 - **管理面板** `mira-dashboard-next`(v0.0.0):Vue 3.5 + shadcn-vue 2.7 + Tailwind v4 Web 后台,API 层走 mira-app-core SDK,含 /server 运维页(仅 super)
 - **浏览器扩展** `mira-browser-extension`(v0.0.1):Chrome MV3 网页素材采集(截图/拖拽/嗅探/批量上传/cookie 抓取)
 - **移动端** `mira_mobile`(v1.0.0+1):Flutter(Dart ^3.10),浏览/下载/相册自动备份(不在 workspace.yaml,独立管理)
-- **插件 UI 库** `mira-plugin-ui`(v1.1.0):自包含 dist 的共享组件库(ui 67 目录 + library 媒体库组件族),被扩展/CEP 面板/服务端插件 web/客户端市场插件共 8 处消费
+- **插件 UI 库** `mira-plugin-ui`(v1.1.0):自包含 dist 的共享组件库(ui 68 目录 + library 媒体库组件族,包级 i18n 单例),被扩展/CEP 面板/服务端插件 web/客户端市场插件/pair.html 共 10 处消费
 - **栅格布局** `grid-layout-plus`(v2.0.0-beta.0):vendored fork,供 mira-client Home 仪表盘
 - **CEP 面板** `mira-cep-panel`(v0.1.0):Photoshop 2020 内浏览/置入 Mira 素材(Chromium 61 兼容)
 - **瀑布流组件** `vue-masonry`(v0.1.0,@hunmer/vue-masonry):Vue 3 瀑布流,被 mira-client/扩展依赖
@@ -32,8 +32,8 @@ pnpm workspace monorepo,分为以下层次:
 - **落地页** `landing-page`(v0.1.0,efferd-ui):Next.js 16 + React 19 单页营销站(efferd.com,静态导出)
 - **工具** `mira-scripts-core`(v1.0.5):数据迁移/导入 CLI
 - **文档** `mira-doc`(v1.0.0):VitePress 文档站
-- **插件** `plugins/`:服务端插件集合(16 个,全部有独立 CLAUDE.md,见 [module-index.md](module-index.md))
-- **客户端插件市场** `online_client_plugins/`(5 个入索引):视频剪辑器/以图搜图/白板/2 Demo,经 `plugins.json` 索引分发(3D/Spine/PSD 预览已撤下)
+- **插件** `plugins/`:服务端插件集合(20 个:6 深度 + 14 格式,全部有独立 CLAUDE.md,见 [module-index.md](module-index.md))
+- **客户端插件市场** `online_client_plugins/`(6 个入索引):视频剪辑器/以图搜图/白板/字体操作/2 Demo,经 `plugins.json` 索引分发(3D/Spine/PSD 预览已撤下)
 
 ## 技术栈
 

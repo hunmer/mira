@@ -14,11 +14,15 @@
 
 ## Q: 怎么跑起来开发?
 
-`pnpm run electron:dev`(Windows 含 chcp 65001)。类型检查用 `pnpm run type-check`(主门禁)。UI 回归可用 `pnpm run test:ui:remote <testName>`(需 dev 构建运行中且 procm server 可连,默认 ws://127.0.0.1:7331/room)。
+`pnpm run electron:dev`(Windows 含 chcp 65001)。类型检查用 `pnpm run type-check`(主门禁)+ `pnpm run lint`。UI 回归脚本 `test:ui:remote` 已从 package.json 删除(v3.0.2),但驱动脚本仍在,可直跑:`node scripts/test-ui.mjs <testName>`(需 dev 构建运行中且 procm server 可连,默认 ws://127.0.0.1:7331/room)。node 纯函数测试:`node --experimental-strip-types --test <file>`。
+
+## Q: 跨组件事件怎么发?
+
+用类型化事件总线 `miraEventBus`(`src/renderer/services/EventBus.ts`,MiraEventMap 14 种事件,on/off/emit/emitAsync)。v3.0.2 起全仓已从 `window.dispatchEvent(new CustomEvent(...))` 迁移,**不要再新建 CustomEvent**;新增事件先在 MiraEventMap 补类型。
 
 ## Q: 哪些旧的东西已经删了?
 
-自研 `volt/` 组件库整体删除;`--mira-*` / `--surface-*` 自定义变量全部迁到 shadcn 语义 token;element-plus/naive 等旧库 0 引用;**SCSS 体系整体删除**(`assets/scss/` 不存在,0 个 `lang="scss"`);浮动窗口独立构建(vendor/core.js/floating-window.html/`build:float`)移除;`public/ext_icons/` 被 `public/icons/`(188 个)替代。注意:`collapsible/`、`command/` 在 2026-08-05 曾被删,v2.x 又按需加回,现为 53 个组件(08-20 后 +chart)。仅剩 2 处 radix-vue 直引待清理。
+自研 `volt/` 组件库整体删除;`--mira-*` / `--surface-*` 自定义变量全部迁到 shadcn 语义 token;element-plus/naive 等旧库 0 引用;**SCSS 体系整体删除**(`assets/scss/` 不存在,0 个 `lang="scss"`);浮动窗口独立构建(vendor/core.js/floating-window.html/`build:float`)移除;`public/ext_icons/` 被 `public/icons/`(188 个)替代;v3.0.2:`/upload` 路由与 FileUploadView 删除(收进 FileUploadDialog)、`chapter-scrubber/` 删除(并入 `scrollbar/`)、`test:split-tabs`/`test:ui:remote` 脚本删除。注意:`collapsible/`、`command/` 在 2026-08-05 曾被删,v2.x 又按需加回,现为 **60 个组件**(08-20 后 +chart,08-25 后 +attachment/dropzone/interactive-hover-button/spinner/terminal-view,11-21 后 +images-badge/pagination/scrollbar 并删 chapter-scrubber)。仅剩 2 处 radix-vue 直引待清理。
 
 ## Q: 多窗口怎么加 IPC?
 

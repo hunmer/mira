@@ -192,6 +192,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Badge } from '@/components/ui/badge'
 import { useVideoPreview } from '@renderer/composables/useVideoPreview'
 import type { MediaCardComponentProps, MediaCardEvents } from '../../types/components'
+import { formatBytes as formatFileSize, formatDate, formatDuration } from '@renderer/utils'
+import { getFileExtension as getExtFromName } from '@renderer/utils/fileUtils'
+import { classifyMedia } from 'mira-app-core/shared/sdk'
 
 type Props = MediaCardComponentProps
 
@@ -238,19 +241,18 @@ const handleMore = () => {
 
 const getFileType = (item: any): string => {
   if (!item.mimeType) return 'document'
-  
-  if (item.mimeType.startsWith('image/')) return 'image'
-  if (item.mimeType.startsWith('video/')) return 'video'
-  if (item.mimeType.startsWith('audio/')) return 'audio'
-  
+
+  const kind = classifyMedia(item.mimeType).kind
+  if (kind !== 'other') return kind
+
   // Check if it's a folder (you might need to adjust this logic based on your data structure)
   if (item.mimeType === 'application/x-directory' || item.metadata?.itemCount !== undefined) return 'folder'
-  
+
   return 'document'
 }
 
 const getFileExtension = (filename: string): string => {
-  return filename.split('.').pop()?.toUpperCase() || ''
+  return getExtFromName(filename).toUpperCase()
 }
 
 const getDocumentIcon = (filename: string): string => {
@@ -271,29 +273,6 @@ const getDocumentIcon = (filename: string): string => {
   return iconMap[extension || ''] || 'insert_drive_file text-muted-foreground'
 }
 
-const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return '0 B'
-  
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
-}
-
-const formatDate = (date: Date | string): string => {
-  return new Date(date).toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  })
-}
-
-const formatDuration = (seconds: number): string => {
-  const minutes = Math.floor(seconds / 60)
-  const remainingSeconds = Math.floor(seconds % 60)
-  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
-}
 </script>
 
 <style scoped>

@@ -347,6 +347,9 @@ import { runBatchOperation } from '@renderer/composables/useBatchOperation'
 import { renameLocalFilePath } from '@renderer/utils/localFilePath'
 import OrderedSectionList from '@/renderer/components/common/OrderedSectionList.vue'
 import SortableLayoutDialog from '@/renderer/components/common/SortableLayoutDialog.vue'
+import { formatBytes as formatFileSize, formatDate, formatDuration } from '@renderer/utils'
+import { getFileExtension as getExtFromName } from '@renderer/utils/fileUtils'
+import { classifyMedia } from 'mira-app-core/shared/sdk'
 
 // 叠放相册弹入动画：index 0 = 最里边先弹入，依次到最外边
 const POP_SPRING = { type: 'spring', stiffness: 400, damping: 17 } as const
@@ -961,50 +964,17 @@ const copyToClipboard = (text: string) => {
 }
 
 const getFileExtension = (item: FileInfo): string => {
-  const ext = item.extension || item.name.split('.').pop()?.toUpperCase() || 'FILE'
-  return ext
+  return item.extension || getExtFromName(item.name).toUpperCase() || 'FILE'
 }
 
 const isImageFile = (item: FileInfo): boolean => {
-  return item.mimeType.startsWith('image/')
+  return classifyMedia(item.mimeType).isImage
 }
 
 const isVideoFile = (item: FileInfo): boolean => {
-  return item.mimeType.startsWith('video/')
+  return classifyMedia(item.mimeType).isVideo
 }
 
-const formatFileSize = (bytes?: number): string => {
-  if (!bytes) return 'Unknown'
-  const units = ['B', 'KB', 'MB', 'GB']
-  let size = bytes
-  let unitIndex = 0
-
-  while (size >= 1024 && unitIndex < units.length - 1) {
-    size /= 1024
-    unitIndex++
-  }
-
-  return `${size.toFixed(1)} ${units[unitIndex]}`
-}
-
-const formatDate = (dateString?: string): string => {
-  if (!dateString) return 'Unknown'
-  const date = new Date(dateString)
-  return date.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-}
-
-const formatDuration = (seconds?: number): string => {
-  if (!seconds) return 'Unknown'
-  const mins = Math.floor(seconds / 60)
-  const secs = seconds % 60
-  return `${mins}:${secs.toString().padStart(2, '0')}`
-}
 </script>
 
 <style scoped>

@@ -149,7 +149,7 @@ graph LR
 
 ## 插件列表元数据(`getPluginsList`)
 
-读取 `plugins.json`,对每条:
+读取 `plugins.json`,对每条(2026-11 起共 15 条:v3.0.1 的 11 条 + mira_html_format / mira_font_format / mira_office_viewer / mira_semantic_search,条目含 title/category/tags 展示 meta):
 - 读 `{pluginDir}/package.json`
 - 探测图标文件(`icon.{png,jpg,jpeg,svg,ico}`),生成 `/api/plugins/{name}/icon{ext}`
 - 解析 `package.json.mira.{title,icon,category,tags}` 字段(展示元数据)

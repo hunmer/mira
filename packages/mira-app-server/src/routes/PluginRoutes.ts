@@ -26,6 +26,50 @@ interface PluginInfo {
     tags: any[];
 }
 
+// yauzl 无类型声明，沿用运行时 require
+const yauzl = require('yauzl');
+
+/** 解压 zip 内的单个文件条目到 targetDir（自动建目录），写完才 resolve */
+async function extractEntry(zipfile: any, entry: any, targetDir: string): Promise<void> {
+    const outputPath = path.join(targetDir, entry.fileName);
+    const outputDir = path.dirname(outputPath);
+    if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
+    }
+    await new Promise<void>((resolve, reject) => {
+        zipfile.openReadStream(entry, (err: any, readStream: any) => {
+            if (err) return reject(err);
+            const writeStream = fs.createWriteStream(outputPath);
+            readStream.pipe(writeStream);
+            writeStream.on('finish', () => resolve());
+            writeStream.on('error', reject);
+        });
+    });
+}
+
+/** 逐条目解压 zip 包到 targetDir（把原 yauzl 回调链收敛为 async/await） */
+function extractZip(zipPath: string, targetDir: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+        yauzl.open(zipPath, { lazyEntries: true }, (err: any, zipfile: any) => {
+            if (err) return reject(err);
+
+            zipfile.readEntry();
+            zipfile.on('entry', (entry: any) => {
+                // 目录条目（以 / 结尾）直接跳过
+                if (/\/$/.test(entry.fileName)) {
+                    zipfile.readEntry();
+                    return;
+                }
+                extractEntry(zipfile, entry, targetDir)
+                    .then(() => zipfile.readEntry())
+                    .catch(reject);
+            });
+            zipfile.on('end', () => resolve());
+            zipfile.on('error', reject);
+        });
+    });
+}
+
 export class PluginRoutes {
     private router: Router;
     private backend: MiraServer;
@@ -544,7 +588,6 @@ export class PluginRoutes {
         this.router.post('/upload', async (req: Request, res: Response) => {
             try {
                 const multer = require('multer');
-                const yauzl = require('yauzl');
 
                 // 配置multer用于文件上传
                 const storage = multer.memoryStorage();
@@ -606,55 +649,7 @@ export class PluginRoutes {
                         try {
                             if (file.originalname.endsWith('.zip')) {
                                 // 处理ZIP文件
-                                await new Promise<void>((resolve, reject) => {
-                                    yauzl.open(tempFilePath, { lazyEntries: true }, (err: any, zipfile: any) => {
-                                        if (err) return reject(err);
-
-                                        zipfile.readEntry();
-                                        zipfile.on('entry', (entry: any) => {
-                                            if (/\/$/.test(entry.fileName)) {
-                                                // 目录
-                                                zipfile.readEntry();
-                                            } else {
-                                                // 文件
-                                                const outputPath = path.join(pluginsDir, entry.fileName);
-                                                const outputDir = path.dirname(outputPath);
-
-                                                if (!fs.existsSync(outputDir)) {
-                                                    fs.mkdirSync(outputDir, { recursive: true });
-                                                }
-
-                                                zipfile.openReadStream(entry, (err: any, readStream: any) => {
-                                                    if (err) return reject(err);
-
-                                                    const writeStream = fs.createWriteStream(outputPath);
-                                                    readStream.pipe(writeStream);
-
-                                                    writeStream.on('finish', () => {
-                                                        // 检查是否是package.json文件(暂时不需要)
-                                                        // if (entry.fileName.endsWith('package.json') && !entry.fileName.includes('/')) {
-                                                        //     try {
-                                                        //         packageInfo = JSON.parse(fs.readFileSync(outputPath, 'utf-8'));
-                                                        //         pluginName = packageInfo.name || path.basename(entry.fileName, '.json');
-                                                        //     } catch (e) {
-                                                        //         console.warn('Error reading package.json:', e);
-                                                        //     }
-                                                        // }
-                                                        zipfile.readEntry();
-                                                    });
-
-                                                    writeStream.on('error', reject);
-                                                });
-                                            }
-                                        });
-
-                                        zipfile.on('end', () => {
-                                            resolve();
-                                        });
-
-                                        zipfile.on('error', reject);
-                                    });
-                                });
+                                await extractZip(tempFilePath, pluginsDir);
                             } else {
                                 // 暂不支持tar.gz，返回错误
                                 throw new Error('目前仅支持 .zip 格式的插件包');

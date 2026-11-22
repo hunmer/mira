@@ -45,6 +45,8 @@
 
 <script setup lang="ts">
 import type { FileInfo } from '../../../shared/types'
+import { formatDuration } from '@renderer/utils'
+import { getFileExtension as getExtFromName } from '@renderer/utils/fileUtils'
 
 interface Props {
   videos: FileInfo[]
@@ -60,16 +62,9 @@ defineEmits<Emits>()
 
 // 获取文件格式
 const getFileFormat = (fileName: string): string => {
-  const extension = fileName.split('.').pop()?.toUpperCase()
-  return extension || 'VIDEO'
+  return getExtFromName(fileName).toUpperCase() || 'VIDEO'
 }
 
-// 格式化时长
-const formatDuration = (seconds: number): string => {
-  const minutes = Math.floor(seconds / 60)
-  const remainingSeconds = seconds % 60
-  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
-}
 </script>
 
 <style scoped>

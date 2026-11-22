@@ -34,8 +34,9 @@ SettingsRouter StatisticsRouter TagRouter ThumbRouter UserRouter WebSocketRouter
 - `MiraClient`:统一客户端门面
 - `HttpClient`:REST 调用
 - `WebSocketClient`:WS 订阅
-- **17 个 API 模块**(库/文件/标签/文件夹/缩略图/统计/设置/用户/管理/CookieSite/Admin/Download/FileSystem 等;v3.0 新增 createShareTicket、user readFile/writeFile、importFrom/进度/取消、scanDuplicates matchMode)
-- SDK 覆盖(`.audit/sdk-coverage-report.md`,2026-08-24):固定 JSON API 138 条,covered 125 / missing 13 / excluded 13 / dynamic 7
+- **17 个 API 模块**(库/文件/标签/文件夹/缩略图/统计/设置/用户/管理/CookieSite/Admin/Download/FileSystem 等;v3.0 新增 createShareTicket、user readFile/writeFile、importFrom/进度/取消、scanDuplicates matchMode;v3.0.2 新增 importFilePath/checkDuplicates/relocate/setFileTagsBatch,HttpClient 401 自动重认证单飞重放,retryFileOperation 对 EBUSY/EPERM/EACCES 指数退避)
+- SDK 覆盖(`.audit/sdk-coverage-report.md`,2026-09-09):固定 JSON API 141 条,covered 128 / missing 13 / excluded 13 / dynamic 7
+- v3.0.2 新端点 5 条:`POST /api/libraries/:id/relocate` + `GET /api/libraries/:id/relocate/progress`(LibraryRelocationService 停库→流式复制→改写 librarys.json→删源→重启)、`POST /api/files/import-path`(**仅 loopback**)、`POST /api/files/checkDuplicates`、`POST /api/tags/file/set-batch`;**回收站只读**:recycled 文件的 rename/update/tag/folder 操作统一 409;**名称/ID 关联**:`FileAssociationResolver`(resolveTagIds/resolveFolderId,按名解析无则创建)接入 File/Tag/Folder/Download 四路由与 MCP
 - 被 mira-client、mira-scripts-core、mira-dashboard-next(13 个 api 模块基本全走 SDK)、mira-browser-extension 复用
 
 ## 浏览器扩展消息(mira-browser-extension)

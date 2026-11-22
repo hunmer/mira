@@ -32,6 +32,6 @@ src/
 | `mira-app-core/storage/sqlite` | ILibraryServerData 接口 + LibraryServerDataSQLite 实现 |
 | `mira-app-core/shared/sdk` | MiraClient + 17 个 Module + WebSocket/HTTP client（ESM bundle） |
 
-## SDK 覆盖状态（2026-08-19 审计）
+## SDK 覆盖状态（2026-09-09 审计）
 
-依据仓库根 `.audit/sdk-coverage-report.md`：server 固定 JSON API 共 128 条，SDK covered 117、missing 11（devices message/test、libraries query/execute/schema/record、plugins start/stop、user avatar、plugin-routes）、excluded 13（资源流/SSE/通配）、dynamic 7（插件运行时注册路由）。
+依据仓库根 `.audit/sdk-coverage-report.md`：server 固定 JSON API 共 141 条，SDK covered 128、missing 13（devices message/test/messages、devices/share/:param、libraries query/execute/schema/record 等）、excluded 13（资源流/SSE/通配）、dynamic 7（插件运行时注册路由）。

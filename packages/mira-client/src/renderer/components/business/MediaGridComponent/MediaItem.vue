@@ -109,6 +109,7 @@
 import { computed, ref } from 'vue'
 import type { FileInfo } from '../../../../shared/types'
 import { useSettingsStore } from '@renderer/stores/settings'
+import { classifyMedia } from 'mira-app-core/shared/sdk'
 
 interface Props {
   item: FileInfo
@@ -162,14 +163,14 @@ const fileExtension = computed((): string => {
   const ext = props.item.extension || props.item.name.split('.').pop()?.toUpperCase()
   if (ext) return ext
 
-  if (props.item.mimeType.startsWith('image/')) {
+  if (classifyMedia(props.item.mimeType).isImage) {
     if (props.item.mimeType.includes('png')) return 'PNG'
     if (props.item.mimeType.includes('gif')) return 'GIF'
     if (props.item.mimeType.includes('svg')) return 'SVG'
     return 'JPG'
   }
-  if (props.item.mimeType.startsWith('video/')) return 'MP4'
-  if (props.item.mimeType.startsWith('audio/')) return 'MP3'
+  if (classifyMedia(props.item.mimeType).isVideo) return 'MP4'
+  if (classifyMedia(props.item.mimeType).isAudio) return 'MP3'
   return 'FILE'
 })
 

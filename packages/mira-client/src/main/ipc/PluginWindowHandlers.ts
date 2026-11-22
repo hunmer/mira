@@ -8,6 +8,7 @@ import { logger } from '../utils/Logger'
 import type { PluginHandler } from '../handlers/PluginHandler'
 import { downloadService } from '../services/DownloadService'
 import { FontActionService, type AdobeAppType } from '../services/FontActionService'
+import { classifyMedia } from 'mira-app-core/shared/sdk'
 
 const FONT_ACTIONS_PLUGIN_ID = '6c444c09-b708-4fa6-a597-47e7aa2b5e5c'
 
@@ -405,7 +406,7 @@ export class PluginWindowHandlers {
       : value instanceof Uint8Array
         ? Buffer.from(value.buffer, value.byteOffset, value.byteLength)
         : Buffer.alloc(0)
-    if (!payload?.mimeType?.startsWith('image/') || buffer.length === 0 || buffer.length > 100 * 1024 * 1024) {
+    if (!classifyMedia(payload?.mimeType).isImage || buffer.length === 0 || buffer.length > 100 * 1024 * 1024) {
       throw new Error('无效的图片数据')
     }
     return buffer
