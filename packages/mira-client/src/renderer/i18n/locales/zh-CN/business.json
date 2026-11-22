@@ -256,7 +256,17 @@
   },
   "folderManageDialog": {
     "title": "文件夹管理",
-    "itemTypeLabel": "文件夹"
+    "itemTypeLabel": "文件夹",
+    "moreActions": "更多操作",
+    "deleteEmptyFolders": "删除空文件夹",
+    "scanningEmptyFolders": "正在扫描空文件夹…",
+    "emptyConfirmTitle": "删除空文件夹",
+    "emptyConfirmDesc": "是否删除 {count} 个空文件夹？",
+    "noEmptyTitle": "没有空文件夹",
+    "noEmptyDesc": "扫描完成，没有发现空文件夹",
+    "cancel": "取消",
+    "confirm": "确定",
+    "delete": "删除"
   },
   "folderMoveDialog": {
     "title": "移动文件夹",
@@ -267,7 +277,10 @@
     "cancel": "取消",
     "moving": "移动中...",
     "move": "移动",
-    "moveFailed": "移动失败"
+    "moveFailed": "移动失败",
+    "moveChildren": "批量迁移子文件夹",
+    "moveChildrenHint": "仅移动勾选的子文件夹，当前文件夹保留；勾选父文件夹将包含其全部后代，并保留内部层级。",
+    "selectChildrenRequired": "请至少选择一个子文件夹"
   },
   "folderTreeComponent": {
     "emptyTrash": "清空回收站",

@@ -1,9 +1,10 @@
-﻿import { computed, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { FolderItem } from '@renderer/types/components'
 import type { MenuItem } from '@/renderer/types/menu'
 import { miraSDKService } from '@renderer/services/MiraSDKService'
 import { useLibraryStore } from '@renderer/stores/library'
+import type { FolderMoveRequest } from '../../folderMoveSelection'
 import { miraEventBus } from '@renderer/services/EventBus'
 
 export type ContextType = 'folder' | 'tag'
@@ -281,15 +282,18 @@ export function useFolderOperations(emit: FolderOperationsEmits) {
     movingItemType.value = 'folder'
   }
 
-  async function handleItemMove(data: { folderId: string; newParentId?: number }) {
-    if (!libraryStore.currentLibrary || !movingItem.value) return
+  async function handleItemMove(data: FolderMoveRequest) {
+    if (!libraryStore.currentLibrary || !movingItem.value) throw new Error(t('business.folderMoveDialog.moveFailed'))
     try {
       const libraryId = libraryStore.currentLibrary.id
       const itemType = movingItemType.value
       if (itemType === 'folder') {
-        await miraSDKService.moveFolder(libraryId, parseInt(data.folderId), data.newParentId || null)
+        const folderIds = data.folderIds ?? [data.folderId]
+        if (folderIds.length === 0) throw new Error(t('business.folderMoveDialog.selectChildrenRequired'))
+        for (const folderId of folderIds) {
+          await miraSDKService.moveFolder(libraryId, parseInt(folderId), data.newParentId ?? null)
+        }
         emit['folder-move'](movingItem.value)
-        await new Promise(resolve => setTimeout(resolve, 100))
         emit['refresh-folders']()
       } else {
         emit['tag-move'](movingItem.value)
@@ -300,6 +304,7 @@ export function useFolderOperations(emit: FolderOperationsEmits) {
     } catch (error) {
       console.error(`Failed to move ${movingItemType.value}:`, error)
       movingItemType.value === 'folder' ? emit['refresh-folders']() : emit['refresh-tags']()
+      throw error
     }
   }
 

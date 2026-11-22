@@ -108,8 +108,11 @@ export function useBranchLines(options: {
     }
 
     paths.value = nextPaths
-    width.value = Math.max(1, Math.ceil(layer.scrollWidth))
-    height.value = Math.max(1, Math.ceil(layer.scrollHeight))
+    // 画布尺寸必须从行容器（rowsRoot）度量，不能用 layer 的 scrollWidth/scrollHeight：
+    // SVG 是 layer 下绝对定位的子元素，会反过来撑大 layer 的滚动尺寸，
+    // 形成自保持反馈 —— 删行后高度永远缩不回去，残留被删部分的总高度。
+    width.value = Math.max(1, Math.ceil(rowsRoot.scrollWidth))
+    height.value = Math.max(1, Math.ceil(rowsRoot.scrollHeight))
   }
 
   let measureFrame = 0

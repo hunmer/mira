@@ -8,7 +8,7 @@
 
   <!-- 通用移动对话框 -->
   <FolderMoveDialog :visible="ops.showMoveDialog.value" :folder="ops.movingItem.value" :available-folders="folders"
-    :item-type="ops.movingItemType.value" @close="ops.handleMoveDialogClose" @move="ops.handleItemMove" />
+    :item-type="ops.movingItemType.value" :move-items="ops.handleItemMove" @close="ops.handleMoveDialogClose" />
 
   <!-- 删除确认对话框 -->
   <AlertDialog v-if="ops.showDeleteDialog.value" :open="true" @update:open="ops.showDeleteDialog.value = $event">

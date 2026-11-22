@@ -329,6 +329,9 @@ const isSearching = computed(() => trimmedQuery.value.length > 0)
             <span class="material-icons" style="font-size: 14px">close</span>
           </button>
         </div>
+
+        <!-- 工具栏扩展插槽：搜索栏右侧（如文件夹管理的更多操作菜单） -->
+        <slot name="toolbar-extra"></slot>
       </div>
 
       <!-- 分组卡片网格（SelectionBox 支持拖拽范围框选） -->

@@ -256,7 +256,17 @@
   },
   "folderManageDialog": {
     "title": "Folder Management",
-    "itemTypeLabel": "folder"
+    "itemTypeLabel": "folder",
+    "moreActions": "More actions",
+    "deleteEmptyFolders": "Delete empty folders",
+    "scanningEmptyFolders": "Scanning empty folders…",
+    "emptyConfirmTitle": "Delete Empty Folders",
+    "emptyConfirmDesc": "Delete {count} empty folder(s)?",
+    "noEmptyTitle": "No Empty Folders",
+    "noEmptyDesc": "Scan complete. No empty folders found",
+    "cancel": "Cancel",
+    "confirm": "OK",
+    "delete": "Delete"
   },
   "folderMoveDialog": {
     "title": "Move Folder",
@@ -267,7 +277,10 @@
     "cancel": "Cancel",
     "moving": "Moving...",
     "move": "Move",
-    "moveFailed": "Move failed"
+    "moveFailed": "Move failed",
+    "moveChildren": "Move subfolders in bulk",
+    "moveChildrenHint": "Move only the selected subfolders and keep the current folder. Selecting a parent includes all descendants and preserves their hierarchy.",
+    "selectChildrenRequired": "Select at least one subfolder"
   },
   "folderTreeComponent": {
     "emptyTrash": "Empty Trash",
