@@ -63,8 +63,8 @@ async function handleConfirm() {
     })
     if (!ok) return
 
-    // 以目录名作为库名，保持原路径不变（服务端将打开已有 library_data.db）
-    await libraryApi.create({ name: result.name, path: p, description: '' })
+    // 服务端按 路径+名称 拼接目录：以父目录 + 目录名创建，还原所选库目录（打开已有 library_data.db）
+    await libraryApi.create({ name: result.name, path: result.parentPath, description: '' })
     toast.success(t('common.success'))
     emit('imported')
     emit('update:open', false)

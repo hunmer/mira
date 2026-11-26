@@ -84,7 +84,7 @@ function getDefaultForm(): LibraryFormData {
 function openCreate() {
   editingOriginalPath.value = ''
   relocationProgress.value = null
-  promptedPath = ''
+  promptedKey = ''
   editingLib.value = { ...getDefaultForm() }
   dialogOpen.value = true
 }
@@ -120,42 +120,49 @@ function openEdit(lib: Library) {
   dialogOpen.value = true
 }
 
-// 创建素材库时检测所选目录：若已是素材库目录，提示是否导入
+// 创建素材库时检测素材库目录（路径 + 名称）：若已是素材库目录，提示是否导入
 let pathCheckTimer: ReturnType<typeof setTimeout> | null = null
-let promptedPath = ''
+let promptedKey = ''
 
-watch(() => editingLib.value?.path, (path) => {
-  if (pathCheckTimer) clearTimeout(pathCheckTimer)
-  // 仅创建模式且对话框打开时检测；编辑模式路径变更走迁移流程
-  if (!dialogOpen.value || editingLib.value?._id || !path?.trim()) return
-  const target = path.trim()
-  if (target === promptedPath) return
-  pathCheckTimer = setTimeout(() => {
-    pathCheckTimer = null
-    void checkExistingLibrary(target)
-  }, 500)
-})
+watch(
+  () => [editingLib.value?.path, editingLib.value?.name] as const,
+  ([path, name]) => {
+    if (pathCheckTimer) clearTimeout(pathCheckTimer)
+    // 仅创建模式且对话框打开时检测；编辑模式路径变更走迁移流程
+    if (!dialogOpen.value || editingLib.value?._id || !path?.trim()) return
+    const targetPath = path.trim()
+    const targetName = (name || '').trim()
+    const key = `${targetPath}\n${targetName}`
+    if (key === promptedKey) return
+    pathCheckTimer = setTimeout(() => {
+      pathCheckTimer = null
+      void checkExistingLibrary(targetPath, targetName)
+    }, 500)
+  }
+)
 
-async function checkExistingLibrary(p: string) {
-  // 对话框已关闭或路径已变化则不提示
+async function checkExistingLibrary(p: string, n: string) {
+  // 对话框已关闭或路径/名称已变化则不提示
   if (!dialogOpen.value || !editingLib.value || editingLib.value._id) return
   if ((editingLib.value.path || '').trim() !== p) return
+  if ((editingLib.value.name || '').trim() !== n) return
   try {
-    const result = await libraryApi.checkPath(p)
+    const result = await libraryApi.checkPath(p, n || undefined)
     if (!result.isLibrary) return
     if (result.registered) {
+      promptedKey = `${p}\n${n}`
       toast.info(t('library.alreadyInList'))
       return
     }
-    promptedPath = p
+    promptedKey = `${p}\n${n}`
     const ok = await requireConfirm({
       title: t('library.createLibrary'),
       description: t('library.existingLibraryPrompt'),
       confirmText: t('library.importExisting'),
     })
     if (!ok) return
-    // 导入已有素材库：以目录名作为库名，保持原路径不变（服务端将打开已有 library_data.db）
-    await libraryApi.create({ name: result.name, path: p, description: '' })
+    // 导入已有素材库：以父目录 + 库名还原该目录，服务端将打开已有 library_data.db
+    await libraryApi.create({ name: result.name, path: result.parentPath, description: '' })
     toast.success(t('common.success'))
     dialogOpen.value = false
     editingLib.value = null

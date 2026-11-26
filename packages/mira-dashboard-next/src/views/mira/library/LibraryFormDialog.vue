@@ -95,6 +95,7 @@ const toggleRole = (role: string) => {
         <div class="space-y-2">
           <Label>{{ t('library.path') }}</Label>
           <PathTreeSelect v-model="form.path" :placeholder="t('library.pathPlaceholder')" />
+          <p class="text-xs text-muted-foreground">{{ t('library.pathHint') }}</p>
         </div>
         <div class="space-y-2">
           <Label>{{ t('library.importType') }}</Label>

@@ -137,6 +137,7 @@ export default {
     pluginsDirPlaceholder: 'Plugins directory path (optional)',
     namePlaceholder: 'Enter library name',
     pathPlaceholder: 'Select library path',
+    pathHint: 'Library directory is the selected path + name (subdirectory created automatically)',
     importType: 'File import mode',
     importTypeCopy: 'Copy (default)',
     importTypeMove: 'Move',

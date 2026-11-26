@@ -137,6 +137,7 @@ export default {
     pluginsDirPlaceholder: '插件目录路径（可选）',
     namePlaceholder: '请输入资源库名称',
     pathPlaceholder: '请选择资源库路径',
+    pathHint: '素材库目录为所选路径 + 名称（自动创建子目录）',
     importType: '文件导入方式',
     importTypeCopy: '复制（默认）',
     importTypeMove: '移动',

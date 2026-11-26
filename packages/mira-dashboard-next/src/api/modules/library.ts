@@ -20,6 +20,10 @@ export interface LibraryPathCheckResult {
   registeredId: string | null
   /** 建议的素材库名（目录名） */
   name: string
+  /** 实际素材库目录（路径 + 名称解析后的绝对路径） */
+  path: string
+  /** 素材库目录的父目录（导入时作为 create 的 path 传入，与名称拼接后还原该目录） */
+  parentPath: string
 }
 
 export const libraryApi = {
@@ -41,6 +45,6 @@ export const libraryApi = {
   cancelImport: (importId: string): Promise<{ message: string }> =>
     getMiraClient().libraries().cancelImport(importId),
   // SDK 未覆盖 /libraries/check 端点，走 axios（同 PathTreeSelect 直连 /fs/dirs 先例）
-  checkPath: (path: string): Promise<LibraryPathCheckResult> =>
-    client.get('/libraries/check', { params: { path } }).then(res => res.data),
+  checkPath: (path: string, name?: string): Promise<LibraryPathCheckResult> =>
+    client.get('/libraries/check', { params: { path, ...(name ? { name } : {}) } }).then(res => res.data),
 }

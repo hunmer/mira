@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto';
 import { Transform } from 'stream';
 import { pipeline } from 'stream/promises';
 import { MiraServer } from '..';
+import { resolveLibraryPath } from '../lib/libraryPath';
 
 export interface LibraryRelocationProgress {
     id: string;
@@ -137,7 +138,8 @@ export class LibraryRelocationService {
         const configuredPath = config.path || config.customFields?.path;
         if (!configuredPath) throw new Error('Library path is not configured');
         const sourcePath = path.resolve(configuredPath);
-        const destination = path.resolve(destinationPath);
+        // 与创建口径一致：素材库目录 = 路径 + 名称（选中的路径作为父目录）
+        const destination = path.resolve(resolveLibraryPath(destinationPath, config.name));
         const id = randomUUID();
         const progress: LibraryRelocationProgress = {
             id,

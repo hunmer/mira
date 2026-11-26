@@ -5,13 +5,9 @@ import { MiraServer } from '..';
 import { LibraryWatcher } from '../LibraryWatcher';
 import { LibraryImportService, ImportSource } from '../services/LibraryImportService';
 import { LibraryRelocationService } from '../services/LibraryRelocationService';
+import { resolveLibraryPath } from '../lib/libraryPath';
 
-export function resolveLibraryPath(libraryPath: string, libraryName: string): string {
-    const normalizedPath = path.normalize(libraryPath);
-    return path.basename(normalizedPath) === libraryName
-        ? normalizedPath
-        : path.join(normalizedPath, libraryName);
-}
+export { resolveLibraryPath };
 
 export class LibraryRoutes {
     private router: Router;
@@ -66,7 +62,7 @@ export class LibraryRoutes {
             res.json({ message: 'Import cancel requested' });
         });
 
-        // 检查目录是否为已有素材库（含是否已注册到素材库列表）
+        // 检查素材库目录（路径 + 名称）是否为已有素材库（含是否已注册到素材库列表）
         // 供面板「打开素材库」/「创建素材库时已有库检测」使用
         this.router.get('/check', async (req: Request, res: Response) => {
             try {
@@ -74,8 +70,12 @@ export class LibraryRoutes {
                 if (!rawPath) {
                     return res.status(400).json({ error: 'path is required' });
                 }
+                const rawName = String(req.query.name || '').trim();
 
-                const resolved = path.resolve(path.normalize(rawPath));
+                // 与创建口径一致：素材库目录 = 路径 + 名称；未提供名称时仅检查所选路径本身
+                const resolved = rawName
+                    ? path.resolve(resolveLibraryPath(rawPath, rawName))
+                    : path.resolve(path.normalize(rawPath));
 
                 // 目录下存在 library_data.db 即视为已有素材库
                 const isLibrary = fs.existsSync(path.join(resolved, 'library_data.db'));
@@ -98,7 +98,15 @@ export class LibraryRoutes {
                     // librarys.json 不存在或解析失败视为未注册
                 }
 
-                res.json({ isLibrary, registered, registeredId, name: path.basename(resolved) });
+                // parentPath + name 可还原 resolved 目录，导入已有库时据此创建
+                res.json({
+                    isLibrary,
+                    registered,
+                    registeredId,
+                    name: path.basename(resolved),
+                    path: resolved,
+                    parentPath: path.dirname(resolved),
+                });
             } catch (error: any) {
                 console.error('Error checking library path:', error);
                 res.status(500).json({ error: error?.message || 'Failed to check library path' });
