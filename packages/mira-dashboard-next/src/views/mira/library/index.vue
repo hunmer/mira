@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import type { Library } from '@/types/mira'
@@ -17,13 +17,14 @@ import {
 import LibraryFormDialog from './LibraryFormDialog.vue'
 import type { LibraryFormData } from './LibraryFormDialog.vue'
 import ImportDialog from './ImportDialog.vue'
+import OpenLibraryDialog from './OpenLibraryDialog.vue'
 import ShareDialog from './ShareDialog.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import { useConfirmDialog } from '@/composables/useConfirmDialog'
 import { toast } from 'vue-sonner'
 import {
   RiAddLine, RiSearchLine, RiEditLine, RiDeleteBinLine, RiShareLine,
-  RiDownload2Line, RiDownloadCloudLine,
+  RiDownload2Line, RiDownloadCloudLine, RiFolderOpenLine,
 } from '@remixicon/vue'
 
 const { t } = useI18n()
@@ -42,6 +43,7 @@ const shareOpen = ref(false)
 const sharingLib = ref<Library | null>(null)
 const importOpen = ref(false)
 const importSource = ref<'eagle' | 'billfish'>('eagle')
+const openLibOpen = ref(false)
 
 function openImport(source: 'eagle' | 'billfish') {
   importSource.value = source
@@ -82,6 +84,7 @@ function getDefaultForm(): LibraryFormData {
 function openCreate() {
   editingOriginalPath.value = ''
   relocationProgress.value = null
+  promptedPath = ''
   editingLib.value = { ...getDefaultForm() }
   dialogOpen.value = true
 }
@@ -116,6 +119,55 @@ function openEdit(lib: Library) {
   }
   dialogOpen.value = true
 }
+
+// 创建素材库时检测所选目录：若已是素材库目录，提示是否导入
+let pathCheckTimer: ReturnType<typeof setTimeout> | null = null
+let promptedPath = ''
+
+watch(() => editingLib.value?.path, (path) => {
+  if (pathCheckTimer) clearTimeout(pathCheckTimer)
+  // 仅创建模式且对话框打开时检测；编辑模式路径变更走迁移流程
+  if (!dialogOpen.value || editingLib.value?._id || !path?.trim()) return
+  const target = path.trim()
+  if (target === promptedPath) return
+  pathCheckTimer = setTimeout(() => {
+    pathCheckTimer = null
+    void checkExistingLibrary(target)
+  }, 500)
+})
+
+async function checkExistingLibrary(p: string) {
+  // 对话框已关闭或路径已变化则不提示
+  if (!dialogOpen.value || !editingLib.value || editingLib.value._id) return
+  if ((editingLib.value.path || '').trim() !== p) return
+  try {
+    const result = await libraryApi.checkPath(p)
+    if (!result.isLibrary) return
+    if (result.registered) {
+      toast.info(t('library.alreadyInList'))
+      return
+    }
+    promptedPath = p
+    const ok = await requireConfirm({
+      title: t('library.createLibrary'),
+      description: t('library.existingLibraryPrompt'),
+      confirmText: t('library.importExisting'),
+    })
+    if (!ok) return
+    // 导入已有素材库：以目录名作为库名，保持原路径不变（服务端将打开已有 library_data.db）
+    await libraryApi.create({ name: result.name, path: p, description: '' })
+    toast.success(t('common.success'))
+    dialogOpen.value = false
+    editingLib.value = null
+    await loadLibraries()
+  } catch (error: any) {
+    toast.error(error?.response?.data?.error || error?.message || t('common.failed'))
+  }
+}
+
+onBeforeUnmount(() => {
+  if (pathCheckTimer) clearTimeout(pathCheckTimer)
+})
 
 async function handleSave() {
   if (!editingLib.value || saving.value) return
@@ -262,6 +314,9 @@ if (requestedLibId) {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        <Button variant="outline" @click="openLibOpen = true">
+          <RiFolderOpenLine class="mr-2 size-4" /> {{ t('library.openLibrary') }}
+        </Button>
         <Button @click="openCreate">
           <RiAddLine class="mr-2 size-4" /> {{ t('library.createLibrary') }}
         </Button>
@@ -340,6 +395,12 @@ if (requestedLibId) {
       :open="importOpen"
       :source="importSource"
       @update:open="importOpen = $event"
+      @imported="loadLibraries"
+    />
+
+    <!-- Open an existing library folder -->
+    <OpenLibraryDialog
+      v-model:open="openLibOpen"
       @imported="loadLibraries"
     />
 

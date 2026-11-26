@@ -66,6 +66,45 @@ export class LibraryRoutes {
             res.json({ message: 'Import cancel requested' });
         });
 
+        // 检查目录是否为已有素材库（含是否已注册到素材库列表）
+        // 供面板「打开素材库」/「创建素材库时已有库检测」使用
+        this.router.get('/check', async (req: Request, res: Response) => {
+            try {
+                const rawPath = String(req.query.path || '').trim();
+                if (!rawPath) {
+                    return res.status(400).json({ error: 'path is required' });
+                }
+
+                const resolved = path.resolve(path.normalize(rawPath));
+
+                // 目录下存在 library_data.db 即视为已有素材库
+                const isLibrary = fs.existsSync(path.join(resolved, 'library_data.db'));
+
+                // 是否已注册：读取 data/librarys.json（含禁用库，与 GET / 口径一致）
+                let registered = false;
+                let registeredId: string | null = null;
+                try {
+                    const data = await fs.promises.readFile(path.join(this.backend.dataPath, 'librarys.json'), 'utf8');
+                    const configs = JSON.parse(data);
+                    for (const config of configs) {
+                        const configPath = config.path || config.customFields?.path;
+                        if (configPath && path.resolve(path.normalize(configPath)) === resolved) {
+                            registered = true;
+                            registeredId = config.id;
+                            break;
+                        }
+                    }
+                } catch (readError) {
+                    // librarys.json 不存在或解析失败视为未注册
+                }
+
+                res.json({ isLibrary, registered, registeredId, name: path.basename(resolved) });
+            } catch (error: any) {
+                console.error('Error checking library path:', error);
+                res.status(500).json({ error: error?.message || 'Failed to check library path' });
+            }
+        });
+
         this.router.post('/:id/relocate', async (req: Request, res: Response) => {
             try {
                 const destinationPath = String(req.body?.destinationPath || '').trim();
