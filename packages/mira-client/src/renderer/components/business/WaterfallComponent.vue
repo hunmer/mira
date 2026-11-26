@@ -417,11 +417,38 @@ const computeColSpan = (ratio: number): number => {
 const getKey = (item: FileInfo & { ratio?: number }, index: number): string | number =>
   item.id ?? index
 
+/** 信息浮层（文件名/大小/文件夹/标签）的高度估值；卡片比它还矮时需改为上下堆叠，避免浮层被裁切 */
+const INFO_OVERLAY_HEIGHT = 76
+
+// Masonry 实际宽度（px）：用于把图片比例换算成像素高度，判断卡片是否矮于信息浮层
+const masonryWidth = ref(0)
+let masonryWidthObserver: ResizeObserver | null = null
+
+/** 该项是否会显示信息浮层（与 MediaWaterfallItem 的 hasVisibleInfo 判定一致） */
+const hasInfoOverlay = (item: FileInfo): boolean => {
+  const fields = settingsStore.settings.visibleItemFields
+  return fields.includes('filename')
+    || (fields.includes('size') && !!item.size)
+    || (fields.includes('folder') && item.folderId !== undefined && item.folderId !== null && item.folderId !== '')
+    || (fields.includes('tags') && (item.tags?.length ?? 0) > 0)
+}
+
 const getMeta = (item: FileInfo & { ratio?: number }, _index: number): MasonryItemMeta => {
   const ratio = item.ratio ?? 1
   const desired = computeColSpan(ratio)
   // 保证旁边还能放普通项：最多占用 columns-1 列（columnsPerRow 近似）
   const colSpan = Math.min(Math.max(desired, 1), Math.max(props.columnsPerRow - 1, 1), props.maxColSpan)
+  const count = Math.max(props.columnsPerRow, 2)
+  const columnWidth = masonryWidth.value > 0
+    ? (masonryWidth.value - (count - 1) * props.gap) / count
+    : 0
+  const itemWidth = colSpan * columnWidth + (colSpan - 1) * props.gap
+  const imageHeight = itemWidth / ratio
+  // 超宽切片图等矮图：按纯比例布局时卡片比底部信息浮层还矮，浮层上半截会被 overflow-hidden 裁掉。
+  // 此时改为「图 + 浮层」上下堆叠（固定高度，不参与补隙拉伸），为浮层预留空间。
+  if (itemWidth > 0 && imageHeight < INFO_OVERLAY_HEIGHT && hasInfoOverlay(item)) {
+    return { colSpan, height: imageHeight + INFO_OVERLAY_HEIGHT, lazy: props.lazyload }
+  }
   return {
     colSpan,
     aspect: `${ratio}:1`, // Masonry 按宽度算高度，多列时高度自动按比例放大
@@ -699,6 +726,16 @@ onMounted(() => {
     layoutResizeObserver.observe(selectionRoot)
     selectionRoot.addEventListener('load', handleDebugImageLoad, true)
   }
+  // 测 Masonry 根节点实际宽度（与 Masonry 内部取宽的节点一致），供 getMeta 换算像素高度
+  const masonryRoot = masonryRef.value?.$el as HTMLElement | null
+  if (masonryRoot instanceof HTMLElement) {
+    masonryWidth.value = masonryRoot.clientWidth
+    masonryWidthObserver = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width
+      if (width) masonryWidth.value = width
+    })
+    masonryWidthObserver.observe(masonryRoot)
+  }
   if (isWaterfallDebugEnabled() && typeof PerformanceObserver !== 'undefined') {
     try {
       debugLongTaskObserver = new PerformanceObserver((list) => {
@@ -718,6 +755,8 @@ onMounted(() => {
 onUnmounted(() => {
   cancelAnimationFrame(refreshFrame)
   layoutResizeObserver?.disconnect()
+  masonryWidthObserver?.disconnect()
+  masonryWidthObserver = null
   const selectionRoot = (selectionBoxRef.value as any)?.$el as HTMLElement | null
   selectionRoot?.removeEventListener('load', handleDebugImageLoad, true)
   debugLongTaskObserver?.disconnect()

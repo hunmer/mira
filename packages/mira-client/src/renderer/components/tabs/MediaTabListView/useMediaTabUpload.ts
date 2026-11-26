@@ -8,6 +8,34 @@ import { getLibraryPrefs } from '@renderer/composables/LibraryPrefs'
 import { useDirectImport } from '@renderer/composables/useDirectImport'
 import type { ImportFolderPayload, ImportTarget } from '@renderer/composables/useImportHandler'
 
+/** 剥离树形 id 前缀（folder-xxx / tag-xxx）并排除空值与 '=null'（未分类/无标签特殊值），返回可用的纯 id 字符串 */
+function normalizeSourceId(value: unknown): string | undefined {
+  if (value == null || value === '' || value === '=null') return undefined
+  const raw = String(value).replace(/^(?:folder|tag)-/, '')
+  return raw !== '' && raw !== '=null' ? raw : undefined
+}
+
+/** 解析筛选中的目标文件夹 id：优先 folders FilterRule（FilterBar 改动），兼容 folder 简单值（FolderTabType） */
+function resolveFolderIdFromFilters(filters: Record<string, any> | undefined): string | undefined {
+  const rule = filters?.folders
+  if (rule && typeof rule === 'object' && Array.isArray(rule.selectedValues)) {
+    const id = normalizeSourceId(rule.selectedValues[0])
+    if (id !== undefined) return id
+  }
+  return normalizeSourceId(filters?.folder)
+}
+
+/** 解析筛选中的目标标签 id 列表：兼容 FilterRule 对象（TagTabType/FilterBar，selectedValues）与数组格式 */
+function resolveTagIdsFromFilters(filters: Record<string, any> | undefined): string[] {
+  const tags = filters?.tags
+  const values: unknown[] = Array.isArray(tags)
+    ? tags
+    : (tags && typeof tags === 'object' && Array.isArray(tags.selectedValues) ? tags.selectedValues : [])
+  return values
+    .map(v => normalizeSourceId(v))
+    .filter((v): v is string => v !== undefined)
+}
+
 /**
  * 拖拽上传 / 导入：根区与文件夹卡片拖放、URL 拖入识别、直接导入模式、上传对话框开关
  * 从 MediaTabListView.vue 按功能拆出，逻辑保持不变。
@@ -18,6 +46,8 @@ export function useMediaTabUpload(deps: {
     viewType?: 'files' | 'trash'
     filters?: Record<string, any>
   }
+  /** tab 当前生效筛选（含 tab 固有初始筛选与用户 FilterBar 改动）；未传时仅用 props.filters */
+  mediaTabData?: { filters: { value: Record<string, any> } }
 }) {
   const { props } = deps
   const { t } = useI18n()
@@ -50,14 +80,16 @@ export function useMediaTabUpload(deps: {
     showUploadDialog.value = true
   }
 
-  const importTarget = computed<ImportTarget>(() => {
-    const folder = props.filters?.folder
-    const tags = props.filters?.tags
-    return {
-      folderId: folder != null && folder !== '=null' ? String(folder) : undefined,
-      tagIds: Array.isArray(tags) ? tags.map(String) : [],
-    }
-  })
+  /** tab 当前生效筛选：tab 固有初始筛选（props.filters）+ 用户 FilterBar 改动（mediaTabData.filters） */
+  const currentFilters = computed<Record<string, any>>(() => ({
+    ...(props.filters ?? {}),
+    ...(deps.mediaTabData?.filters?.value ?? {}),
+  }))
+
+  const importTarget = computed<ImportTarget>(() => ({
+    folderId: resolveFolderIdFromFilters(currentFilters.value),
+    tagIds: resolveTagIdsFromFilters(currentFilters.value),
+  }))
 
   function handleImportFolder(payload: ImportFolderPayload) {
     // 关闭「导入后二次确定」：跳过上传对话框直接导入
@@ -104,23 +136,18 @@ export function useMediaTabUpload(deps: {
       const uriList = e.dataTransfer?.getData('text/uri-list') || e.dataTransfer?.getData('text/plain') || ''
       const urls = uriList.split(/\r?\n/).map((s) => s.trim()).filter((s) => /^https?:\/\//i.test(s))
       if (urls.length > 0) {
-        const folder = props.filters?.folder
-        const folderIdNum = targetFolderId != null
-          ? Number(targetFolderId)
-          : (folder != null && Number.isFinite(Number(folder)) ? Number(folder) : null)
-        const tags = props.filters?.tags
-        urlImportStore.open({ urls, folderId: folderIdNum, tagIds: Array.isArray(tags) ? tags.map(String) : [] })
+        const folder = targetFolderId ?? resolveFolderIdFromFilters(currentFilters.value)
+        const folderIdNum = folder != null && Number.isFinite(Number(folder)) ? Number(folder) : null
+        const tagIds = resolveTagIdsFromFilters(currentFilters.value)
+        urlImportStore.open({ urls, folderId: folderIdNum, tagIds })
         return
       }
       return
     }
 
     const files = Array.from(e.dataTransfer.files)
-    const folder = props.filters?.folder
-    const folderId = targetFolderId
-      || (folder != null && Number.isFinite(Number(folder)) ? String(folder) : undefined)
-    const tags = props.filters?.tags
-    const tagIds = Array.isArray(tags) ? tags.map(String) : []
+    const folderId = targetFolderId || resolveFolderIdFromFilters(currentFilters.value)
+    const tagIds = resolveTagIdsFromFilters(currentFilters.value)
 
     // 关闭「导入后二次确定」：拖入文件直接上传，不打开上传对话框
     if (!getLibraryPrefs().confirmAfterImport) {

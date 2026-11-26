@@ -276,7 +276,7 @@
                     :data="pagedDisplayFiles"
                     :get-key="(file: any) => file.id"
                     :columns="columnsByWidth"
-                    :gap="12"
+                    :gap="MASONRY_GAP"
                     :get-meta="getFileMeta"
                     :layout-mode="'fill'"
                     :enter-animation="false"
@@ -353,8 +353,8 @@
                           </div>
                         </div>
 
-                        <!-- 文件信息：固定高度不收缩，与 CARD_INFO_HEIGHT 估值对齐 -->
-                        <div class="p-2 shrink-0">
+                        <!-- 文件信息：高度下限与 CARD_INFO_HEIGHT 估值对齐，保证与瀑布流估算自洽 -->
+                        <div class="p-2 shrink-0" :style="{ minHeight: `${CARD_INFO_HEIGHT}px` }">
                           <p class="text-xs font-medium text-foreground dark:text-muted-foreground truncate" :title="file.file.name">
                             {{ file.file.name }}
                           </p>
@@ -491,7 +491,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick, watch } from 'vue'
+import { ref, computed, nextTick, onBeforeUnmount, watch } from 'vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -730,18 +730,59 @@ const CARD_INFO_HEIGHT = 76
 // 宽图占列阈值（基于 ratio = w/h）：>= 阈值占更多列，与 WaterfallComponent 对齐
 const WIDE_RATIO_THRESHOLD = 1.6
 const ULTRA_WIDE_RATIO_THRESHOLD = 2.4
+const MASONRY_GAP = 12
+
+const masonryRef = ref<InstanceType<typeof Masonry>>()
+
+/** 与 Masonry 内部 resolveColumns 一致的断点分列（仅用于把图片比例换算成实际像素高度） */
+function resolveColumnCount(width: number, cols: MasonryColumns): number {
+  if (typeof cols === 'number') return Math.max(1, Math.floor(cols))
+  if (width >= 1280 && cols.xl) return cols.xl
+  if (width >= 1024 && cols.lg) return cols.lg
+  if (width >= 768 && cols.md) return cols.md
+  if (width >= 640 && cols.sm) return cols.sm
+  return cols.base ?? 1
+}
+
+// Masonry 把 aspect 应用到 item 的「实际渲染宽度」，getFileMeta 必须用实际列宽换算像素高度。
+// 对话框内容随开关反复挂载，故在 Masonry 实例就绪时接 ResizeObserver，而不是只在 onMounted 接一次。
+const masonryWidth = ref(0)
+let masonryWidthObserver: ResizeObserver | null = null
+const stopMasonryWidthWatch = watch(masonryRef, (instance) => {
+  masonryWidthObserver?.disconnect()
+  masonryWidthObserver = null
+  const el = instance?.$el
+  if (!(el instanceof HTMLElement)) return
+  masonryWidth.value = el.clientWidth
+  masonryWidthObserver = new ResizeObserver((entries) => {
+    const width = entries[0]?.contentRect.width
+    if (width) masonryWidth.value = width
+  })
+  masonryWidthObserver.observe(el)
+}, { flush: 'post' })
+onBeforeUnmount(() => {
+  stopMasonryWidthWatch()
+  masonryWidthObserver?.disconnect()
+  masonryWidthObserver = null
+})
+
+/** 单列实际宽度（px）；容器尚未测量时为 0 */
+const gridColumnWidth = computed(() => {
+  if (masonryWidth.value <= 0) return 0
+  const cols = resolveColumnCount(masonryWidth.value, columnsByWidth.value)
+  return (masonryWidth.value - (cols - 1) * MASONRY_GAP) / cols
+})
 
 /**
  * 真实变高瀑布流的布局元信息。
  *
- * 高度计算要点：Masonry 的 aspect 是针对「整个 item 宽度」算总高度。
- * 卡片 = 预览区(按真实图片比例) + 固定信息块(CARD_INFO_HEIGHT)。
- * 因此合成 aspect 时要让「预览区高度 = colWidth × 真实比例」，再补上信息块高度，
- * 即 aspect 表示的 height = 预览区高度 + 信息块高度。
+ * 高度计算要点：Masonry 的 aspect 是针对「整个 item 实际宽度」算总高度。
+ * 卡片 = 预览区(按真实图片比例) + 固定信息块(CARD_INFO_HEIGHT 像素)。
+ * 因此必须按 item 实际宽度换算：总高 = itemWidth / ratio + CARD_INFO_HEIGHT，
+ * 再写成等价的 width:height 比例。
  *
- * 实现：换算成等价的 width:height 比例。以 colWidth 为参照宽度，预览区高 = colWidth/ratio，
- * 信息块加 CARD_INFO_HEIGHT，得到合成 aspect = colWidth : (colWidth/ratio + infoH)。
- * 用 1000 作分子避免精度损失。
+ * 注意：不能用虚拟参考宽度（如 1000）叠加像素高度——Masonry 会把整段比例缩放到实际宽度，
+ * 信息块高度随之被缩成「实际宽 / 参考宽」倍（≈11px），预览区被信息块挤没、卡片溢出槽位被裁切。
  */
 function getFileMeta(file: PendingFile, _index: number): MasonryItemMeta {
   const ratio = getRatio(file)
@@ -753,17 +794,19 @@ function getFileMeta(file: PendingFile, _index: number): MasonryItemMeta {
         : 1
     const colSpan = Math.min(Math.max(desiredColSpan, 1), Math.max(approxColumns.value - 1, 1))
     // colSpan>1 时实际显示宽度更大，预览区高度按实际宽度算
-    const refWidth = 1000 * colSpan
-    const previewH = refWidth / ratio
-    const totalH = previewH + CARD_INFO_HEIGHT
-    return { colSpan, aspect: `${refWidth}:${totalH}`, lazy: true }
+    const itemWidth = colSpan * gridColumnWidth.value + (colSpan - 1) * MASONRY_GAP
+    if (itemWidth > 0) {
+      const totalH = itemWidth / ratio + CARD_INFO_HEIGHT
+      return { colSpan, aspect: `${itemWidth}:${totalH}`, lazy: true }
+    }
+    // 容器尚未测得宽度：此时 Masonry 自身 colWidth 也为 0 不会布局，测量后响应式自动重算
+    return { colSpan, aspect: `${ratio}:1`, lazy: true }
   }
   // 非图片：用 height 给定固定卡片总高，避免瀑布流里塌成一行
   return { height: 220, lazy: false }
 }
 
 // Masonry 会响应 data 数组的增删；这里只在图片比例批量发布时手动刷新 getMeta 布局。
-const masonryRef = ref<InstanceType<typeof Masonry>>()
 const refreshLayout = () => nextTick(() => {
   masonryRef.value?.refresh()
 })

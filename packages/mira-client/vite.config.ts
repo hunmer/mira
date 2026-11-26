@@ -52,8 +52,8 @@ export default defineConfig(({ mode }) => {
       appendTo: 'src/renderer/main.ts',
       launchEditor: getEditor(),
       componentInspector: {
-        // Ctrl+Shift+D 触发审查元素模式，点击页面元素跳转到 IDE 对应代码
-        toggleComboKey: 'control-shift-d'
+        // Ctrl+Alt+D 触发审查元素模式，点击页面元素跳转到 IDE 对应代码
+        toggleComboKey: 'control-alt-d'
       }
     })] : []),
     // 只在开发环境启用 Vite Inspect

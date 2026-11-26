@@ -218,7 +218,8 @@ const mediaContainerStyle = computed(() => ({
 }))
 
 // 紧凑模式下用 cover 完全填满，消除缩略图比例与卡片比例的细微偏差产生的 letterbox 边距
-const fitClass = computed(() => (props.compact ? 'object-cover' : 'object-contain'))
+// 非紧凑模式贴顶：矮图卡片会在图下方为信息浮层预留高度（见 WaterfallComponent getMeta），图不能垂直居中
+const fitClass = computed(() => (props.compact ? 'object-cover' : 'object-contain object-top'))
 
 // hovercard 预览图：优先原图（带缓存破坏），保证清晰
 

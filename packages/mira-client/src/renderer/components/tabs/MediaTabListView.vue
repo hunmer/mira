@@ -412,7 +412,7 @@ const {
   handleFolderCardDragLeave,
   handleDragLeave,
   handleDrop
-} = useMediaTabUpload({ props })
+} = useMediaTabUpload({ props, mediaTabData })
 
 // 批量操作：恢复/彻底删除/删除 + 确认弹窗
 const {
