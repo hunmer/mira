@@ -61,6 +61,15 @@
             </svg>
           </div>
         </div>
+
+        <!-- 空状态：纳入右键触发区，右键可弹出菜单（添加文件夹/标签） -->
+        <div v-else class="flex flex-col items-center justify-center py-8 text-muted-foreground"
+          @contextmenu="handleEmptyContextMenu">
+          <span class="material-icons text-4xl mb-2 text-muted-foreground">{{ itemType === 'folder' ? 'folder_open' :
+            'label'
+            }}</span>
+          <p class="text-sm text-center">{{ t('business.folderTreeComponent.empty', { title: sectionTitle }) }}</p>
+        </div>
       </ContextMenuTrigger>
       <ContextMenuContent v-if="!readOnly || contextMenuItems.length > 0" class="w-52">
         <template v-for="(item, i) in contextMenuItems" :key="i">
@@ -84,14 +93,6 @@
         </template>
       </ContextMenuContent>
     </ContextMenu>
-
-    <!-- 空状态 -->
-    <div v-if="treeData.length === 0" class="flex flex-col items-center justify-center py-8 text-muted-foreground">
-      <span class="material-icons text-4xl mb-2 text-muted-foreground">{{ itemType === 'folder' ? 'folder_open' :
-        'label'
-        }}</span>
-      <p class="text-sm text-center">{{ t('business.folderTreeComponent.empty', { title: sectionTitle }) }}</p>
-    </div>
 
     <!-- 编辑/移动/删除/批量删除/拖拽确认对话框 -->
     <FolderTreeDialogs v-if="!readOnly" v-model:show-drag-confirm="showDragConfirm" :ops="ops" :folders="folders"
@@ -506,6 +507,15 @@ function handleNodeContextMenu(node: HeTreeNode, _event: MouseEvent) {
     ops.currentContextFolder.value = { ...node.originalData, id: node.id, label: node.label, icon: node.icon, count: node.count } as FolderItem
   } else {
     ops.currentContextTag.value = { ...node.originalData, id: node.id, name: node.label }
+  }
+}
+
+// 空状态右键：清空残留的上下文节点（避免编辑/删除指向已不存在的项），菜单仅「添加」可用
+function handleEmptyContextMenu() {
+  if (isFolder.value) {
+    ops.currentContextFolder.value = null
+  } else {
+    ops.currentContextTag.value = null
   }
 }
 
